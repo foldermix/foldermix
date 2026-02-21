@@ -7,7 +7,19 @@ import pytest
 
 @pytest.fixture
 def sample_dir(tmp_path: Path) -> Path:
-    """Create a sample directory structure for testing."""
+    """Create a sample directory structure for testing.
+
+    Creates:
+        sample.txt        - plain text file
+        sample.md         - markdown file
+        sample.json       - JSON file
+        sample.csv        - CSV file
+        nested/child.txt  - file in a subdirectory
+        excluded_dir/ignored.txt - file in a to-be-excluded directory
+        image.png         - binary file (should be skipped by default)
+        .hidden           - hidden file (should be skipped when hidden=False)
+        huge.txt          - oversized file placeholder
+    """
     # Create some sample files
     (tmp_path / "sample.txt").write_text("Hello, world!\nThis is a text file.")
     (tmp_path / "sample.md").write_text("# Title\n\nSome markdown content.")

@@ -44,6 +44,11 @@ LANG_MAP: dict[str, str] = {
 }
 
 
+def _make_anchor(relpath: str) -> str:
+    """Generate a GitHub-style markdown anchor from a file's relative path."""
+    return relpath.replace("/", "").replace(".", "").replace("_", "").replace("-", "").lower()
+
+
 class MarkdownWriter(Writer):
     def write(self, out: IO[str], header: HeaderInfo, items: list[FileBundleItem]) -> None:
         out.write("# FolderPack Context\n\n")
@@ -56,26 +61,14 @@ class MarkdownWriter(Writer):
         if items:
             out.write("## Table of Contents\n\n")
             for item in items:
-                anchor = (
-                    item.relpath.replace("/", "")
-                    .replace(".", "")
-                    .replace("_", "")
-                    .replace("-", "")
-                    .lower()
-                )
+                anchor = _make_anchor(item.relpath)
                 out.write(f"- [{item.relpath}](#{anchor})\n")
             out.write("\n")
 
         out.write("---\n\n")
 
         for item in items:
-            anchor = (
-                item.relpath.replace("/", "")
-                .replace(".", "")
-                .replace("_", "")
-                .replace("-", "")
-                .lower()
-            )
+            anchor = _make_anchor(item.relpath)
             out.write(f"## {item.relpath} {{#{anchor}}}\n\n")
             out.write(f"- **Size**: {item.size_bytes:,} bytes\n")
             out.write(f"- **Modified**: {item.mtime}\n")
