@@ -99,7 +99,7 @@ DEFAULT_EXCLUDE_DIRS: list[str] = [
     ".ruff_cache",
 ]
 
-SENSITIVE_FILENAMES: set[str] = {
+SENSITIVE_PATTERNS: set[str] = {
     ".env",
     "*.pem",
     "*.key",
