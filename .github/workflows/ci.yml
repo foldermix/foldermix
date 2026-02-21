@@ -175,4 +175,5 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Codecov token not configured
         if: ${{ secrets.CODECOV_TOKEN == '' }}
-        run: echo "Skipping Codecov upload: CODECOV_TOKEN is not set."
+        run: |
+          echo "Skipping Codecov upload: CODECOV_TOKEN is not set."
