@@ -46,6 +46,7 @@ ignore = ["E501"]
 
 [tool.pytest.ini_options]
 addopts = "-vv -ra --cov=foldermix --cov-branch --cov-report=term-missing:skip-covered --cov-fail-under=98"
+filterwarnings = ["error"]
 markers = [
     "integration: end-to-end and snapshot-style tests",
     "slow: slower tests that may be skipped in smoke runs",

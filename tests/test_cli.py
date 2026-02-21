@@ -4,9 +4,9 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
+import foldermix.packer as packer_module
 from foldermix import __version__
 from foldermix.cli import app
-import foldermix.packer as packer_module
 
 runner = CliRunner()
 

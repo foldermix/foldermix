@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from io import StringIO
 
-from foldermix.writers.base import FileBundleItem, HeaderInfo
+import pytest
+
+from foldermix.writers.base import FileBundleItem, HeaderInfo, Writer
 from foldermix.writers.markdown_writer import MarkdownWriter
 from foldermix.writers.xml_writer import XmlWriter
 
@@ -73,3 +75,9 @@ def test_xml_writer_writes_truncated_flag() -> None:
     XmlWriter().write(buf, _header(), [item])
     out = buf.getvalue()
     assert "<truncated>true</truncated>" in out
+
+
+def test_base_writer_write_raises_not_implemented() -> None:
+    writer = Writer()
+    with pytest.raises(NotImplementedError):
+        writer.write(StringIO(), _header(), [])
