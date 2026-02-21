@@ -29,7 +29,8 @@ class XmlWriter(Writer):
             out.write(f"      <converter>{saxutils.escape(item.converter_name)}</converter>\n")
             if item.truncated:
                 out.write("      <truncated>true</truncated>\n")
-            out.write(f"      <content>{saxutils.escape(item.content)}</content>\n")
+            safe_content = item.content.replace("]]>", "]]]]><![CDATA[>")
+            out.write(f"      <content><![CDATA[{safe_content}]]></content>\n")
             out.write("    </file>\n")
 
         out.write("  </files>\n")

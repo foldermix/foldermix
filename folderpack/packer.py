@@ -224,10 +224,8 @@ def pack(config: PackConfig) -> None:
     # Determine output path
     out_path = config.out
     if out_path is None:
-        from datetime import datetime, timezone
-
         ext_map = {"md": "md", "xml": "xml", "jsonl": "jsonl"}
-        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        ts = utcnow_iso().replace(":", "").replace("-", "").replace("+", "").replace("T", "_")[:15]
         out_path = Path(f"folderpack_{ts}.{ext_map[config.format]}")
 
     console.print(f"Writing to [bold]{out_path}[/bold] ...")

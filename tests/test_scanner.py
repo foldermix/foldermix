@@ -87,7 +87,7 @@ def test_oversize_skip(sample_dir: Path) -> None:
     config = PackConfig(root=sample_dir, max_bytes=10, on_oversize="skip")
     included, skipped = scan(config)
     for r in included:
-        assert r.size <= 10 or True  # may have small files
+        assert r.size <= 10
     skip_reasons = {r.relpath: r.reason for r in skipped}
     oversized = [k for k, v in skip_reasons.items() if v == "oversize"]
     assert len(oversized) > 0

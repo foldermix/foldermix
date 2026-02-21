@@ -132,9 +132,11 @@ class TestXmlWriter:
         buf = StringIO()
         writer.write(buf, make_header(), items)
         output = buf.getvalue()
-        # Should be parseable
-        ET.fromstring(output)
-        assert "]]>" not in output.replace("]]]]><![CDATA[>", "")
+        # Should be parseable and content preserved correctly
+        root = ET.fromstring(output)
+        content_elem = root.find(".//content")
+        assert content_elem is not None
+        assert "]]>" in (content_elem.text or "")  # original text preserved by parser
 
     def test_content_preserved(self) -> None:
         writer = XmlWriter()
