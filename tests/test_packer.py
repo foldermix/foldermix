@@ -151,7 +151,7 @@ def test_pack_keeps_deterministic_order_after_parallel_conversion(
             out.write("ok\n")
 
     monkeypatch.setattr(packer, "_build_registry", lambda: _SingleConverterRegistry(_SlowConverter()))
-    monkeypatch.setattr(packer, "_get_writer", lambda fmt: _CaptureWriter())
+    monkeypatch.setattr(packer, "_get_writer", lambda *args, **kwargs: _CaptureWriter())
 
     config = PackConfig(
         root=tmp_path,
@@ -165,10 +165,6 @@ def test_pack_keeps_deterministic_order_after_parallel_conversion(
     assert captured_order == ["a.txt", "b.txt"]
 
 
-@pytest.mark.xfail(
-    reason="include_toc is accepted in config but not applied by markdown output flow yet",
-    strict=True,
-)
 def test_pack_include_toc_false_omits_table_of_contents(tmp_path: Path) -> None:
     _write(tmp_path / "a.txt", "hello\n")
     out_path = tmp_path / "out.md"

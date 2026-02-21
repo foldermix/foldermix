@@ -45,4 +45,7 @@ select = ["E", "F", "I", "UP"]
 ignore = ["E501"]
 
 [tool.pytest.ini_options]
+addopts = "-vv -ra --cov=foldermix --cov-branch --cov-report=term-missing:skip-covered"
+strict_config = true
+strict_markers = true
 testpaths = ["tests"]
