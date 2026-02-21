@@ -121,6 +121,23 @@ def test_pack_uses_progress_branch_with_tqdm(tmp_path: Path, monkeypatch) -> Non
     assert out_path.exists()
 
 
+def test_pack_progress_falls_back_when_tqdm_missing(tmp_path: Path, monkeypatch) -> None:
+    (tmp_path / "a.txt").write_text("ok", encoding="utf-8")
+    out_path = tmp_path / "out.md"
+
+    # When tqdm import fails, pack should still succeed via non-progress path.
+    monkeypatch.setitem(sys.modules, "tqdm", None)
+    config = PackConfig(
+        root=tmp_path,
+        out=out_path,
+        progress=True,
+        include_sha256=False,
+        workers=1,
+    )
+    packer.pack(config)
+    assert out_path.exists()
+
+
 def test_pack_generates_default_output_name_when_out_not_set(tmp_path: Path, monkeypatch) -> None:
     project = tmp_path / "project"
     project.mkdir()
