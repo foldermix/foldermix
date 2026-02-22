@@ -1,15 +1,17 @@
 """foldermix - pack a folder into a single LLM-friendly context file."""
 
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import version as package_version
+import re
+from importlib.metadata import PackageNotFoundError, version as package_version
 from pathlib import Path
-
-import tomllib
 
 
 def _read_version_from_pyproject() -> str:
     pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
-    return tomllib.loads(pyproject.read_text(encoding="utf-8"))["project"]["version"]
+    text = pyproject.read_text(encoding="utf-8")
+    match = re.search(r'^version\s*=\s*"([^"]+)"\s*$', text, re.MULTILINE)
+    if not match:
+        raise RuntimeError("Could not find project version in pyproject.toml")
+    return match.group(1)
 
 
 try:
