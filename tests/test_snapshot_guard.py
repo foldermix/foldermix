@@ -29,6 +29,16 @@ def _normalize_fixture_newlines_to_lf(root: Path) -> None:
             p.write_bytes(normalized)
 
 
+def _normalize_root_path(text: str, project_dir: Path) -> str:
+    """Normalize root path placeholders for plain and JSON-escaped path forms."""
+    raw_root = str(project_dir)
+    normalized = text.replace(raw_root, "__ROOT__")
+    escaped_root = raw_root.replace("\\", "\\\\")
+    if escaped_root != raw_root:
+        normalized = normalized.replace(escaped_root, "__ROOT__")
+    return normalized
+
+
 def _render_simple_project_snapshot(base_tmp: Path, fmt: str, out_name: str) -> str:
     base_tmp.mkdir(parents=True, exist_ok=True)
     src = FIXTURE_DIR / "simple_project"
@@ -52,7 +62,7 @@ def _render_simple_project_snapshot(base_tmp: Path, fmt: str, out_name: str) -> 
     finally:
         packer.utcnow_iso = original_utcnow_iso
 
-    return out_path.read_text(encoding="utf-8").replace(str(project_dir), "__ROOT__")
+    return _normalize_root_path(out_path.read_text(encoding="utf-8"), project_dir)
 
 
 def test_simple_project_expected_snapshots_are_in_sync(tmp_path: Path) -> None:
