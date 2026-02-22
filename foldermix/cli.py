@@ -170,7 +170,7 @@ def pack_cmd(
 
     if format not in ("md", "xml", "jsonl"):
         console.print(
-            f"[red]Invalid --format: {format!r}. Valid choices are: md, xml, jsonl.[/red]\n"
+            f"[red]Invalid format: {format!r}. Valid choices are: md, xml, jsonl.[/red]\n"
             "Run 'foldermix pack --help' for full usage information."
         )
         raise typer.Exit(code=1)

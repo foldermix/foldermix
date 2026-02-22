@@ -14,7 +14,7 @@ runner = CliRunner()
 def test_pack_rejects_invalid_format(tmp_path: Path) -> None:
     result = runner.invoke(app, ["pack", str(tmp_path), "--format", "bad"])
     assert result.exit_code == 1
-    assert "Invalid --format" in result.output
+    assert "Invalid format" in result.output
     assert "md, xml, jsonl" in result.output
     assert "--help" in result.output
 
