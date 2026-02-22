@@ -287,13 +287,13 @@ jobs:
           cp /tmp/foldermix.rb homebrew-tap/Formula/foldermix.rb
 
           cd homebrew-tap
-          if git diff --quiet -- Formula/foldermix.rb; then
+          git add Formula/foldermix.rb
+          if git diff --cached --quiet -- Formula/foldermix.rb; then
             echo "Formula unchanged; nothing to commit."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Formula/foldermix.rb
           git commit -m "foldermix ${{ needs.publish-pypi.outputs.version }}"
           git push
