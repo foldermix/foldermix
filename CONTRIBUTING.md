@@ -30,3 +30,9 @@ pip install -e ".[dev,all]"
 python -m mutmut run
 python -m mutmut results
 ```
+
+## Performance Smoke Test
+
+```bash
+FOLDERMIX_RUN_PERF_SMOKE=1 python -m pytest tests/test_perf_smoke.py -q -o addopts=
+```

@@ -23,6 +23,9 @@ def _build_large_tree(root: Path, file_count: int) -> None:
 @pytest.mark.slow
 def test_pack_large_tree_performance_smoke(tmp_path: Path) -> None:
     """Guard against major runtime/memory regressions on medium-large trees."""
+    if os.getenv("FOLDERMIX_RUN_PERF_SMOKE", "").strip() != "1":
+        pytest.skip("Set FOLDERMIX_RUN_PERF_SMOKE=1 to enable perf smoke test.")
+
     file_count = int(os.getenv("FOLDERMIX_PERF_FILE_COUNT", "1500"))
     max_seconds = float(os.getenv("FOLDERMIX_PERF_MAX_SECONDS", "25.0"))
     max_peak_mb = float(os.getenv("FOLDERMIX_PERF_MAX_PEAK_MB", "256.0"))
