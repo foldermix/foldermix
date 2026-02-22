@@ -15,8 +15,9 @@ def _read_version_from_pyproject() -> str:
     return match.group(1)
 
 
-try:
-    __version__ = package_version("foldermix")
-except PackageNotFoundError:
-    # Fallback for environments that import source directly without installed metadata.
+_PYPROJECT = Path(__file__).resolve().parents[1] / "pyproject.toml"
+if _PYPROJECT.exists():
+    # Source checkout: trust pyproject as the single source of truth.
     __version__ = _read_version_from_pyproject()
+else:
+    __version__ = package_version("foldermix")
