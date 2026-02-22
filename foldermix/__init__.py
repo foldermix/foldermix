@@ -1,6 +1,7 @@
 """foldermix - pack a folder into a single LLM-friendly context file."""
 
-from importlib.metadata import PackageNotFoundError, version as package_version
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as package_version
 from pathlib import Path
 
 import tomllib
