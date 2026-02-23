@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "foldermix"
-version = "0.1.6"
+version = "0.1.7"
 description = "Pack a folder into a single LLM-friendly context file"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,7 +12,6 @@ license = { file = "LICENSE" }
 keywords = ["llm", "context", "packing", "cli"]
 dependencies = [
     "typer>=0.9",
-    "pydantic>=2.0",
     "pathspec>=0.12",
     "rich>=13.0",
 ]

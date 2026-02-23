@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
-
-from pydantic import BaseModel, Field
 
 DEFAULT_INCLUDE_EXT: list[str] = [
     ".txt",
@@ -112,15 +111,16 @@ SENSITIVE_PATTERNS: set[str] = {
 }
 
 
-class PackConfig(BaseModel):
+@dataclass(slots=True)
+class PackConfig:
     root: Path
     out: Path | None = None
     format: Literal["md", "xml", "jsonl"] = "md"
     include_ext: list[str] | None = None
-    exclude_ext: list[str] = Field(default_factory=lambda: list(DEFAULT_EXCLUDE_EXT))
-    exclude_dirs: list[str] = Field(default_factory=lambda: list(DEFAULT_EXCLUDE_DIRS))
-    exclude_glob: list[str] = Field(default_factory=list)
-    include_glob: list[str] = Field(default_factory=list)
+    exclude_ext: list[str] = field(default_factory=lambda: list(DEFAULT_EXCLUDE_EXT))
+    exclude_dirs: list[str] = field(default_factory=lambda: list(DEFAULT_EXCLUDE_DIRS))
+    exclude_glob: list[str] = field(default_factory=list)
+    include_glob: list[str] = field(default_factory=list)
     max_bytes: int = 10_000_000
     max_total_bytes: int | None = None
     max_files: int | None = None
