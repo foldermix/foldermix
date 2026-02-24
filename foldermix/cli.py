@@ -40,7 +40,7 @@ def _apply_config_overrides(
     ctx: typer.Context, values: dict[str, object], overrides: dict[str, object]
 ) -> None:
     for key, value in overrides.items():
-        if key in values and not _is_cli_set(ctx, key):
+        if key not in values or not _is_cli_set(ctx, key):
             values[key] = value
 
 
