@@ -80,11 +80,11 @@ Typer application with four commands: `pack`, `list`, `stats`, `version`.
 
 ### `foldermix/writers/`
 
-Each writer implements the `Writer` protocol from `writers/base.py`:
+Each writer subclasses the `Writer` interface from `writers/base.py`:
 
 ```python
-class Writer(Protocol):
-    def write(self, header: HeaderInfo, items: list[FileBundleItem], out: IO[str]) -> None: ...
+class Writer:
+    def write(self, out: IO[str], header: HeaderInfo, items: list[FileBundleItem]) -> None: ...
 ```
 
 - `MarkdownWriter` — produces a fenced-code-block document with optional TOC and SHA-256 entries.
