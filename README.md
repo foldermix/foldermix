@@ -94,7 +94,7 @@ See [SECURITY.md](SECURITY.md) for details on sensitive file handling.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full developer guide.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
 ---
 
