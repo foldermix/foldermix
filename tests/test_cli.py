@@ -204,6 +204,26 @@ def test_list_discovers_default_config(tmp_path: Path) -> None:
     assert config_path.exists()
 
 
+def test_list_reports_invalid_config(tmp_path: Path) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[list]",
+                'hidden = "yes"',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["list", str(tmp_path), "--config", str(config_path)])
+
+    assert result.exit_code == 1
+    assert "Invalid config at" in result.output
+    assert "hidden: expected a boolean" in result.output
+
+
 def test_stats_prints_summary_and_extensions(tmp_path: Path) -> None:
     (tmp_path / "a.py").write_text("print('a')\n")
     (tmp_path / "b.py").write_text("print('b')\n")
@@ -216,6 +236,26 @@ def test_stats_prints_summary_and_extensions(tmp_path: Path) -> None:
     assert "Skipped files:  0" in result.output
     assert ".py" in result.output
     assert ".md" in result.output
+
+
+def test_stats_reports_invalid_config(tmp_path: Path) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[stats]",
+                "include_ext = 123",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["stats", str(tmp_path), "--config", str(config_path)])
+
+    assert result.exit_code == 1
+    assert "Invalid config at" in result.output
+    assert "include_ext: expected a list of strings" in result.output
 
 
 def test_version_prints_package_version() -> None:
