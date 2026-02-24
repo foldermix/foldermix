@@ -80,11 +80,11 @@ Typer application with four commands: `pack`, `list`, `stats`, `version`.
 
 ### `foldermix/writers/`
 
-Each writer implements the `Writer` protocol from `writers/base.py`:
+Each writer subclasses the `Writer` class from `writers/base.py`:
 
 ```python
-class Writer(Protocol):
-    def write(self, header: HeaderInfo, items: list[FileBundleItem], out: IO[str]) -> None: ...
+class Writer:
+    def write(self, out: IO[str], header: HeaderInfo, items: list[FileBundleItem]) -> None: ...
 ```
 
 - `MarkdownWriter` — produces a fenced-code-block document with optional TOC and SHA-256 entries.
@@ -101,7 +101,7 @@ class Converter(Protocol):
     def convert(self, path: Path, encoding: str = "utf-8") -> ConversionResult: ...
 ```
 
-Optional converters (`pdf`, `office`, `markitdown`) are registered only when the corresponding extra is installed. The plain-text converter is always registered as a fallback.
+Optional converters (`pdf`, `office`, `markitdown`) are always added to the registry, but they only become active when their optional dependencies are installed (otherwise their `can_convert()` methods return `False`, making them effective no-ops). The plain-text converter is always active as a fallback.
 
 ---
 
@@ -142,7 +142,7 @@ The fast `test_snapshot_guard.py` runs in every CI lane (no `integration` marker
 **Regenerating snapshots:** When packer output changes intentionally (e.g. new header fields), regenerate the fixtures by running:
 
 ```bash
-pytest tests/integration/test_pack_outputs.py -m integration -v
+pytest -o addopts= tests/integration/test_pack_outputs.py -m integration -v
 ```
 
 If the test fails with a diff, update the expected files in `tests/integration/fixtures/expected/` with the new output, then commit the updated fixtures as part of the same PR.
@@ -160,7 +160,7 @@ Triggered on every push to `main` and every pull request.
 | Job | Depends on | Purpose |
 |-----|-----------|---------|
 | `lint` | — | `ruff check` + `ruff format --check` |
-| `smoke` | — | Unit tests, matrix: Python 3.10/3.11/3.12 × Ubuntu + macOS + Windows |
+| `smoke` | — | Unit tests on Ubuntu (3.10, 3.11, 3.12), macOS (3.12), and Windows (3.12) |
 | `minimal-deps` | — | Core tests without optional extras installed |
 | `package-smoke` | — | Build wheel → clean-venv install → CLI black-box assertions |
 | `full` | lint, smoke, minimal-deps, package-smoke | Full pytest suite with ≥ 98% branch coverage; uploads to Codecov |
@@ -178,7 +178,7 @@ Triggered on every push to `main` and every pull request.
 
 - Runs weekly (Sunday 09:00 UTC) and on `workflow_dispatch`.
 - Sets `FOLDERMIX_RUN_PERF_SMOKE=1` and runs `test_perf_smoke.py`.
-- Asserts: pack 1,500 synthetic files in ≤ 25 s, peak RSS ≤ 256 MB.
+- Asserts: pack 1,500 synthetic files in ≤ 25 s, peak Python `tracemalloc` memory ≤ 256 MiB (as configured by `FOLDERMIX_PERF_MAX_PEAK_MB`).
 
 ### `security-audit.yml` — Dependency Audit
 
@@ -189,7 +189,7 @@ Triggered on every push to `main` and every pull request.
 
 ## Adding a New Output Format
 
-1. Create `foldermix/writers/myformat_writer.py` implementing the `Writer` protocol.
+1. Create `foldermix/writers/myformat_writer.py` subclassing the `Writer` class.
 2. Register it in `foldermix/writers/__init__.py` and `foldermix/cli.py` format lookup.
 3. Add unit tests in `tests/test_writers.py` and edge-case tests in `tests/test_writers_edge.py`.
 4. Add a snapshot fixture: copy `tests/integration/fixtures/expected/simple_project.md` as a template, run the packer against the `simple_project` fixture, and save the output to `tests/integration/fixtures/expected/simple_project.myformat`.
