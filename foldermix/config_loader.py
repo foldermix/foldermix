@@ -3,7 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import tomllib
+try:  # Python 3.11+
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - exercised on py310 CI
+    import tomli as tomllib
 
 CONFIG_FILENAME = "foldermix.toml"
 
