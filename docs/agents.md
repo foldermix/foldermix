@@ -142,7 +142,7 @@ The fast `test_snapshot_guard.py` runs in every CI lane (no `integration` marker
 **Regenerating snapshots:** When packer output changes intentionally (e.g. new header fields), regenerate the fixtures by running:
 
 ```bash
-pytest tests/integration/test_pack_outputs.py -m integration -v
+pytest -o addopts= tests/integration/test_pack_outputs.py -m integration -v
 ```
 
 If the test fails with a diff, update the expected files in `tests/integration/fixtures/expected/` with the new output, then commit the updated fixtures as part of the same PR.
