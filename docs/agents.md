@@ -52,7 +52,7 @@ foldermix/
 
 Typer application with four commands: `pack`, `list`, `stats`, `version`.
 
-- All CLI options are validated early; invalid values exit with code 1 and a human-readable error.
+- The `pack` command validates its core options early and exits with code 1 on those validation failures; Typer still handles parsing errors and unknown flags (typically with exit code 2).
 - Builds a `PackConfig` and delegates to `packer.pack()`.
 
 ### `foldermix/config.py`
