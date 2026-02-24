@@ -154,7 +154,9 @@ def _extract_config_root(data: dict[str, Any], *, path: Path) -> dict[str, Any]:
     return data
 
 
-def _resolve_section(root: dict[str, Any], command: str, errors: list[str]) -> tuple[dict[str, Any], str]:
+def _resolve_section(
+    root: dict[str, Any], command: str, errors: list[str]
+) -> tuple[dict[str, Any], str]:
     has_sections = any(key in _SECTION_KEYS for key in root)
     if not has_sections:
         return root, "config"
@@ -162,8 +164,7 @@ def _resolve_section(root: dict[str, Any], command: str, errors: list[str]) -> t
     unknown = [key for key in root if key not in _SECTION_KEYS]
     if unknown:
         errors.append(
-            "config: unknown top-level keys when using sections: "
-            + ", ".join(sorted(unknown))
+            "config: unknown top-level keys when using sections: " + ", ".join(sorted(unknown))
         )
 
     section: dict[str, Any] = {}
