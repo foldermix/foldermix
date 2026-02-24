@@ -310,7 +310,9 @@ def test_load_command_config_merges_common_section_and_command_override(tmp_path
     assert values["workers"] == 2
 
 
-def test_load_command_config_uses_common_section_when_command_section_missing(tmp_path: Path) -> None:
+def test_load_command_config_uses_common_section_when_command_section_missing(
+    tmp_path: Path,
+) -> None:
     config_path = tmp_path / "foldermix.toml"
     config_path.write_text(
         "\n".join(
@@ -433,7 +435,9 @@ def test_load_command_config_rejects_invalid_toml(tmp_path: Path) -> None:
     assert "invalid TOML" in str(exc.value)
 
 
-def test_load_command_config_wraps_os_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_load_command_config_wraps_os_errors(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     config_path = tmp_path / "foldermix.toml"
     config_path.write_text("[pack]\n", encoding="utf-8")
 
