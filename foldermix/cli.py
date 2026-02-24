@@ -48,7 +48,7 @@ def _apply_config_overrides(
 def pack_cmd(
     ctx: typer.Context,
     path: Path = typer.Argument(Path("."), help="Directory to pack"),
-    config: Path | None = typer.Option(
+    config_path: Path | None = typer.Option(
         None, "--config", help="Path to a foldermix TOML config file"
     ),
     out: Path | None = typer.Option(
@@ -214,7 +214,7 @@ def pack_cmd(
     }
 
     try:
-        overrides, _ = load_command_config("pack", root=path, config_path=config)
+        overrides, _ = load_command_config("pack", root=path, config_path=config_path)
     except ConfigLoadError as exc:
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=1) from exc
@@ -244,9 +244,9 @@ def pack_cmd(
         )
         raise typer.Exit(code=1)
 
-    config = PackConfig(**values)  # type: ignore[arg-type]
+    pack_config = PackConfig(**values)  # type: ignore[arg-type]
 
-    pack(config)
+    pack(pack_config)
 
 
 @app.command("list")
