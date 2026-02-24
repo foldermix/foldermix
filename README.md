@@ -121,14 +121,14 @@ The CI `lint` job runs `ruff check . && ruff format --check .` on every push and
 ### Running Tests
 
 ```bash
-# Fast unit/smoke tests (excludes integration & slow markers)
-pytest -m "not integration and not slow"
+# Fast unit/smoke tests (excludes integration & slow markers; no coverage gate)
+pytest -m "not integration and not slow" -o addopts=
 
 # Full suite with branch coverage (gate: ≥ 98%)
 pytest --cov=foldermix --cov-branch --cov-fail-under=98 tests/
 
-# Integration/snapshot tests only
-pytest -m integration
+# Integration/snapshot tests only (no coverage gate)
+pytest -m integration -o addopts=
 
 # Performance smoke test (opt-in via env var)
 FOLDERMIX_RUN_PERF_SMOKE=1 pytest tests/test_perf_smoke.py -q -o addopts=
