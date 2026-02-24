@@ -94,6 +94,25 @@ def test_load_command_config_rejects_unknown_key(tmp_path: Path) -> None:
     assert "unknown key" in str(exc.value)
 
 
+def test_load_command_config_rejects_known_but_invalid_command_key(tmp_path: Path) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[stats]",
+                "workers = 2",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigLoadError) as exc:
+        load_command_config("stats", root=tmp_path, config_path=config_path)
+
+    assert "is not valid for 'stats' command" in str(exc.value)
+
+
 def test_load_command_config_accepts_csv_list_values(tmp_path: Path) -> None:
     config_path = tmp_path / "foldermix.toml"
     config_path.write_text(

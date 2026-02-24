@@ -193,18 +193,21 @@ def _validate_and_filter(
 ) -> dict[str, Any]:
     errors: list[str] = []
     normalized: dict[str, Any] = {}
+    allowed = _COMMAND_KEYS[command]
 
     for key, raw_value in section.items():
         if key not in _ALL_KEYS:
             errors.append(f"{where}: unknown key {key!r}")
+            continue
+        if key not in allowed:
+            errors.append(f"{where}: key {key!r} is not valid for {command!r} command")
             continue
         normalized[key] = _coerce_value(key, raw_value, errors, where=where)
 
     if errors:
         raise ConfigLoadError(path, errors)
 
-    allowed = _COMMAND_KEYS[command]
-    return {key: value for key, value in normalized.items() if key in allowed}
+    return normalized
 
 
 def discover_config_path(search_start: Path) -> Path | None:
