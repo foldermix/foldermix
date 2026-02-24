@@ -178,7 +178,7 @@ Triggered on every push to `main` and every pull request.
 
 - Runs weekly (Sunday 09:00 UTC) and on `workflow_dispatch`.
 - Sets `FOLDERMIX_RUN_PERF_SMOKE=1` and runs `test_perf_smoke.py`.
-- Asserts: pack 1,500 synthetic files in ≤ 25 s, peak RSS ≤ 256 MB.
+- Asserts: pack 1,500 synthetic files in ≤ 25 s, peak Python `tracemalloc` memory ≤ 256 MiB (as configured by `FOLDERMIX_PERF_MAX_PEAK_MB`).
 
 ### `security-audit.yml` — Dependency Audit
 
