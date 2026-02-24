@@ -181,7 +181,7 @@ tests/integration/fixtures/
 
 | Workflow file | Trigger | Jobs |
 |---------------|---------|------|
-| `ci.yml` | Every push / PR | `lint` → `smoke` (matrix: Python 3.10–3.12, Ubuntu/macOS/Windows) → `minimal-deps` → `package-smoke` → `full` (coverage gate + Codecov) → `publish-pypi` → `update-homebrew-tap` |
+| `ci.yml` | Every push / PR | `lint` → `smoke` (Python 3.10–3.12 on Ubuntu; Python 3.12 on macOS & Windows) → `minimal-deps` → `package-smoke` → `full` (coverage gate + Codecov) → `publish-pypi` → `update-homebrew-tap` |
 | `mutation.yml` | Weekly (Sat 09:00 UTC) + `workflow_dispatch` | `mutmut` on core source modules |
 | `perf-smoke.yml` | Weekly (Sun 09:00 UTC) + `workflow_dispatch` | Performance smoke test (1,500 files, ≤ 25 s) |
 | `security-audit.yml` | Weekly (Mon 09:00 UTC) + `pyproject.toml` changes + `workflow_dispatch` | `pip-audit` dependency vulnerability scan |
