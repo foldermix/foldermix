@@ -498,12 +498,13 @@ def test_pack_help_all_options_documented(tmp_path: Path) -> None:
 def test_list_help_all_options_documented() -> None:
     result = runner.invoke(app, ["list", "--help"])
     assert result.exit_code == 0
+    output = _strip_ansi(result.output)
     # Options that previously had no help text now show descriptions
-    assert "extensions to include" in result.output
-    assert "extensions to exclude" in result.output
-    assert "hidden" in result.output
-    assert "gitignore" in result.output
-    assert "Examples:" in result.output
+    assert "--include-ext" in output
+    assert "--exclude-ext" in output
+    assert "hidden" in output
+    assert "gitignore" in output
+    assert "Examples:" in output
 
 
 def test_stats_help_all_options_documented() -> None:

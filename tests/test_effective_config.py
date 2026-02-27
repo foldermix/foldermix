@@ -82,8 +82,8 @@ def test_effective_config_payload_is_deterministic_and_json_safe() -> None:
     )
 
     assert payload["command"] == "pack"
-    assert payload["config_path"] == "/tmp/project/foldermix.toml"
+    assert Path(payload["config_path"]) == Path("/tmp/project/foldermix.toml")
     assert list(payload["effective_config"]) == sorted(payload["effective_config"])
-    assert payload["effective_config"]["root"]["value"] == "/tmp/project"
+    assert Path(payload["effective_config"]["root"]["value"]) == Path("/tmp/project")
     assert payload["effective_config"]["root"]["source"] == "cli"
     assert payload["effective_config"]["include_ext"]["value"] == [".py", ".md"]
