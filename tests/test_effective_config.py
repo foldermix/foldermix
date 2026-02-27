@@ -105,6 +105,6 @@ def test_effective_config_payload_converts_nested_dict_values() -> None:
     nested = payload["effective_config"]["nested"]["value"]
 
     assert payload["config_path"] is None
-    assert nested["1"] == "/tmp/a"
-    assert nested["items"][0] == "/tmp/b"
-    assert nested["items"][1]["k"] == "/tmp/c"
+    assert Path(nested["1"]) == Path("/tmp/a")
+    assert Path(nested["items"][0]) == Path("/tmp/b")
+    assert Path(nested["items"][1]["k"]) == Path("/tmp/c")
