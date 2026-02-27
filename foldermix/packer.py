@@ -51,6 +51,10 @@ def _convert_record(
     config: PackConfig,
 ) -> FileBundleItem:
     converter = registry.get_converter(record.ext)
+    if record.ext == ".pdf" and config.pdf_ocr:
+        pdf_converter = PdfFallbackConverter()
+        if pdf_converter.can_convert(record.ext):
+            converter = pdf_converter
     truncated = False
     warnings: list[str] = []
 
@@ -59,6 +63,17 @@ def _convert_record(
         converter_name = "none"
         original_mime = ""
     else:
+
+        def run_convert(path: Path):
+            if isinstance(converter, PdfFallbackConverter):
+                return converter.convert(
+                    path,
+                    config.encoding,
+                    enable_ocr=config.pdf_ocr,
+                    ocr_strict=config.pdf_ocr_strict,
+                )
+            return converter.convert(path, config.encoding)
+
         try:
             if config.on_oversize == "truncate" and record.size > config.max_bytes:
                 # Truncate: read first K and last K bytes
@@ -72,13 +87,13 @@ def _convert_record(
                 tmp = record.path.parent / (record.path.name + ".truncated.tmp")
                 try:
                     tmp.write_bytes(truncated_bytes)
-                    result = converter.convert(tmp, config.encoding)
+                    result = run_convert(tmp)
                 finally:
                     if tmp.exists():
                         tmp.unlink()
                 truncated = True
             else:
-                result = converter.convert(record.path, config.encoding)
+                result = run_convert(record.path)
 
             content = result.content
             converter_name = result.converter_name
