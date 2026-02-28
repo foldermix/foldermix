@@ -147,6 +147,26 @@ def test_stdin_paths_outside_root_are_skipped(tmp_path: Path) -> None:
     assert skipped == [SkipRecord("../outside.txt", "outside_root")]
 
 
+def test_stdin_paths_outside_root_relpath_valueerror_fallback(
+    tmp_path: Path, monkeypatch
+) -> None:
+    root = tmp_path / "root"
+    root.mkdir()
+    outside = tmp_path / "outside.txt"
+    outside.write_text("outside", encoding="utf-8")
+
+    def raise_value_error(_path: object, _start: object = None) -> str:
+        raise ValueError("cross-drive path")
+
+    monkeypatch.setattr("foldermix.scanner.os.path.relpath", raise_value_error)
+
+    config = PackConfig(root=root, stdin_paths=[outside.resolve()])
+    included, skipped = scan(config)
+
+    assert included == []
+    assert skipped == [SkipRecord(outside.resolve().as_posix(), "outside_root")]
+
+
 def test_stdin_paths_dedup_not_file_and_excluded_dir(tmp_path: Path) -> None:
     root = tmp_path / "root"
     root.mkdir()

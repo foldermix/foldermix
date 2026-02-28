@@ -157,7 +157,11 @@ def _scan_explicit_paths(config: PackConfig) -> tuple[list[FileRecord], list[Ski
         try:
             rel_path = explicit_path.relative_to(root)
         except ValueError:
-            rel_str = Path(os.path.relpath(explicit_path, root)).as_posix()
+            try:
+                rel_str = Path(os.path.relpath(explicit_path, root)).as_posix()
+            except ValueError:
+                # On Windows, relpath can fail for paths on different drives.
+                rel_str = explicit_path.as_posix()
             skipped.append(SkipRecord(rel_str, "outside_root"))
             continue
 
