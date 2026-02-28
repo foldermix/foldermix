@@ -1,0 +1,29 @@
+# foldermix starter configuration
+# profile: engineering-docs
+# intent: Source-adjacent technical docs profile for repeatable team handoffs.
+# rationale: Engineering docs usually mix prose and lightweight code examples; this profile keeps content fidelity high while stripping frontmatter noise from markdown.
+
+# Pack defaults for this profile.
+[pack]
+include_ext = [".md", ".rst", ".txt", ".py", ".js", ".ts", ".json", ".yaml", ".yml", ".toml"]
+hidden = false
+respect_gitignore = true
+on_oversize = "skip"
+continue_on_error = false
+redact = "none"
+strip_frontmatter = true
+include_sha256 = true
+include_toc = true
+pdf_ocr = false
+pdf_ocr_strict = false
+
+# Keep list output aligned with pack filters.
+[list]
+include_ext = [".md", ".rst", ".txt", ".py", ".js", ".ts", ".json", ".yaml", ".yml", ".toml"]
+hidden = false
+respect_gitignore = true
+
+# Keep stats output aligned with pack filters.
+[stats]
+include_ext = [".md", ".rst", ".txt", ".py", ".js", ".ts", ".json", ".yaml", ".yml", ".toml"]
+hidden = false

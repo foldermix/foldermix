@@ -10,12 +10,14 @@ from . import __version__
 from .config import DEFAULT_EXCLUDE_DIRS, DEFAULT_EXCLUDE_EXT, PackConfig
 from .config_loader import ConfigLoadError, load_command_config
 from .effective_config import EffectiveConfig, effective_config_payload, merge_config_layers
+from .init_profiles import available_profiles, has_profile, render_profile_config
 
 app = typer.Typer(
     name="foldermix",
     help=(
         "Pack a folder into a single LLM-friendly context file.\n\n"
         "Commands:\n\n"
+        "  init    – Generate a starter foldermix.toml from a local-use profile.\n\n"
         "  pack    – Scan a directory and write all files into one output file.\n\n"
         "  list    – Preview which files would be included without packing.\n\n"
         "  stats   – Show file-count and byte-size statistics for a directory.\n\n"
@@ -489,6 +491,61 @@ def stats_cmd(
     console.print("\n  [bold]By extension:[/bold]")
     for ext, count in sorted(ext_counts.items(), key=lambda x: -x[1]):
         console.print(f"    {ext or '(none)':15s} {count:5d}")
+
+
+@app.command("init")
+def init_cmd(
+    profile: str = typer.Option(
+        ...,
+        "--profile",
+        help=(
+            "Starter profile name: legal, research, support, engineering-docs. "
+            "Use this to bootstrap a local foldermix.toml."
+        ),
+    ),
+    out: Path = typer.Option(
+        Path("foldermix.toml"),
+        "--out",
+        "-o",
+        help="Path to write the generated config file [default: ./foldermix.toml]",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Overwrite an existing output file. By default existing files are preserved.",
+    ),
+) -> None:
+    """Generate a starter foldermix.toml for common local workflows."""
+    normalized = profile.strip().lower()
+    if not has_profile(normalized):
+        valid = ", ".join(available_profiles())
+        console.print(
+            "[red]Invalid profile:"
+            f" {profile!r}. Valid choices are: {valid}.[/red]\n"
+            "Run 'foldermix init --help' for usage information."
+        )
+        raise typer.Exit(code=1)
+
+    output_path = out.expanduser()
+    if output_path.exists() and not force:
+        console.print(
+            f"[red]Refusing to overwrite existing file: {output_path}.[/red]\n"
+            "Use --force to overwrite."
+        )
+        raise typer.Exit(code=1)
+
+    try:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(render_profile_config(normalized), encoding="utf-8")
+    except OSError as exc:
+        console.print(f"[red]Failed to write config: {exc}[/red]")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        f"Wrote starter config to {output_path} using profile '{normalized}'. "
+        "Run: foldermix pack . --config "
+        f"{output_path}"
+    )
 
 
 @app.command("version")

@@ -1,0 +1,125 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+from typer.testing import CliRunner
+
+import foldermix.packer as packer_module
+from foldermix.cli import app
+
+try:  # Python 3.11+
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - exercised on py310 CI
+    import tomli as tomllib
+
+
+runner = CliRunner()
+FIXTURE_DIR = Path(__file__).parent / "data" / "init_profiles"
+
+
+@pytest.mark.parametrize(
+    "profile",
+    ["legal", "research", "support", "engineering-docs"],
+)
+def test_init_writes_expected_profile_template(tmp_path: Path, profile: str) -> None:
+    output_path = tmp_path / "foldermix.toml"
+
+    result = runner.invoke(
+        app,
+        ["init", "--profile", profile, "--out", str(output_path)],
+    )
+
+    assert result.exit_code == 0, result.output
+    expected = (FIXTURE_DIR / f"{profile}.toml").read_text(encoding="utf-8")
+    assert output_path.read_text(encoding="utf-8") == expected
+
+    parsed = tomllib.loads(expected)
+    assert isinstance(parsed, dict)
+    assert "pack" in parsed
+    assert "list" in parsed
+    assert "stats" in parsed
+
+
+def test_init_rejects_invalid_profile(tmp_path: Path) -> None:
+    output_path = tmp_path / "foldermix.toml"
+    result = runner.invoke(
+        app,
+        ["init", "--profile", "unknown", "--out", str(output_path)],
+    )
+
+    assert result.exit_code == 1
+    assert "Invalid profile" in result.output
+    assert "legal" in result.output
+    assert "research" in result.output
+    assert "support" in result.output
+    assert "engineering-docs" in result.output
+    assert not output_path.exists()
+
+
+def test_init_refuses_to_overwrite_without_force(tmp_path: Path) -> None:
+    output_path = tmp_path / "foldermix.toml"
+    output_path.write_text("sentinel\n", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        ["init", "--profile", "legal", "--out", str(output_path)],
+    )
+
+    assert result.exit_code == 1
+    assert "Refusing to overwrite existing file" in result.output
+    assert output_path.read_text(encoding="utf-8") == "sentinel\n"
+
+
+def test_init_force_overwrites_existing_file(tmp_path: Path) -> None:
+    output_path = tmp_path / "foldermix.toml"
+    output_path.write_text("sentinel\n", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        ["init", "--profile", "legal", "--out", str(output_path), "--force"],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Wrote starter config to" in result.output
+    assert output_path.read_text(encoding="utf-8") != "sentinel\n"
+
+
+@pytest.mark.parametrize(
+    ("profile", "expected_redact"),
+    [
+        ("legal", "all"),
+        ("research", "emails"),
+        ("support", "all"),
+        ("engineering-docs", "none"),
+    ],
+)
+def test_init_generated_config_runs_with_pack(
+    monkeypatch, tmp_path: Path, profile: str, expected_redact: str
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_pack(config) -> None:
+        captured["config"] = config
+
+    monkeypatch.setattr(packer_module, "pack", fake_pack)
+
+    config_path = tmp_path / "foldermix.toml"
+    init_result = runner.invoke(
+        app,
+        ["init", "--profile", profile, "--out", str(config_path)],
+    )
+    assert init_result.exit_code == 0, init_result.output
+
+    input_dir = tmp_path / "input"
+    input_dir.mkdir()
+    (input_dir / "sample.txt").write_text("hello\n", encoding="utf-8")
+
+    pack_result = runner.invoke(
+        app,
+        ["pack", str(input_dir), "--config", str(config_path)],
+    )
+    assert pack_result.exit_code == 0, pack_result.output
+
+    config = captured["config"]
+    assert config.redact == expected_redact

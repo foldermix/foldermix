@@ -1,0 +1,29 @@
+# foldermix starter configuration
+# profile: support
+# intent: Ticket and runbook context profile with strict PII redaction.
+# rationale: Support exports commonly include customer identifiers; this profile defaults to full redaction while preserving lightweight operational formats.
+
+# Pack defaults for this profile.
+[pack]
+include_ext = [".txt", ".md", ".json", ".yaml", ".yml", ".csv", ".tsv", ".log"]
+hidden = false
+respect_gitignore = true
+on_oversize = "truncate"
+continue_on_error = true
+redact = "all"
+strip_frontmatter = false
+include_sha256 = true
+include_toc = true
+pdf_ocr = false
+pdf_ocr_strict = false
+
+# Keep list output aligned with pack filters.
+[list]
+include_ext = [".txt", ".md", ".json", ".yaml", ".yml", ".csv", ".tsv", ".log"]
+hidden = false
+respect_gitignore = true
+
+# Keep stats output aligned with pack filters.
+[stats]
+include_ext = [".txt", ".md", ".json", ".yaml", ".yml", ".csv", ".tsv", ".log"]
+hidden = false

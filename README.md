@@ -48,6 +48,9 @@ foldermix pack . --config foldermix.toml --print-effective-config
 
 # Show version
 foldermix version
+
+# Bootstrap a local config profile
+foldermix init --profile engineering-docs
 ```
 
 ## Features
@@ -76,6 +79,23 @@ foldermix pack . --print-effective-config
 foldermix list . --print-effective-config
 foldermix stats . --print-effective-config
 ```
+
+## Starter Config Profiles
+
+Use `foldermix init` to generate a commented starter `foldermix.toml` for common local workflows:
+
+```bash
+foldermix init --profile legal
+foldermix init --profile research --out ./configs/foldermix.toml
+foldermix init --profile support --force
+```
+
+Available profiles:
+
+- `legal` - privacy-first defaults with full redaction and OCR enabled.
+- `research` - broad document coverage with OCR and email-only redaction.
+- `support` - ticket/runbook focused filters with full redaction defaults.
+- `engineering-docs` - technical docs profile with frontmatter stripping and no redaction.
 
 ## Options
 

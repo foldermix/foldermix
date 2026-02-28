@@ -50,10 +50,11 @@ foldermix/
 
 ### `foldermix/cli.py`
 
-Typer application with four commands: `pack`, `list`, `stats`, `version`.
+Typer application with five commands: `init`, `pack`, `list`, `stats`, `version`.
 
 - The `pack` command validates its core options early and exits with code 1 on those validation failures; Typer still handles parsing errors and unknown flags (typically with exit code 2).
 - Builds a `PackConfig` and delegates to `packer.pack()`.
+- The `init` command writes a commented `foldermix.toml` for one of the built-in local-use profiles.
 
 ### `foldermix/config.py`
 
