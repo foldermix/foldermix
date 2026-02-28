@@ -109,7 +109,7 @@ Use `--print-effective-config` on any command to inspect the merged result with 
 | `test_packer.py` | — | Core `packer.pack()` logic, error handling, oversize policy |
 | `test_packer_edges.py` | — | `_convert_record()` edge cases (truncate cleanup, redaction/frontmatter, PDF OCR selection), tqdm progress branches, and default output naming |
 | `test_scanner.py` | — | Gitignore, extension filters, glob patterns |
-| `test_scanner_edge.py` | — | Circular symlinks, deeply nested directories |
+| `test_scanner_edge.py` | — | Sensitive-file skipping, unreadable files, `is_sensitive()` pattern matching |
 | `test_scanner_properties.py` | — | Hypothesis-based property tests for the scanner |
 | `test_snapshot_guard.py` | — | Fast guard that snapshot fixtures are in sync with the packer |
 | `test_utils.py` | — | Redaction, frontmatter stripping, SHA-256 helpers |
