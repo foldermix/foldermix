@@ -166,7 +166,7 @@ pytest -o addopts= tests/integration/test_pack_outputs.py -m integration -v
 - Do not silently swallow actionable errors.
 - Keep dependency additions justified and documented.
 - Update README and docs when user-visible behavior or options change.
-- Every module starts with `from __future__ import annotations`.
+- New or modified Python modules should start with `from __future__ import annotations`; document any intentional exceptions (for example, specific `__init__.py` files).
 - Use `Protocol` for interfaces; type hints throughout.
 
 ## PR expectations
