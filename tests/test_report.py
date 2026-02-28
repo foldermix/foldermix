@@ -3,7 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from foldermix.report import ReportData, build_skipped_file_entry, write_report
+from foldermix.report import (
+    ReportData,
+    build_included_file_entry,
+    build_skipped_file_entry,
+    write_report,
+)
 
 
 def test_build_skipped_file_entry_unknown_reason_uses_fallback_code_and_message() -> None:
@@ -35,7 +40,7 @@ def test_write_report_backfills_reason_code_counts_when_missing(tmp_path: Path) 
                 ],
             }
         ],
-        skipped_files=[build_skipped_file_entry(path="missing.txt", reason="missing")],
+        skipped_files=[{"path": "missing.txt", "reason": "missing"}],
     )
 
     write_report(report_path, data)
@@ -45,3 +50,18 @@ def test_write_report_backfills_reason_code_counts_when_missing(tmp_path: Path) 
         "OUTCOME_CONVERSION_WARNING": 1,
         "SKIP_MISSING": 1,
     }
+
+
+def test_build_included_file_entry_deduplicates_outcome_codes() -> None:
+    entry = build_included_file_entry(
+        path="a.txt",
+        size=3,
+        ext=".txt",
+        truncated=False,
+        redacted=False,
+        warning_messages=["warn-1", "warn-2"],
+        redact_mode="none",
+    )
+
+    assert entry["outcome_codes"] == ["OUTCOME_CONVERSION_WARNING"]
+    assert len(entry["outcomes"]) == 2

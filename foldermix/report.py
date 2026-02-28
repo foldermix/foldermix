@@ -100,12 +100,13 @@ def build_included_file_entry(
                 "message": warning,
             }
         )
+    outcome_codes = list(dict.fromkeys(outcome["code"] for outcome in outcomes))
 
     return {
         "path": path,
         "size": size,
         "ext": ext,
-        "outcome_codes": [outcome["code"] for outcome in outcomes],
+        "outcome_codes": outcome_codes,
         "outcomes": outcomes,
     }
 
@@ -115,7 +116,14 @@ def build_reason_code_counts(
 ) -> dict[str, int]:
     counts: dict[str, int] = {}
     for entry in skipped_files:
-        code = str(entry.get("reason_code", "SKIP_UNKNOWN"))
+        reason_code = entry.get("reason_code")
+        if reason_code is None:
+            reason = entry.get("reason")
+            if isinstance(reason, str):
+                reason_code = _skip_reason_code(reason)
+            else:
+                reason_code = "SKIP_UNKNOWN"
+        code = str(reason_code)
         counts[code] = counts.get(code, 0) + 1
 
     for entry in included_files:

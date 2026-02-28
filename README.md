@@ -145,7 +145,8 @@ Options:
 - Current schema: `schema_version = 2`
 - Compatibility policy:
   - Existing keys are preserved (`included_count`, `skipped_count`, `total_bytes`, `included_files`, `skipped_files`).
-  - New fields are additive (`reason_code`, `message`, `outcome_codes`, `outcomes`, `reason_code_counts`).
+  - New top-level fields are additive (`schema_version`, `reason_code_counts`).
+  - New per-entry fields are additive (`reason_code`, `message`, `outcome_codes`, `outcomes`).
 
 Example `report.json` shape:
 
@@ -185,7 +186,7 @@ Example `report.json` shape:
 
 Canonical reason-code groups:
 
-- Skip reasons: `SKIP_HIDDEN`, `SKIP_EXCLUDED_DIR`, `SKIP_SENSITIVE`, `SKIP_GITIGNORED`, `SKIP_EXCLUDED_GLOB`, `SKIP_EXCLUDED_EXT`, `SKIP_UNREADABLE`, `SKIP_OVERSIZE`, `SKIP_OUTSIDE_ROOT`, `SKIP_MISSING`, `SKIP_NOT_FILE`
+- Skip reasons: `SKIP_HIDDEN`, `SKIP_EXCLUDED_DIR`, `SKIP_SENSITIVE`, `SKIP_GITIGNORED`, `SKIP_EXCLUDED_GLOB`, `SKIP_EXCLUDED_EXT`, `SKIP_UNREADABLE`, `SKIP_OVERSIZE`, `SKIP_OUTSIDE_ROOT`, `SKIP_MISSING`, `SKIP_NOT_FILE`, `SKIP_UNKNOWN` (fallback when a skip reason cannot be mapped to a specific code)
 - Included-file outcomes: `OUTCOME_TRUNCATED`, `OUTCOME_REDACTED`, `OUTCOME_CONVERSION_WARNING`
 
 ## Security
