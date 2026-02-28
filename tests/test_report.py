@@ -4,6 +4,9 @@ import json
 from pathlib import Path
 
 from foldermix.report import (
+    SKIP_REASON_CODES,
+    SKIP_REASON_MESSAGES,
+    SKIP_REASONS,
     ReportData,
     build_included_file_entry,
     build_skipped_file_entry,
@@ -18,6 +21,14 @@ def test_build_skipped_file_entry_unknown_reason_uses_fallback_code_and_message(
     assert entry["reason"] == "mystery_reason"
     assert entry["reason_code"] == "SKIP_UNKNOWN"
     assert entry["message"] == "Path skipped for an unspecified reason."
+
+
+def test_skip_reason_derived_maps_match_source_of_truth() -> None:
+    assert set(SKIP_REASON_CODES) == set(SKIP_REASONS)
+    assert set(SKIP_REASON_MESSAGES) == set(SKIP_REASONS)
+    for reason, info in SKIP_REASONS.items():
+        assert SKIP_REASON_CODES[reason] == info.code
+        assert SKIP_REASON_MESSAGES[reason] == info.message
 
 
 def test_write_report_backfills_reason_code_counts_when_missing(tmp_path: Path) -> None:

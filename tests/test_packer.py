@@ -105,6 +105,41 @@ def test_pack_continue_on_error_true_writes_error_item(tmp_path: Path, monkeypat
     assert file_line["warnings"] == ["boom"]
 
 
+def test_pack_report_included_count_matches_written_items_on_post_convert_error(
+    tmp_path: Path, monkeypatch
+) -> None:
+    _write(tmp_path / "a.txt", "hello\n")
+    _write(tmp_path / "b.txt", "world\n")
+    out_path = tmp_path / "out.jsonl"
+    report_path = tmp_path / "report.json"
+
+    original_mtime_iso = packer.mtime_iso
+
+    def flaky_mtime_iso(path: Path) -> str:
+        if path.name == "b.txt":
+            raise RuntimeError("mtime lookup failed")
+        return original_mtime_iso(path)
+
+    monkeypatch.setattr(packer, "mtime_iso", flaky_mtime_iso)
+
+    config = PackConfig(
+        root=tmp_path,
+        out=out_path,
+        format="jsonl",
+        report=report_path,
+        workers=1,
+        continue_on_error=True,
+        include_sha256=False,
+    )
+
+    packer.pack(config)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["included_count"] == 1
+    assert len(report["included_files"]) == 1
+    assert report["included_files"][0]["path"] == "a.txt"
+
+
 def test_pack_writes_report_json(tmp_path: Path) -> None:
     # Write bytes directly so expected size is stable across LF/CRLF platforms.
     (tmp_path / "data.txt").write_bytes(b"ok\n")

@@ -286,7 +286,7 @@ def pack(config: PackConfig) -> None:
         ]
         skipped_files = [build_skipped_file_entry(path=r.relpath, reason=r.reason) for r in skipped]
         report_data = ReportData(
-            included_count=len(included),
+            included_count=len(items),
             skipped_count=len(skipped),
             total_bytes=total_bytes,
             included_files=included_files,

@@ -7,32 +7,64 @@ from pathlib import Path
 
 REPORT_SCHEMA_VERSION = 2
 
-SKIP_REASON_CODES: dict[str, str] = {
-    "hidden": "SKIP_HIDDEN",
-    "excluded_dir": "SKIP_EXCLUDED_DIR",
-    "sensitive": "SKIP_SENSITIVE",
-    "gitignored": "SKIP_GITIGNORED",
-    "excluded_glob": "SKIP_EXCLUDED_GLOB",
-    "excluded_ext": "SKIP_EXCLUDED_EXT",
-    "unreadable": "SKIP_UNREADABLE",
-    "oversize": "SKIP_OVERSIZE",
-    "outside_root": "SKIP_OUTSIDE_ROOT",
-    "missing": "SKIP_MISSING",
-    "not_file": "SKIP_NOT_FILE",
+
+@dataclass(frozen=True)
+class SkipReasonInfo:
+    code: str
+    message: str
+
+
+SKIP_REASONS: dict[str, SkipReasonInfo] = {
+    "hidden": SkipReasonInfo(
+        code="SKIP_HIDDEN",
+        message="Hidden path excluded by default scanner rules.",
+    ),
+    "excluded_dir": SkipReasonInfo(
+        code="SKIP_EXCLUDED_DIR",
+        message="Path is inside an excluded directory.",
+    ),
+    "sensitive": SkipReasonInfo(
+        code="SKIP_SENSITIVE",
+        message="Path matches a sensitive-file pattern.",
+    ),
+    "gitignored": SkipReasonInfo(
+        code="SKIP_GITIGNORED",
+        message="Path is matched by .gitignore rules.",
+    ),
+    "excluded_glob": SkipReasonInfo(
+        code="SKIP_EXCLUDED_GLOB",
+        message="Path is excluded by glob filtering.",
+    ),
+    "excluded_ext": SkipReasonInfo(
+        code="SKIP_EXCLUDED_EXT",
+        message="Path is excluded by extension filtering.",
+    ),
+    "unreadable": SkipReasonInfo(
+        code="SKIP_UNREADABLE",
+        message="Path could not be read from the filesystem.",
+    ),
+    "oversize": SkipReasonInfo(
+        code="SKIP_OVERSIZE",
+        message="Path exceeds --max-bytes with skip policy.",
+    ),
+    "outside_root": SkipReasonInfo(
+        code="SKIP_OUTSIDE_ROOT",
+        message="Explicit path is outside the configured root.",
+    ),
+    "missing": SkipReasonInfo(
+        code="SKIP_MISSING",
+        message="Explicit path does not exist.",
+    ),
+    "not_file": SkipReasonInfo(
+        code="SKIP_NOT_FILE",
+        message="Explicit path is not a regular file.",
+    ),
 }
 
+# Kept as derived mappings for compatibility with existing internal/tests usage.
+SKIP_REASON_CODES: dict[str, str] = {reason: info.code for reason, info in SKIP_REASONS.items()}
 SKIP_REASON_MESSAGES: dict[str, str] = {
-    "hidden": "Hidden path excluded by default scanner rules.",
-    "excluded_dir": "Path is inside an excluded directory.",
-    "sensitive": "Path matches a sensitive-file pattern.",
-    "gitignored": "Path is matched by .gitignore rules.",
-    "excluded_glob": "Path is excluded by glob filtering.",
-    "excluded_ext": "Path is excluded by extension filtering.",
-    "unreadable": "Path could not be read from the filesystem.",
-    "oversize": "Path exceeds --max-bytes with skip policy.",
-    "outside_root": "Explicit path is outside the configured root.",
-    "missing": "Explicit path does not exist.",
-    "not_file": "Explicit path is not a regular file.",
+    reason: info.message for reason, info in SKIP_REASONS.items()
 }
 
 OUTCOME_TRUNCATED = "OUTCOME_TRUNCATED"
@@ -52,11 +84,17 @@ class ReportData:
 
 
 def _skip_reason_code(reason: str) -> str:
-    return SKIP_REASON_CODES.get(reason, "SKIP_UNKNOWN")
+    info = SKIP_REASONS.get(reason)
+    if info is None:
+        return "SKIP_UNKNOWN"
+    return info.code
 
 
 def _skip_reason_message(reason: str) -> str:
-    return SKIP_REASON_MESSAGES.get(reason, "Path skipped for an unspecified reason.")
+    info = SKIP_REASONS.get(reason)
+    if info is None:
+        return "Path skipped for an unspecified reason."
+    return info.message
 
 
 def build_skipped_file_entry(*, path: str, reason: str) -> dict:
