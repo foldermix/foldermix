@@ -530,6 +530,7 @@ def test_stats_help_all_options_documented() -> None:
 def test_root_help_lists_all_commands() -> None:
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
+    assert "init" in result.output
     assert "pack" in result.output
     assert "list" in result.output
     assert "stats" in result.output
