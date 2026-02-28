@@ -66,8 +66,11 @@ class PdfFallbackConverter:
                             texts.append(text)
         return "\n".join(texts)
 
-    def _render_pdf_page(self, path: Path, page_index: int, pdfium: Any) -> Any:
-        doc = pdfium.PdfDocument(str(path))
+    def _render_pdf_page(
+        self, path: Path, page_index: int, pdfium: Any, *, pdf_doc: Any | None = None
+    ) -> Any:
+        doc = pdf_doc if pdf_doc is not None else pdfium.PdfDocument(str(path))
+        close_doc = pdf_doc is None
         page = None
         try:
             page = doc[page_index]
@@ -80,10 +83,19 @@ class PdfFallbackConverter:
         finally:
             if page is not None:
                 self._close_if_possible(page)
-            self._close_if_possible(doc)
+            if close_doc:
+                self._close_if_possible(doc)
 
-    def _ocr_page(self, path: Path, page_index: int, *, pdfium: Any, ocr_engine: Any) -> str:
-        image = self._render_pdf_page(path, page_index, pdfium)
+    def _ocr_page(
+        self,
+        path: Path,
+        page_index: int,
+        *,
+        pdfium: Any,
+        ocr_engine: Any,
+        pdf_doc: Any | None = None,
+    ) -> str:
+        image = self._render_pdf_page(path, page_index, pdfium, pdf_doc=pdf_doc)
         ocr_result = ocr_engine(image)
         return self._extract_ocr_text(ocr_result)
 
@@ -104,6 +116,7 @@ class PdfFallbackConverter:
         ocr_setup_attempted = False
         pdfium = None
         ocr_engine = None
+        pdf_doc = None
 
         def unresolved_ocr(message: str) -> None:
             warnings.append(message)
@@ -111,54 +124,69 @@ class PdfFallbackConverter:
                 raise RuntimeError(message)
 
         pages = []
-        for i, page in enumerate(reader.pages):
-            text = page.extract_text() or ""
-            page_num = i + 1
-            page_text = text
-            if not text.strip():
-                if not enable_ocr:
-                    unresolved_ocr(
-                        f"Page {page_num} has no extractable text. OCR is disabled; use --pdf-ocr to attempt OCR."
-                    )
-                elif ocr_unavailable_reason:
-                    unresolved_ocr(
-                        f"Page {page_num} has no extractable text and OCR is unavailable. {ocr_unavailable_reason}."
-                    )
-                else:
-                    if not ocr_setup_attempted:
-                        ocr_setup_attempted = True
-                        pdfium, rapid_ocr_cls, missing = self._load_ocr_dependencies()
-                        if missing:
-                            ocr_unavailable_reason = "OCR dependencies missing: " + ", ".join(
-                                missing
-                            )
-                        else:
-                            try:
-                                ocr_engine = rapid_ocr_cls()
-                            except Exception as exc:
-                                ocr_unavailable_reason = f"OCR engine initialization failed: {exc}"
-
-                    if ocr_unavailable_reason:
+        try:
+            for i, page in enumerate(reader.pages):
+                text = page.extract_text() or ""
+                page_num = i + 1
+                page_text = text
+                if not text.strip():
+                    if not enable_ocr:
+                        unresolved_ocr(
+                            f"Page {page_num} has no extractable text. OCR is disabled; use --pdf-ocr to attempt OCR."
+                        )
+                    elif ocr_unavailable_reason:
                         unresolved_ocr(
                             f"Page {page_num} has no extractable text and OCR is unavailable. {ocr_unavailable_reason}."
                         )
-                        pages.append(f"### Page {page_num}\n{page_text}")
-                        continue
-
-                    try:
-                        ocr_text = self._ocr_page(path, i, pdfium=pdfium, ocr_engine=ocr_engine)
-                    except Exception as exc:
-                        unresolved_ocr(f"Page {page_num} OCR failed: {exc}")
                     else:
-                        if ocr_text.strip():
-                            page_text = ocr_text
-                            ocr_used = True
-                        else:
-                            unresolved_ocr(
-                                f"Page {page_num} has no extractable text and OCR produced no text."
-                            )
+                        if not ocr_setup_attempted:
+                            ocr_setup_attempted = True
+                            pdfium, rapid_ocr_cls, missing = self._load_ocr_dependencies()
+                            if missing:
+                                ocr_unavailable_reason = "OCR dependencies missing: " + ", ".join(
+                                    missing
+                                )
+                            else:
+                                try:
+                                    ocr_engine = rapid_ocr_cls()
+                                except Exception as exc:
+                                    ocr_unavailable_reason = (
+                                        f"OCR engine initialization failed: {exc}"
+                                    )
 
-            pages.append(f"### Page {page_num}\n{page_text}")
+                        if ocr_unavailable_reason:
+                            unresolved_ocr(
+                                f"Page {page_num} has no extractable text and OCR is unavailable. {ocr_unavailable_reason}."
+                            )
+                            pages.append(f"### Page {page_num}\n{page_text}")
+                            continue
+
+                        if pdf_doc is None:
+                            pdf_doc = pdfium.PdfDocument(str(path))
+
+                        try:
+                            ocr_text = self._ocr_page(
+                                path,
+                                i,
+                                pdfium=pdfium,
+                                ocr_engine=ocr_engine,
+                                pdf_doc=pdf_doc,
+                            )
+                        except Exception as exc:
+                            unresolved_ocr(f"Page {page_num} OCR failed: {exc}")
+                        else:
+                            if ocr_text.strip():
+                                page_text = ocr_text
+                                ocr_used = True
+                            else:
+                                unresolved_ocr(
+                                    f"Page {page_num} has no extractable text and OCR produced no text."
+                                )
+
+                pages.append(f"### Page {page_num}\n{page_text}")
+        finally:
+            if pdf_doc is not None:
+                self._close_if_possible(pdf_doc)
 
         converter_name = "pypdf+rapidocr" if ocr_used else "pypdf"
         return ConversionResult(

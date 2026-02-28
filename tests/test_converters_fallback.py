@@ -326,6 +326,7 @@ def test_pdf_fallback_reuses_ocr_setup_across_textless_pages(monkeypatch, tmp_pa
     path.write_text("placeholder", encoding="utf-8")
     init_calls = {"count": 0}
     ocr_calls = {"count": 0}
+    doc_calls = {"open": 0, "close": 0}
 
     class _Page:
         @staticmethod
@@ -349,11 +350,15 @@ def test_pdf_fallback_reuses_ocr_setup_across_textless_pages(monkeypatch, tmp_pa
 
     class _PdfiumDoc:
         def __init__(self, _path: str) -> None:
-            pass
+            doc_calls["open"] += 1
 
         @staticmethod
         def __getitem__(_idx: int):
             return _PdfiumPage()
+
+        @staticmethod
+        def close() -> None:
+            doc_calls["close"] += 1
 
     class _RapidOCR:
         @staticmethod
@@ -378,6 +383,8 @@ def test_pdf_fallback_reuses_ocr_setup_across_textless_pages(monkeypatch, tmp_pa
     assert "### Page 2\nocr text 2" in result.content
     assert init_calls["count"] == 1
     assert ocr_calls["count"] == 2
+    assert doc_calls["open"] == 1
+    assert doc_calls["close"] == 1
     assert result.converter_name == "pypdf+rapidocr"
     assert result.warnings == []
 
@@ -628,6 +635,7 @@ def test_pdf_fallback_warns_when_ocr_engine_init_fails(monkeypatch, tmp_path: Pa
 def test_pdf_fallback_warns_when_ocr_runtime_fails(monkeypatch, tmp_path: Path) -> None:
     path = tmp_path / "f.pdf"
     path.write_text("placeholder", encoding="utf-8")
+    doc_calls = {"close": 0}
 
     class _Page:
         @staticmethod
@@ -657,6 +665,10 @@ def test_pdf_fallback_warns_when_ocr_runtime_fails(monkeypatch, tmp_path: Path) 
         def __getitem__(_idx: int):
             return _PdfiumPage()
 
+        @staticmethod
+        def close() -> None:
+            doc_calls["close"] += 1
+
     class _RapidOCR:
         @staticmethod
         def __call__(_image):
@@ -673,3 +685,4 @@ def test_pdf_fallback_warns_when_ocr_runtime_fails(monkeypatch, tmp_path: Path) 
     result = PdfFallbackConverter().convert(path, enable_ocr=True)
     assert len(result.warnings) == 1
     assert "OCR failed: ocr boom" in result.warnings[0]
+    assert doc_calls["close"] == 1
