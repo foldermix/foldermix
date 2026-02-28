@@ -127,7 +127,7 @@ def _convert_record(
                 content = f"[Error converting file: {e}]"
                 converter_name = "error"
                 original_mime = ""
-                warnings = [str(e)]
+                warnings.append(str(e))
             else:
                 raise
 

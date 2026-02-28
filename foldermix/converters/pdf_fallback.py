@@ -101,18 +101,9 @@ class PdfFallbackConverter:
         warnings: list[str] = []
         ocr_used = False
         ocr_unavailable_reason: str | None = None
+        ocr_setup_attempted = False
         pdfium = None
         ocr_engine = None
-
-        if enable_ocr:
-            pdfium, rapid_ocr_cls, missing = self._load_ocr_dependencies()
-            if missing:
-                ocr_unavailable_reason = "OCR dependencies missing: " + ", ".join(missing)
-            else:
-                try:
-                    ocr_engine = rapid_ocr_cls()
-                except Exception as exc:
-                    ocr_unavailable_reason = f"OCR engine initialization failed: {exc}"
 
         def unresolved_ocr(message: str) -> None:
             warnings.append(message)
@@ -134,6 +125,26 @@ class PdfFallbackConverter:
                         f"Page {page_num} has no extractable text and OCR is unavailable. {ocr_unavailable_reason}."
                     )
                 else:
+                    if not ocr_setup_attempted:
+                        ocr_setup_attempted = True
+                        pdfium, rapid_ocr_cls, missing = self._load_ocr_dependencies()
+                        if missing:
+                            ocr_unavailable_reason = "OCR dependencies missing: " + ", ".join(missing)
+                        else:
+                            try:
+                                ocr_engine = rapid_ocr_cls()
+                            except Exception as exc:
+                                ocr_unavailable_reason = (
+                                    f"OCR engine initialization failed: {exc}"
+                                )
+
+                    if ocr_unavailable_reason:
+                        unresolved_ocr(
+                            f"Page {page_num} has no extractable text and OCR is unavailable. {ocr_unavailable_reason}."
+                        )
+                        pages.append(f"### Page {page_num}\n{page_text}")
+                        continue
+
                     try:
                         ocr_text = self._ocr_page(path, i, pdfium=pdfium, ocr_engine=ocr_engine)
                     except Exception as exc:

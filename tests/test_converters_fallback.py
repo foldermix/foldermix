@@ -140,6 +140,45 @@ def test_pdf_fallback_convert(monkeypatch, tmp_path: Path) -> None:
     assert result.warnings == []
 
 
+def test_pdf_fallback_enable_ocr_does_not_initialize_engine_when_all_pages_have_text(
+    monkeypatch, tmp_path: Path
+) -> None:
+    path = tmp_path / "f.pdf"
+    path.write_text("placeholder", encoding="utf-8")
+    init_calls = {"count": 0}
+
+    class _Page:
+        @staticmethod
+        def extract_text() -> str:
+            return "already text"
+
+    class _Reader:
+        def __init__(self, _path: str) -> None:
+            self.pages = [_Page()]
+
+    def _rapidocr_factory():
+        init_calls["count"] += 1
+        return object()
+
+    class _PdfiumDoc:
+        def __init__(self, _path: str) -> None:
+            raise AssertionError("pdfium should not be touched when OCR is unnecessary")
+
+    monkeypatch.setitem(sys.modules, "pypdf", SimpleNamespace(PdfReader=_Reader))
+    monkeypatch.setitem(sys.modules, "pypdfium2", SimpleNamespace(PdfDocument=_PdfiumDoc))
+    monkeypatch.setitem(
+        sys.modules,
+        "rapidocr_onnxruntime",
+        SimpleNamespace(RapidOCR=_rapidocr_factory),
+    )
+
+    result = PdfFallbackConverter().convert(path, enable_ocr=True)
+    assert "### Page 1\nalready text" in result.content
+    assert result.converter_name == "pypdf"
+    assert result.warnings == []
+    assert init_calls["count"] == 0
+
+
 def test_pdf_fallback_warns_when_page_needs_ocr_but_ocr_disabled(
     monkeypatch, tmp_path: Path
 ) -> None:

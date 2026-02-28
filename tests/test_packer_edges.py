@@ -226,6 +226,36 @@ def test_convert_record_pdf_ocr_with_missing_pypdf_and_strict_raises(
         raise AssertionError("expected RuntimeError when pdf_ocr_strict is enabled")
 
 
+def test_convert_record_continue_on_error_preserves_prior_ocr_warning(
+    monkeypatch, tmp_path: Path
+) -> None:
+    path = tmp_path / "a.pdf"
+    path.write_text("placeholder", encoding="utf-8")
+
+    class _FailingConverter:
+        @staticmethod
+        def convert(_p: Path, encoding: str = "utf-8") -> ConversionResult:
+            raise RuntimeError("converter blew up")
+
+    monkeypatch.setitem(sys.modules, "pypdf", None)
+    record = FileRecord(path=path, relpath="a.pdf", ext=".pdf", size=1, mtime=0.0)
+    item = packer._convert_record(
+        record,
+        _RegistryOne(_FailingConverter()),
+        PackConfig(
+            root=tmp_path,
+            include_sha256=False,
+            pdf_ocr=True,
+            continue_on_error=True,
+        ),
+    )
+    assert item.converter_name == "error"
+    assert "Error converting file" in item.content
+    assert len(item.warnings) == 2
+    assert "PDF OCR is enabled" in item.warnings[0]
+    assert "converter blew up" in item.warnings[1]
+
+
 def test_pack_uses_progress_branch_with_tqdm(tmp_path: Path, monkeypatch) -> None:
     (tmp_path / "a.txt").write_text("ok", encoding="utf-8")
     out_path = tmp_path / "out.md"
