@@ -27,6 +27,17 @@ def test_pack_rejects_invalid_format(tmp_path: Path) -> None:
     assert "--help" in result.output
 
 
+def test_pack_invalid_format_fails_before_stdin_read(monkeypatch, tmp_path: Path) -> None:
+    def fail_read_stdin_paths(_use_stdin: bool, _null_delimited: bool) -> list[Path] | None:
+        raise AssertionError("stdin should not be read before argument validation")
+
+    monkeypatch.setattr("foldermix.cli._read_stdin_paths", fail_read_stdin_paths)
+
+    result = runner.invoke(app, ["pack", str(tmp_path), "--stdin", "--format", "bad"])
+    assert result.exit_code == 1
+    assert "Invalid format" in result.output
+
+
 def test_pack_rejects_invalid_on_oversize(tmp_path: Path) -> None:
     result = runner.invoke(app, ["pack", str(tmp_path), "--on-oversize", "bad"])
     assert result.exit_code == 1

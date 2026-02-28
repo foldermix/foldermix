@@ -322,7 +322,6 @@ def pack_cmd(
         _print_effective_config("pack", merged, used_config_path)
         return
     values = merged.values
-    stdin_paths = _read_stdin_paths(stdin, null_delimited)
 
     if values["format"] not in ("md", "xml", "jsonl"):
         console.print(
@@ -348,6 +347,7 @@ def pack_cmd(
         )
         raise typer.Exit(code=1)
 
+    stdin_paths = _read_stdin_paths(stdin, null_delimited)
     pack_config = PackConfig(stdin_paths=stdin_paths, **values)  # type: ignore[arg-type]
 
     pack(pack_config)
