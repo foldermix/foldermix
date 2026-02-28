@@ -51,12 +51,21 @@ def _convert_record(
     config: PackConfig,
 ) -> FileBundleItem:
     converter = registry.get_converter(record.ext)
+    warnings: list[str] = []
     if record.ext == ".pdf" and config.pdf_ocr:
         pdf_converter = PdfFallbackConverter()
         if pdf_converter.can_convert(record.ext):
             converter = pdf_converter
+        else:
+            message = (
+                "PDF OCR is enabled, but PDF/OCR dependencies are unavailable. "
+                "Install the PDF/OCR extras (for example, 'pip install foldermix[ocr]') "
+                "or disable --pdf-ocr."
+            )
+            if config.pdf_ocr_strict:
+                raise RuntimeError(message)
+            warnings.append(message)
     truncated = False
-    warnings: list[str] = []
 
     if converter is None:
         content = f"[No converter available for {record.ext}]"
@@ -98,7 +107,7 @@ def _convert_record(
             content = result.content
             converter_name = result.converter_name
             original_mime = result.original_mime
-            warnings = result.warnings
+            warnings.extend(result.warnings)
 
             if config.strip_frontmatter:
                 from .utils import strip_yaml_frontmatter

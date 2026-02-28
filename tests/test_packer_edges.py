@@ -196,6 +196,34 @@ def test_convert_record_pdf_ocr_with_missing_pypdf_keeps_registry_converter(
     )
     assert item.converter_name == "markitdown"
     assert item.content == "markitdown"
+    assert len(item.warnings) == 1
+    assert "PDF OCR is enabled" in item.warnings[0]
+
+
+def test_convert_record_pdf_ocr_with_missing_pypdf_and_strict_raises(
+    monkeypatch, tmp_path: Path
+) -> None:
+    path = tmp_path / "a.pdf"
+    path.write_text("placeholder", encoding="utf-8")
+
+    class _MarkitdownLike:
+        @staticmethod
+        def convert(_p: Path, encoding: str = "utf-8") -> ConversionResult:
+            return ConversionResult(content="markitdown", converter_name="markitdown")
+
+    monkeypatch.setitem(sys.modules, "pypdf", None)
+    record = FileRecord(path=path, relpath="a.pdf", ext=".pdf", size=1, mtime=0.0)
+
+    try:
+        packer._convert_record(
+            record,
+            _RegistryOne(_MarkitdownLike()),
+            PackConfig(root=tmp_path, include_sha256=False, pdf_ocr=True, pdf_ocr_strict=True),
+        )
+    except RuntimeError as exc:
+        assert "PDF OCR is enabled" in str(exc)
+    else:
+        raise AssertionError("expected RuntimeError when pdf_ocr_strict is enabled")
 
 
 def test_pack_uses_progress_branch_with_tqdm(tmp_path: Path, monkeypatch) -> None:

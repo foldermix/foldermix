@@ -11,7 +11,7 @@ pip install foldermix
 # With optional extras:
 pip install "foldermix[all]"   # adds PDF, OCR, Office, tqdm
 pip install "foldermix[pdf]"   # pypdf only
-pip install "foldermix[ocr]"   # OCR for image-based PDF pages (rapidocr + pypdfium2)
+pip install "foldermix[ocr]"   # OCR for image-based PDF pages (includes pypdf + rapidocr + pypdfium2)
 pip install "foldermix[office]" # docx/xlsx/pptx support
 ```
 
