@@ -27,6 +27,17 @@ def test_pack_rejects_invalid_format(tmp_path: Path) -> None:
     assert "--help" in result.output
 
 
+def test_pack_invalid_format_fails_before_stdin_read(monkeypatch, tmp_path: Path) -> None:
+    def fail_read_stdin_paths(_use_stdin: bool, _null_delimited: bool) -> list[Path] | None:
+        raise AssertionError("stdin should not be read before argument validation")
+
+    monkeypatch.setattr("foldermix.cli._read_stdin_paths", fail_read_stdin_paths)
+
+    result = runner.invoke(app, ["pack", str(tmp_path), "--stdin", "--format", "bad"])
+    assert result.exit_code == 1
+    assert "Invalid format" in result.output
+
+
 def test_pack_rejects_invalid_on_oversize(tmp_path: Path) -> None:
     result = runner.invoke(app, ["pack", str(tmp_path), "--on-oversize", "bad"])
     assert result.exit_code == 1
@@ -495,14 +506,17 @@ def test_pack_help_contains_examples() -> None:
 def test_pack_help_all_options_documented(tmp_path: Path) -> None:
     result = runner.invoke(app, ["pack", "--help"])
     assert result.exit_code == 0
+    output = _strip_ansi(result.output)
     # Options that previously had no help text should now show descriptions.
     # Use short substrings that fit in any column width.
-    assert "symbolic" in result.output  # --follow-symlinks
-    assert "gitignore" in result.output  # --respect-gitignore
-    assert "convert" in result.output  # --continue-on-error
-    assert "frontmatter" in result.output  # --strip-frontmatter
-    assert "SHA-256" in result.output  # --include-sha256
-    assert "table of" in result.output  # --include-toc
+    assert "symbolic" in output  # --follow-symlinks
+    assert "gitignore" in output  # --respect-gitignore
+    assert "convert" in output  # --continue-on-error
+    assert "frontmatter" in output  # --strip-frontmatter
+    assert "SHA-256" in output  # --include-sha256
+    assert "table of" in output  # --include-toc
+    assert "--stdin" in output
+    assert "--null" in output
 
 
 def test_list_help_all_options_documented() -> None:
@@ -514,6 +528,8 @@ def test_list_help_all_options_documented() -> None:
     assert "--exclude-ext" in output
     assert "hidden" in output
     assert "gitignore" in output
+    assert "--stdin" in output
+    assert "--null" in output
     assert "Examples:" in output
 
 
@@ -524,6 +540,8 @@ def test_stats_help_all_options_documented() -> None:
     # Options that previously had no help text now show descriptions
     assert "--include-ext" in output
     assert "hidden" in output
+    assert "--stdin" in output
+    assert "--null" in output
     assert "Examples:" in output
 
 
