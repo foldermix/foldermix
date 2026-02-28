@@ -15,7 +15,13 @@ from .converters.pdf_fallback import PdfFallbackConverter
 from .converters.pptx_fallback import PptxFallbackConverter
 from .converters.text import TextConverter
 from .converters.xlsx_fallback import XlsxFallbackConverter
-from .report import ReportData, write_report
+from .report import (
+    ReportData,
+    build_included_file_entry,
+    build_reason_code_counts,
+    build_skipped_file_entry,
+    write_report,
+)
 from .scanner import FileRecord, scan
 from .utils import mtime_iso, sha256_file, utcnow_iso
 from .writers.base import FileBundleItem, HeaderInfo
@@ -66,6 +72,7 @@ def _convert_record(
                 raise RuntimeError(message)
             warnings.append(message)
     truncated = False
+    redacted = False
 
     if converter is None:
         content = f"[No converter available for {record.ext}]"
@@ -117,7 +124,9 @@ def _convert_record(
             if config.redact != "none":
                 from .utils import apply_redaction
 
-                content = apply_redaction(content, config.redact)
+                redacted_content = apply_redaction(content, config.redact)
+                redacted = redacted_content != content
+                content = redacted_content
 
             if config.line_ending == "crlf":
                 content = content.replace("\r\n", "\n").replace("\n", "\r\n")
@@ -149,6 +158,7 @@ def _convert_record(
         original_mime=original_mime,
         warnings=warnings,
         truncated=truncated,
+        redacted=redacted,
     )
 
 
@@ -262,12 +272,28 @@ def pack(config: PackConfig) -> None:
     console.print(f"[green]Done![/green] {len(items)} files, {total_bytes:,} bytes -> {out_path}")
 
     if config.report:
+        included_files = [
+            build_included_file_entry(
+                path=item.relpath,
+                size=item.size_bytes,
+                ext=item.ext,
+                truncated=item.truncated,
+                redacted=item.redacted,
+                warning_messages=item.warnings,
+                redact_mode=config.redact,
+            )
+            for item in items
+        ]
+        skipped_files = [build_skipped_file_entry(path=r.relpath, reason=r.reason) for r in skipped]
         report_data = ReportData(
-            included_count=len(included),
+            included_count=len(items),
             skipped_count=len(skipped),
             total_bytes=total_bytes,
-            included_files=[{"path": r.relpath, "size": r.size, "ext": r.ext} for r in included],
-            skipped_files=[{"path": r.relpath, "reason": r.reason} for r in skipped],
+            included_files=included_files,
+            skipped_files=skipped_files,
+            reason_code_counts=build_reason_code_counts(
+                included_files=included_files, skipped_files=skipped_files
+            ),
         )
         write_report(config.report, report_data)
         console.print(f"Report written to {config.report}")

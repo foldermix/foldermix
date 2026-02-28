@@ -26,6 +26,7 @@ class FileBundleItem:
     original_mime: str
     warnings: list[str] = field(default_factory=list)
     truncated: bool = False
+    redacted: bool = False
 
 
 class Writer:
