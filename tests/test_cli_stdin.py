@@ -47,7 +47,10 @@ def test_pack_stdin_newline_ingests_explicit_paths_and_reports_missing(
     assert _jsonl_relpaths(tmp_path / "out.jsonl") == ["a.txt", "sub dir/b.txt"]
 
     report = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
-    assert {"path": "missing.txt", "reason": "missing"} in report["skipped_files"]
+    assert report["schema_version"] == 2
+    missing = next(entry for entry in report["skipped_files"] if entry["path"] == "missing.txt")
+    assert missing["reason"] == "missing"
+    assert missing["reason_code"] == "SKIP_MISSING"
 
 
 def test_pack_stdin_null_handles_spaces_unicode_and_dedup(monkeypatch, tmp_path: Path) -> None:

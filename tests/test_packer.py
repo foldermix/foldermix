@@ -122,10 +122,66 @@ def test_pack_writes_report_json(tmp_path: Path) -> None:
     packer.pack(config)
 
     report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["schema_version"] == 2
     assert report["included_count"] == 1
     assert report["skipped_count"] == 1
-    assert report["included_files"] == [{"path": "data.txt", "size": 3, "ext": ".txt"}]
-    assert report["skipped_files"] == [{"path": "image.png", "reason": "excluded_ext"}]
+    assert report["included_files"] == [
+        {
+            "path": "data.txt",
+            "size": 3,
+            "ext": ".txt",
+            "outcome_codes": [],
+            "outcomes": [],
+        }
+    ]
+    assert report["skipped_files"] == [
+        {
+            "path": "image.png",
+            "reason": "excluded_ext",
+            "reason_code": "SKIP_EXCLUDED_EXT",
+            "message": "Path is excluded by extension filtering.",
+        }
+    ]
+    assert report["reason_code_counts"] == {"SKIP_EXCLUDED_EXT": 1}
+
+
+def test_pack_report_includes_structured_outcomes(tmp_path: Path) -> None:
+    (tmp_path / "big.txt").write_text("Contact foo@example.com.\n" * 32, encoding="utf-8")
+    (tmp_path / "latin1.txt").write_bytes("café\n".encode("latin-1"))
+    out_path = tmp_path / "out.jsonl"
+    report_path = tmp_path / "report.json"
+    config = PackConfig(
+        root=tmp_path,
+        out=out_path,
+        format="jsonl",
+        report=report_path,
+        max_bytes=80,
+        on_oversize="truncate",
+        redact="emails",
+        encoding="utf-8",
+        workers=1,
+        include_sha256=False,
+    )
+
+    packer.pack(config)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    by_path = {entry["path"]: entry for entry in report["included_files"]}
+
+    assert "OUTCOME_TRUNCATED" in by_path["big.txt"]["outcome_codes"]
+    assert "OUTCOME_REDACTED" in by_path["big.txt"]["outcome_codes"]
+    assert "OUTCOME_CONVERSION_WARNING" in by_path["latin1.txt"]["outcome_codes"]
+
+    warning_messages = [
+        outcome["message"]
+        for outcome in by_path["latin1.txt"]["outcomes"]
+        if outcome["code"] == "OUTCOME_CONVERSION_WARNING"
+    ]
+    assert any("Encoding fallback" in message for message in warning_messages)
+
+    assert report["reason_code_counts"]["OUTCOME_TRUNCATED"] == 1
+    assert report["reason_code_counts"]["OUTCOME_REDACTED"] == 1
+    assert report["reason_code_counts"]["OUTCOME_CONVERSION_WARNING"] == 1
 
 
 def test_pack_keeps_deterministic_order_after_parallel_conversion(
