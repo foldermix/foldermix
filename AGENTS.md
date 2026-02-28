@@ -107,7 +107,7 @@ Use `--print-effective-config` on any command to inspect the merged result with 
 | `test_converters.py` | — | Converter registry, PDF/Office/markitdown/text converters |
 | `test_converters_fallback.py` | — | Graceful degradation when optional extras are absent |
 | `test_packer.py` | — | Core `packer.pack()` logic, error handling, oversize policy |
-| `test_packer_edges.py` | — | Symlinks, hidden files, max-file limits, report output |
+| `test_packer_edges.py` | — | `_convert_record()` edge cases (truncate cleanup, redaction/frontmatter, PDF OCR selection), tqdm progress branches, and default output naming |
 | `test_scanner.py` | — | Gitignore, extension filters, glob patterns |
 | `test_scanner_edge.py` | — | Circular symlinks, deeply nested directories |
 | `test_scanner_properties.py` | — | Hypothesis-based property tests for the scanner |
