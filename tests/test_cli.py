@@ -495,16 +495,17 @@ def test_pack_help_contains_examples() -> None:
 def test_pack_help_all_options_documented(tmp_path: Path) -> None:
     result = runner.invoke(app, ["pack", "--help"])
     assert result.exit_code == 0
+    output = _strip_ansi(result.output)
     # Options that previously had no help text should now show descriptions.
     # Use short substrings that fit in any column width.
-    assert "symbolic" in result.output  # --follow-symlinks
-    assert "gitignore" in result.output  # --respect-gitignore
-    assert "convert" in result.output  # --continue-on-error
-    assert "frontmatter" in result.output  # --strip-frontmatter
-    assert "SHA-256" in result.output  # --include-sha256
-    assert "table of" in result.output  # --include-toc
-    assert "--stdin" in result.output
-    assert "--null" in result.output
+    assert "symbolic" in output  # --follow-symlinks
+    assert "gitignore" in output  # --respect-gitignore
+    assert "convert" in output  # --continue-on-error
+    assert "frontmatter" in output  # --strip-frontmatter
+    assert "SHA-256" in output  # --include-sha256
+    assert "table of" in output  # --include-toc
+    assert "--stdin" in output
+    assert "--null" in output
 
 
 def test_list_help_all_options_documented() -> None:
