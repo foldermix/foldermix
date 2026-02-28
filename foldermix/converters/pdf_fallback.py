@@ -129,14 +129,14 @@ class PdfFallbackConverter:
                         ocr_setup_attempted = True
                         pdfium, rapid_ocr_cls, missing = self._load_ocr_dependencies()
                         if missing:
-                            ocr_unavailable_reason = "OCR dependencies missing: " + ", ".join(missing)
+                            ocr_unavailable_reason = "OCR dependencies missing: " + ", ".join(
+                                missing
+                            )
                         else:
                             try:
                                 ocr_engine = rapid_ocr_cls()
                             except Exception as exc:
-                                ocr_unavailable_reason = (
-                                    f"OCR engine initialization failed: {exc}"
-                                )
+                                ocr_unavailable_reason = f"OCR engine initialization failed: {exc}"
 
                     if ocr_unavailable_reason:
                         unresolved_ocr(
