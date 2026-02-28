@@ -65,3 +65,19 @@ def test_build_included_file_entry_deduplicates_outcome_codes() -> None:
 
     assert entry["outcome_codes"] == ["OUTCOME_CONVERSION_WARNING"]
     assert len(entry["outcomes"]) == 2
+
+
+def test_write_report_backfills_unknown_reason_code_for_non_string_reason(tmp_path: Path) -> None:
+    report_path = tmp_path / "report.json"
+    data = ReportData(
+        included_count=0,
+        skipped_count=1,
+        total_bytes=0,
+        included_files=[],
+        skipped_files=[{"path": "mystery.bin", "reason": 123}],
+    )
+
+    write_report(report_path, data)
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+
+    assert payload["reason_code_counts"] == {"SKIP_UNKNOWN": 1}
