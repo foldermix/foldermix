@@ -119,6 +119,12 @@ def test_pack_loads_values_from_config_file(monkeypatch, tmp_path: Path) -> None
                 "include_sha256 = false",
                 "pdf_ocr = true",
                 "",
+                "[[pack.policy_rules]]",
+                'rule_id = "scan-large"',
+                'description = "Flag large files"',
+                'stage = "scan"',
+                "max_size_bytes = 100",
+                "",
             ]
         ),
         encoding="utf-8",
@@ -132,6 +138,14 @@ def test_pack_loads_values_from_config_file(monkeypatch, tmp_path: Path) -> None
     assert config.include_ext == [".py", ".md"]
     assert config.include_sha256 is False
     assert config.pdf_ocr is True
+    assert config.policy_rules == [
+        {
+            "rule_id": "scan-large",
+            "description": "Flag large files",
+            "stage": "scan",
+            "max_size_bytes": 100,
+        }
+    ]
 
 
 def test_pack_cli_flags_override_config_values(monkeypatch, tmp_path: Path) -> None:

@@ -157,7 +157,7 @@ def test_pack_writes_report_json(tmp_path: Path) -> None:
     packer.pack(config)
 
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["schema_version"] == 2
+    assert report["schema_version"] == 3
     assert report["included_count"] == 1
     assert report["skipped_count"] == 1
     assert report["included_files"] == [
@@ -217,6 +217,62 @@ def test_pack_report_includes_structured_outcomes(tmp_path: Path) -> None:
     assert report["reason_code_counts"]["OUTCOME_TRUNCATED"] == 1
     assert report["reason_code_counts"]["OUTCOME_REDACTED"] == 1
     assert report["reason_code_counts"]["OUTCOME_CONVERSION_WARNING"] == 1
+
+
+def test_pack_report_includes_policy_findings(tmp_path: Path) -> None:
+    (tmp_path / "data.txt").write_text("token SECRET_123\n", encoding="utf-8")
+    out_path = tmp_path / "out.jsonl"
+    report_path = tmp_path / "report.json"
+    config = PackConfig(
+        root=tmp_path,
+        out=out_path,
+        format="jsonl",
+        report=report_path,
+        workers=1,
+        include_sha256=False,
+        policy_rules=[
+            {
+                "rule_id": "scan-size",
+                "description": "Flag large files in scan stage",
+                "stage": "scan",
+                "max_size_bytes": 1,
+                "severity": "low",
+                "action": "warn",
+            },
+            {
+                "rule_id": "convert-secret",
+                "description": "Secret marker detected",
+                "stage": "convert",
+                "content_regex": "SECRET_[0-9]+",
+                "severity": "high",
+                "action": "deny",
+            },
+            {
+                "rule_id": "pack-total",
+                "description": "Total output too large",
+                "stage": "pack",
+                "max_total_bytes": 1,
+                "severity": "medium",
+                "action": "warn",
+            },
+        ],
+    )
+
+    packer.pack(config)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["schema_version"] == 3
+    assert len(report["policy_findings"]) == 3
+    assert report["policy_finding_counts"] == {
+        "total": 3,
+        "by_severity": {"high": 1, "low": 1, "medium": 1},
+        "by_action": {"deny": 1, "warn": 2},
+        "by_reason_code": {
+            "POLICY_CONTENT_REGEX_MATCH": 1,
+            "POLICY_FILE_SIZE_EXCEEDED": 1,
+            "POLICY_TOTAL_BYTES_EXCEEDED": 1,
+        },
+    }
 
 
 def test_pack_keeps_deterministic_order_after_parallel_conversion(

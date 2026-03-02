@@ -501,3 +501,58 @@ def test_private_coercion_helpers_cover_optional_and_unsupported_keys() -> None:
     assert config_loader._coerce_value("unsupported", "x", errors, where=where) == "x"
 
     assert errors == [f"{where}.unsupported: unsupported key"]
+
+
+def test_load_command_config_accepts_policy_rules_tables(tmp_path: Path) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "",
+                "[[pack.policy_rules]]",
+                'rule_id = "scan-large"',
+                'description = "Flag large files"',
+                'stage = "scan"',
+                "max_size_bytes = 100",
+                'severity = "high"',
+                'action = "deny"',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    values, _ = load_command_config("pack", root=tmp_path, config_path=config_path)
+    assert values["policy_rules"] == [
+        {
+            "rule_id": "scan-large",
+            "description": "Flag large files",
+            "stage": "scan",
+            "max_size_bytes": 100,
+            "severity": "high",
+            "action": "deny",
+        }
+    ]
+
+
+def test_load_command_config_rejects_policy_rule_without_matchers(tmp_path: Path) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "",
+                "[[pack.policy_rules]]",
+                'rule_id = "bad-rule"',
+                'description = "missing matcher"',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigLoadError) as exc:
+        load_command_config("pack", root=tmp_path, config_path=config_path)
+
+    assert "expected at least one matcher key" in str(exc.value)

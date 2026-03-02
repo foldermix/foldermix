@@ -39,6 +39,7 @@ _COMMAND_KEYS: dict[str, set[str]] = {
         "include_toc",
         "pdf_ocr",
         "pdf_ocr_strict",
+        "policy_rules",
     },
     "list": {"include_ext", "exclude_ext", "hidden", "respect_gitignore"},
     "stats": {"include_ext", "hidden"},
@@ -69,6 +70,37 @@ _BOOL_KEYS = {
 _STR_KEYS = {"encoding"}
 _PATH_KEYS = {"out", "report"}
 _LIST_KEYS = {"include_ext", "exclude_ext", "exclude_dirs", "exclude_glob", "include_glob"}
+_POLICY_RULE_KEYS = {
+    "rule_id",
+    "description",
+    "severity",
+    "action",
+    "stage",
+    "path_glob",
+    "ext_in",
+    "skip_reason_in",
+    "content_regex",
+    "max_size_bytes",
+    "max_total_bytes",
+    "max_file_count",
+}
+_POLICY_RULE_LITERALS: dict[str, set[str]] = {
+    "severity": {"low", "medium", "high", "critical"},
+    "action": {"warn", "deny"},
+    "stage": {"scan", "convert", "pack", "any"},
+}
+_POLICY_RULE_STR_KEYS = {"rule_id", "description", "path_glob", "content_regex"}
+_POLICY_RULE_LIST_KEYS = {"ext_in", "skip_reason_in"}
+_POLICY_RULE_INT_KEYS = {"max_size_bytes", "max_total_bytes", "max_file_count"}
+_POLICY_MATCHER_KEYS = {
+    "path_glob",
+    "ext_in",
+    "skip_reason_in",
+    "content_regex",
+    "max_size_bytes",
+    "max_total_bytes",
+    "max_file_count",
+}
 
 
 class ConfigLoadError(RuntimeError):
@@ -102,6 +134,9 @@ def _coerce_list_str(value: Any, key: str, errors: list[str], *, where: str) -> 
 
 
 def _coerce_value(key: str, value: Any, errors: list[str], *, where: str) -> Any:
+    if key == "policy_rules":
+        return _coerce_policy_rules(value, errors, where=where)
+
     if key in _LITERALS:
         if not isinstance(value, str):
             errors.append(f"{where}.{key}: expected a string")
@@ -141,6 +176,72 @@ def _coerce_value(key: str, value: Any, errors: list[str], *, where: str) -> Any
 
     errors.append(f"{where}.{key}: unsupported key")
     return value
+
+
+def _coerce_policy_rules(value: Any, errors: list[str], *, where: str) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        errors.append(f"{where}.policy_rules: expected a list of policy rule tables")
+        return []
+
+    normalized_rules: list[dict[str, Any]] = []
+    for index, raw_rule in enumerate(value):
+        rule_where = f"{where}.policy_rules[{index}]"
+        if not isinstance(raw_rule, dict):
+            errors.append(f"{rule_where}: expected a TOML table")
+            continue
+
+        unknown_keys = sorted(key for key in raw_rule if key not in _POLICY_RULE_KEYS)
+        if unknown_keys:
+            errors.append(f"{rule_where}: unknown key(s): {', '.join(unknown_keys)}")
+
+        normalized_rule: dict[str, Any] = {}
+        for key, raw_val in raw_rule.items():
+            if key in _POLICY_RULE_STR_KEYS:
+                if not isinstance(raw_val, str) or not raw_val.strip():
+                    errors.append(f"{rule_where}.{key}: expected a non-empty string")
+                    continue
+                normalized_rule[key] = raw_val
+                continue
+
+            if key in _POLICY_RULE_LIST_KEYS:
+                normalized_rule[key] = _coerce_list_str(raw_val, key, errors, where=rule_where)
+                continue
+
+            if key in _POLICY_RULE_INT_KEYS:
+                if not _is_int(raw_val) or raw_val < 0:
+                    errors.append(f"{rule_where}.{key}: expected a non-negative integer")
+                    continue
+                normalized_rule[key] = raw_val
+                continue
+
+            if key in _POLICY_RULE_LITERALS:
+                if not isinstance(raw_val, str):
+                    errors.append(f"{rule_where}.{key}: expected a string")
+                    continue
+                choices = _POLICY_RULE_LITERALS[key]
+                if raw_val not in choices:
+                    rendered = ", ".join(sorted(choices))
+                    errors.append(
+                        f"{rule_where}.{key}: expected one of {rendered}, got {raw_val!r}"
+                    )
+                    continue
+                normalized_rule[key] = raw_val
+                continue
+
+        if "rule_id" not in normalized_rule:
+            errors.append(f"{rule_where}.rule_id: required")
+        if "description" not in normalized_rule:
+            errors.append(f"{rule_where}.description: required")
+
+        if not any(matcher in normalized_rule for matcher in _POLICY_MATCHER_KEYS):
+            errors.append(
+                f"{rule_where}: expected at least one matcher key "
+                f"({', '.join(sorted(_POLICY_MATCHER_KEYS))})"
+            )
+
+        normalized_rules.append(normalized_rule)
+
+    return normalized_rules
 
 
 def _extract_config_root(data: dict[str, Any], *, path: Path) -> dict[str, Any]:
