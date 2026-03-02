@@ -130,6 +130,32 @@ def test_build_policy_finding_counts_groups_by_key_dimensions() -> None:
     }
 
 
+def test_build_policy_finding_counts_ignores_non_string_dimensions() -> None:
+    counts = build_policy_finding_counts(
+        policy_findings=[
+            {
+                "rule_id": "a",
+                "severity": 1,
+                "action": None,
+                "reason_code": ["x"],
+            },
+            {
+                "rule_id": "b",
+                "severity": "medium",
+                "action": "warn",
+                "reason_code": "POLICY_RULE_MATCH",
+            },
+        ]
+    )
+
+    assert counts == {
+        "total": 2,
+        "by_severity": {"medium": 1},
+        "by_action": {"warn": 1},
+        "by_reason_code": {"POLICY_RULE_MATCH": 1},
+    }
+
+
 def test_write_report_backfills_policy_finding_counts_when_missing(tmp_path: Path) -> None:
     report_path = tmp_path / "report.json"
     data = ReportData(

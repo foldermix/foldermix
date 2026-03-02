@@ -267,3 +267,78 @@ def test_normalize_policy_rules_validation_errors_cover_type_branches() -> None:
 def test_normalize_ext_private_helper_none_and_empty() -> None:
     assert policy._normalize_ext(None) is None
     assert policy._normalize_ext("") == ""
+
+
+def test_policy_evaluator_ext_rule_returns_empty_when_event_has_no_ext() -> None:
+    evaluator = PolicyEvaluator(
+        normalize_policy_rules(
+            [
+                {
+                    "rule_id": "need-ext",
+                    "description": "needs extension",
+                    "stage": "any",
+                    "ext_in": [".txt"],
+                }
+            ]
+        )
+    )
+
+    findings = evaluator.evaluate_scan_skipped(path="a.txt", skip_reason="excluded_ext")
+    assert findings == []
+
+
+def test_policy_evaluator_content_rule_returns_empty_when_event_has_no_content() -> None:
+    evaluator = PolicyEvaluator(
+        normalize_policy_rules(
+            [
+                {
+                    "rule_id": "need-content",
+                    "description": "needs content",
+                    "stage": "any",
+                    "content_regex": "SECRET_[0-9]+",
+                }
+            ]
+        )
+    )
+
+    findings = evaluator.evaluate_scan_included(path="a.txt", ext=".txt", size_bytes=1)
+    assert findings == []
+
+
+def test_policy_evaluator_ext_rule_matches_when_event_ext_is_allowed() -> None:
+    evaluator = PolicyEvaluator(
+        normalize_policy_rules(
+            [
+                {
+                    "rule_id": "allow-txt",
+                    "description": "txt files",
+                    "stage": "convert",
+                    "ext_in": [".txt"],
+                }
+            ]
+        )
+    )
+
+    findings = evaluator.evaluate_converted(path="a.txt", ext=".txt", size_bytes=1, content="ok")
+    assert len(findings) == 1
+    assert findings[0].reason_code == "POLICY_RULE_MATCH"
+
+
+def test_policy_evaluator_pack_file_count_limit_emits_reason_and_message() -> None:
+    evaluator = PolicyEvaluator(
+        normalize_policy_rules(
+            [
+                {
+                    "rule_id": "pack-count",
+                    "description": "Too many files",
+                    "stage": "pack",
+                    "max_file_count": 1,
+                }
+            ]
+        )
+    )
+
+    findings = evaluator.evaluate_pack_summary(file_count=2, total_bytes=1)
+    assert len(findings) == 1
+    assert findings[0].reason_code == "POLICY_FILE_COUNT_EXCEEDED"
+    assert findings[0].message == "Too many files (file_count=2, max_file_count=1)"
