@@ -50,6 +50,18 @@ def test_normalize_policy_rules_rejects_bad_regex() -> None:
     assert "not a valid regex" in str(exc.value)
 
 
+def test_normalize_policy_rules_rejects_duplicate_rule_ids() -> None:
+    with pytest.raises(ValueError) as exc:
+        normalize_policy_rules(
+            [
+                {"rule_id": "dup", "description": "first", "path_glob": "*.txt"},
+                {"rule_id": "dup", "description": "second", "path_glob": "*.md"},
+            ]
+        )
+
+    assert "must be unique" in str(exc.value)
+
+
 def test_policy_evaluator_is_deterministic_by_rule_id() -> None:
     rules = normalize_policy_rules(
         [
@@ -319,7 +331,7 @@ def test_policy_evaluator_ext_rule_matches_when_event_ext_is_allowed() -> None:
         )
     )
 
-    findings = evaluator.evaluate_converted(path="a.txt", ext=".txt", size_bytes=1, content="ok")
+    findings = evaluator.evaluate_converted(path="a.txt", ext=".TXT", size_bytes=1, content="ok")
     assert len(findings) == 1
     assert findings[0].reason_code == "POLICY_RULE_MATCH"
 
@@ -342,3 +354,7 @@ def test_policy_evaluator_pack_file_count_limit_emits_reason_and_message() -> No
     assert len(findings) == 1
     assert findings[0].reason_code == "POLICY_FILE_COUNT_EXCEEDED"
     assert findings[0].message == "Too many files (file_count=2, max_file_count=1)"
+
+
+def test_normalize_ext_private_helper_normalizes_uppercase_dotted() -> None:
+    assert policy._normalize_ext(".TXT") == ".txt"

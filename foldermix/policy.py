@@ -55,9 +55,13 @@ class PolicyFinding:
 
 def normalize_policy_rules(raw_rules: Sequence[Mapping[str, object]]) -> list[PolicyRule]:
     rules: list[PolicyRule] = []
+    seen_rule_ids: set[str] = set()
     for idx, raw in enumerate(raw_rules):
         where = f"policy_rules[{idx}]"
         rule_id = _expect_nonempty_string(raw.get("rule_id"), f"{where}.rule_id")
+        if rule_id in seen_rule_ids:
+            raise ValueError(f"{where}.rule_id must be unique; duplicate value {rule_id!r}")
+        seen_rule_ids.add(rule_id)
         description = _expect_nonempty_string(raw.get("description"), f"{where}.description")
         severity = _expect_literal(
             raw.get("severity", "medium"), _VALID_SEVERITIES, f"{where}.severity"
@@ -264,7 +268,9 @@ def _normalize_ext(ext: str | None) -> str | None:
         return None
     if ext == "":
         return ""
-    return ext if ext.startswith(".") else f".{ext}".lower()
+    if not ext.startswith("."):
+        ext = f".{ext}"
+    return ext.lower()
 
 
 def _expect_nonempty_string(value: object, where: str) -> str:
