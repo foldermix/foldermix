@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from foldermix import policy
 from foldermix.policy import PolicyEvaluator, normalize_policy_rules
 
 
@@ -123,3 +124,146 @@ def test_policy_evaluator_emits_typed_reason_codes_by_stage() -> None:
     assert convert_findings[0].reason_code == "POLICY_CONTENT_REGEX_MATCH"
     assert convert_findings[0].action == "deny"
     assert pack_findings[0].reason_code == "POLICY_TOTAL_BYTES_EXCEEDED"
+
+
+def test_policy_evaluator_returns_empty_when_path_glob_does_not_match() -> None:
+    evaluator = PolicyEvaluator(
+        normalize_policy_rules(
+            [
+                {
+                    "rule_id": "glob-only",
+                    "description": "glob",
+                    "stage": "convert",
+                    "path_glob": "*.md",
+                }
+            ]
+        )
+    )
+    findings = evaluator.evaluate_converted(path="a.txt", ext=".txt", size_bytes=1, content="x")
+    assert findings == []
+
+
+@pytest.mark.parametrize(
+    ("rule", "event_kwargs"),
+    [
+        (
+            {
+                "rule_id": "ext-mismatch",
+                "description": "ext",
+                "stage": "convert",
+                "ext_in": [".md"],
+            },
+            {"path": "a.txt", "ext": ".txt", "size_bytes": 1, "content": "x"},
+        ),
+        (
+            {
+                "rule_id": "skip-mismatch",
+                "description": "skip",
+                "stage": "scan",
+                "skip_reason_in": ["missing"],
+            },
+            {"path": "a.txt", "skip_reason": "excluded_ext"},
+        ),
+        (
+            {
+                "rule_id": "regex-mismatch",
+                "description": "regex",
+                "stage": "convert",
+                "content_regex": "SECRET_[0-9]+",
+            },
+            {"path": "a.txt", "ext": ".txt", "size_bytes": 1, "content": "no-secret"},
+        ),
+        (
+            {
+                "rule_id": "size-threshold",
+                "description": "size",
+                "stage": "convert",
+                "max_size_bytes": 100,
+            },
+            {"path": "a.txt", "ext": ".txt", "size_bytes": 10, "content": "x"},
+        ),
+    ],
+)
+def test_policy_evaluator_returns_empty_for_non_triggering_matchers(
+    rule: dict[str, object], event_kwargs: dict[str, object]
+) -> None:
+    evaluator = PolicyEvaluator(normalize_policy_rules([rule]))
+
+    if rule.get("stage") == "scan":
+        findings = evaluator.evaluate_scan_skipped(**event_kwargs)  # type: ignore[arg-type]
+    else:
+        findings = evaluator.evaluate_converted(**event_kwargs)  # type: ignore[arg-type]
+    assert findings == []
+
+
+def test_policy_evaluator_pack_threshold_non_triggering_cases_return_empty() -> None:
+    evaluator = PolicyEvaluator(
+        normalize_policy_rules(
+            [
+                {
+                    "rule_id": "pack-total",
+                    "description": "total",
+                    "stage": "pack",
+                    "max_total_bytes": 100,
+                },
+                {
+                    "rule_id": "pack-count",
+                    "description": "count",
+                    "stage": "pack",
+                    "max_file_count": 5,
+                },
+            ]
+        )
+    )
+
+    findings = evaluator.evaluate_pack_summary(file_count=2, total_bytes=20)
+    assert findings == []
+
+
+def test_normalize_policy_rules_validation_errors_cover_type_branches() -> None:
+    with pytest.raises(ValueError, match="rule_id"):
+        normalize_policy_rules([{"description": "missing id", "path_glob": "*"}])
+
+    with pytest.raises(ValueError, match="path_glob"):
+        normalize_policy_rules(
+            [{"rule_id": "r", "description": "d", "path_glob": 123}]  # type: ignore[list-item]
+        )
+
+    with pytest.raises(ValueError, match="severity must be a string"):
+        normalize_policy_rules(
+            [{"rule_id": "r", "description": "d", "path_glob": "*", "severity": 1}]  # type: ignore[list-item]
+        )
+
+    with pytest.raises(ValueError, match="severity must be one of"):
+        normalize_policy_rules(
+            [
+                {
+                    "rule_id": "r",
+                    "description": "d",
+                    "path_glob": "*",
+                    "severity": "urgent",
+                }
+            ]
+        )
+
+    with pytest.raises(ValueError, match="max_size_bytes"):
+        normalize_policy_rules(
+            [
+                {
+                    "rule_id": "r",
+                    "description": "d",
+                    "path_glob": "*",
+                    "max_size_bytes": -1,
+                }
+            ]
+        )
+
+    with pytest.raises(ValueError, match="ext_in"):
+        normalize_policy_rules(
+            [{"rule_id": "r", "description": "d", "path_glob": "*", "ext_in": "txt"}]  # type: ignore[list-item]
+        )
+
+
+def test_normalize_ext_private_helper_none_and_empty() -> None:
+    assert policy._normalize_ext(None) is None
+    assert policy._normalize_ext("") == ""

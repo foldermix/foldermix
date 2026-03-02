@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict
 from pathlib import Path
+from typing import cast
 
 import typer
 from rich.console import Console
@@ -292,13 +293,8 @@ def pack(config: PackConfig) -> None:
         policy_counts = build_policy_finding_counts(
             policy_findings=[asdict(finding) for finding in policy_findings]
         )
-        by_severity = policy_counts["by_severity"]
-        if isinstance(by_severity, dict):
-            severity_summary = ", ".join(
-                f"{sev}={count}" for sev, count in by_severity.items() if isinstance(count, int)
-            )
-        else:
-            severity_summary = ""
+        by_severity = cast(dict[str, int], policy_counts["by_severity"])
+        severity_summary = ", ".join(f"{sev}={count}" for sev, count in by_severity.items())
         suffix = f" ({severity_summary})" if severity_summary else ""
         console.print(f"[yellow]Policy findings:[/yellow] {policy_counts['total']}{suffix}")
 
