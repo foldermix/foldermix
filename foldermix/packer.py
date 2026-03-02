@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import asdict
 from pathlib import Path
+from typing import cast
 
 import typer
 from rich.console import Console
@@ -15,9 +17,11 @@ from .converters.pdf_fallback import PdfFallbackConverter
 from .converters.pptx_fallback import PptxFallbackConverter
 from .converters.text import TextConverter
 from .converters.xlsx_fallback import XlsxFallbackConverter
+from .policy import PolicyEvaluator, normalize_policy_rules
 from .report import (
     ReportData,
     build_included_file_entry,
+    build_policy_finding_counts,
     build_reason_code_counts,
     build_skipped_file_entry,
     write_report,
@@ -164,12 +168,40 @@ def _convert_record(
 
 def pack(config: PackConfig) -> None:
     """Main entry point for packing."""
+    policy_evaluator: PolicyEvaluator | None = None
+    if config.policy_rules:
+        try:
+            policy_rules = normalize_policy_rules(config.policy_rules)
+        except ValueError as exc:
+            console.print(f"[red]Invalid policy_rules:[/red] {exc}")
+            raise typer.Exit(code=1) from exc
+        policy_evaluator = PolicyEvaluator(policy_rules)
+
+    policy_findings = []
+
     console.print(f"[bold]Scanning[/bold] {config.root} ...")
     included, skipped = scan(config)
 
     console.print(
         f"Found [green]{len(included)}[/green] files, [yellow]{len(skipped)}[/yellow] skipped"
     )
+
+    if policy_evaluator is not None:
+        for record in included:
+            policy_findings.extend(
+                policy_evaluator.evaluate_scan_included(
+                    path=record.relpath,
+                    ext=record.ext,
+                    size_bytes=record.size,
+                )
+            )
+        for skip in skipped:
+            policy_findings.extend(
+                policy_evaluator.evaluate_scan_skipped(
+                    path=skip.relpath,
+                    skip_reason=skip.reason,
+                )
+            )
 
     # Check limits
     if config.max_files is not None and len(included) > config.max_files:
@@ -231,6 +263,15 @@ def pack(config: PackConfig) -> None:
             console.print(f"[red]Error[/red] converting {record.relpath}: {result}")
         else:
             items.append(result)
+            if policy_evaluator is not None:
+                policy_findings.extend(
+                    policy_evaluator.evaluate_converted(
+                        path=result.relpath,
+                        ext=result.ext,
+                        size_bytes=result.size_bytes,
+                        content=result.content,
+                    )
+                )
 
     if errors and not config.continue_on_error:
         console.print(
@@ -239,6 +280,23 @@ def pack(config: PackConfig) -> None:
         raise typer.Exit(code=2)
 
     total_bytes = sum(i.size_bytes for i in items)
+
+    if policy_evaluator is not None:
+        policy_findings.extend(
+            policy_evaluator.evaluate_pack_summary(
+                file_count=len(items),
+                total_bytes=total_bytes,
+            )
+        )
+
+    if policy_findings:
+        policy_counts = build_policy_finding_counts(
+            policy_findings=[asdict(finding) for finding in policy_findings]
+        )
+        by_severity = cast(dict[str, int], policy_counts["by_severity"])
+        severity_summary = ", ".join(f"{sev}={count}" for sev, count in by_severity.items())
+        suffix = f" ({severity_summary})" if severity_summary else ""
+        console.print(f"[yellow]Policy findings:[/yellow] {policy_counts['total']}{suffix}")
 
     if config.max_total_bytes is not None and total_bytes > config.max_total_bytes:
         console.print(
@@ -272,6 +330,7 @@ def pack(config: PackConfig) -> None:
     console.print(f"[green]Done![/green] {len(items)} files, {total_bytes:,} bytes -> {out_path}")
 
     if config.report:
+        policy_finding_entries = [asdict(finding) for finding in policy_findings]
         included_files = [
             build_included_file_entry(
                 path=item.relpath,
@@ -291,8 +350,12 @@ def pack(config: PackConfig) -> None:
             total_bytes=total_bytes,
             included_files=included_files,
             skipped_files=skipped_files,
+            policy_findings=policy_finding_entries,
             reason_code_counts=build_reason_code_counts(
                 included_files=included_files, skipped_files=skipped_files
+            ),
+            policy_finding_counts=build_policy_finding_counts(
+                policy_findings=policy_finding_entries
             ),
         )
         write_report(config.report, report_data)

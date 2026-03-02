@@ -501,3 +501,141 @@ def test_private_coercion_helpers_cover_optional_and_unsupported_keys() -> None:
     assert config_loader._coerce_value("unsupported", "x", errors, where=where) == "x"
 
     assert errors == [f"{where}.unsupported: unsupported key"]
+
+
+def test_load_command_config_accepts_policy_rules_tables(tmp_path: Path) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "",
+                "[[pack.policy_rules]]",
+                'rule_id = "scan-large"',
+                'description = "Flag large files"',
+                'stage = "scan"',
+                "max_size_bytes = 100",
+                'severity = "high"',
+                'action = "deny"',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    values, _ = load_command_config("pack", root=tmp_path, config_path=config_path)
+    assert values["policy_rules"] == [
+        {
+            "rule_id": "scan-large",
+            "description": "Flag large files",
+            "stage": "scan",
+            "max_size_bytes": 100,
+            "severity": "high",
+            "action": "deny",
+        }
+    ]
+
+
+def test_load_command_config_rejects_policy_rule_without_matchers(tmp_path: Path) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "",
+                "[[pack.policy_rules]]",
+                'rule_id = "bad-rule"',
+                'description = "missing matcher"',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigLoadError) as exc:
+        load_command_config("pack", root=tmp_path, config_path=config_path)
+
+    assert "expected at least one matcher key" in str(exc.value)
+
+
+def test_load_command_config_rejects_policy_rules_when_not_a_list(tmp_path: Path) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "policy_rules = 1",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigLoadError) as exc:
+        load_command_config("pack", root=tmp_path, config_path=config_path)
+
+    assert "expected a list of policy rule tables" in str(exc.value)
+
+
+def test_load_command_config_rejects_policy_rule_entry_when_not_table(tmp_path: Path) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "policy_rules = [1]",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigLoadError) as exc:
+        load_command_config("pack", root=tmp_path, config_path=config_path)
+
+    assert "expected a TOML table" in str(exc.value)
+
+
+def test_load_command_config_rejects_policy_rule_invalid_fields_and_literals(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "",
+                "[[pack.policy_rules]]",
+                "rule_id = ''",
+                "description = ''",
+                "ext_in = 1",
+                "max_size_bytes = -1",
+                "severity = 1",
+                "action = 'block'",
+                "unknown = true",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigLoadError) as exc:
+        load_command_config("pack", root=tmp_path, config_path=config_path)
+
+    message = str(exc.value)
+    assert "unknown key(s): unknown" in message
+    assert "rule_id: expected a non-empty string" in message
+    assert "description: expected a non-empty string" in message
+    assert "ext_in: expected a list of strings" in message
+    assert "max_size_bytes: expected a non-negative integer" in message
+    assert "severity: expected a string" in message
+    assert "action: expected one of deny, warn, got 'block'" in message
+
+
+def test_extract_config_root_ignores_tool_table_without_foldermix(tmp_path: Path) -> None:
+    parsed = {
+        "tool": {"name": "demo"},
+        "pack": {"workers": 2},
+    }
+    root = config_loader._extract_config_root(parsed, path=tmp_path / "foldermix.toml")
+    assert root == parsed

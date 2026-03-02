@@ -62,6 +62,7 @@ _PACK_PARAM_BY_KEY = {
     "include_toc": "include_toc",
     "pdf_ocr": "pdf_ocr",
     "pdf_ocr_strict": "pdf_ocr_strict",
+    "policy_rules": "policy_rules",
 }
 
 _LIST_PARAM_BY_KEY = {
@@ -303,6 +304,7 @@ def pack_cmd(
         "include_toc": include_toc,
         "pdf_ocr": pdf_ocr,
         "pdf_ocr_strict": pdf_ocr_strict,
+        "policy_rules": [],
     }
 
     try:

@@ -142,3 +142,4 @@ class PackConfig:
     include_toc: bool = True
     pdf_ocr: bool = False
     pdf_ocr_strict: bool = False
+    policy_rules: list[dict[str, object]] = field(default_factory=list)

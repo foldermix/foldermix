@@ -157,7 +157,7 @@ def test_pack_writes_report_json(tmp_path: Path) -> None:
     packer.pack(config)
 
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["schema_version"] == 2
+    assert report["schema_version"] == 3
     assert report["included_count"] == 1
     assert report["skipped_count"] == 1
     assert report["included_files"] == [
@@ -217,6 +217,115 @@ def test_pack_report_includes_structured_outcomes(tmp_path: Path) -> None:
     assert report["reason_code_counts"]["OUTCOME_TRUNCATED"] == 1
     assert report["reason_code_counts"]["OUTCOME_REDACTED"] == 1
     assert report["reason_code_counts"]["OUTCOME_CONVERSION_WARNING"] == 1
+
+
+def test_pack_report_includes_policy_findings(tmp_path: Path) -> None:
+    (tmp_path / "data.txt").write_text("token SECRET_123\n", encoding="utf-8")
+    out_path = tmp_path / "out.jsonl"
+    report_path = tmp_path / "report.json"
+    config = PackConfig(
+        root=tmp_path,
+        out=out_path,
+        format="jsonl",
+        report=report_path,
+        workers=1,
+        include_sha256=False,
+        policy_rules=[
+            {
+                "rule_id": "scan-size",
+                "description": "Flag large files in scan stage",
+                "stage": "scan",
+                "max_size_bytes": 1,
+                "severity": "low",
+                "action": "warn",
+            },
+            {
+                "rule_id": "convert-secret",
+                "description": "Secret marker detected",
+                "stage": "convert",
+                "content_regex": "SECRET_[0-9]+",
+                "severity": "high",
+                "action": "deny",
+            },
+            {
+                "rule_id": "pack-total",
+                "description": "Total output too large",
+                "stage": "pack",
+                "max_total_bytes": 1,
+                "severity": "medium",
+                "action": "warn",
+            },
+        ],
+    )
+
+    packer.pack(config)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["schema_version"] == 3
+    assert len(report["policy_findings"]) == 3
+    assert report["policy_finding_counts"] == {
+        "total": 3,
+        "by_severity": {"high": 1, "low": 1, "medium": 1},
+        "by_action": {"deny": 1, "warn": 2},
+        "by_reason_code": {
+            "POLICY_CONTENT_REGEX_MATCH": 1,
+            "POLICY_FILE_SIZE_EXCEEDED": 1,
+            "POLICY_TOTAL_BYTES_EXCEEDED": 1,
+        },
+    }
+
+
+def test_pack_rejects_invalid_policy_rules(tmp_path: Path) -> None:
+    (tmp_path / "a.txt").write_text("hello\n", encoding="utf-8")
+    config = PackConfig(
+        root=tmp_path,
+        out=tmp_path / "out.md",
+        workers=1,
+        policy_rules=[
+            {
+                "rule_id": "bad",
+                "description": "missing matcher",
+            }
+        ],
+    )
+
+    with pytest.raises(typer.Exit) as exc_info:
+        packer.pack(config)
+
+    assert exc_info.value.exit_code == 1
+
+
+def test_pack_policy_scan_evaluates_skipped_records(tmp_path: Path) -> None:
+    (tmp_path / "a.txt").write_text("hello\n", encoding="utf-8")
+    (tmp_path / "image.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+
+    out_path = tmp_path / "out.jsonl"
+    report_path = tmp_path / "report.json"
+    config = PackConfig(
+        root=tmp_path,
+        out=out_path,
+        format="jsonl",
+        report=report_path,
+        workers=1,
+        include_sha256=False,
+        policy_rules=[
+            {
+                "rule_id": "scan-skip-ext",
+                "description": "Flag extension-based skips",
+                "stage": "scan",
+                "skip_reason_in": ["excluded_ext"],
+            }
+        ],
+    )
+
+    packer.pack(config)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    finding = next(
+        entry for entry in report["policy_findings"] if entry["rule_id"] == "scan-skip-ext"
+    )
+    assert finding["path"] == "image.png"
+    assert finding["reason_code"] == "POLICY_SKIP_REASON_MATCH"
 
 
 def test_pack_keeps_deterministic_order_after_parallel_conversion(

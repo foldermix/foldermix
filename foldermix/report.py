@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-REPORT_SCHEMA_VERSION = 2
+REPORT_SCHEMA_VERSION = 3
 
 
 @dataclass(frozen=True)
@@ -79,8 +79,10 @@ class ReportData:
     total_bytes: int
     included_files: list[dict]
     skipped_files: list[dict]
+    policy_findings: list[dict] = field(default_factory=list)
     schema_version: int = REPORT_SCHEMA_VERSION
     reason_code_counts: dict[str, int] = field(default_factory=dict)
+    policy_finding_counts: dict[str, object] = field(default_factory=dict)
 
 
 def _skip_reason_code(reason: str) -> str:
@@ -172,12 +174,42 @@ def build_reason_code_counts(
     return dict(sorted(counts.items()))
 
 
+def build_policy_finding_counts(*, policy_findings: list[dict]) -> dict[str, object]:
+    by_severity: dict[str, int] = {}
+    by_action: dict[str, int] = {}
+    by_reason_code: dict[str, int] = {}
+
+    for finding in policy_findings:
+        severity = finding.get("severity")
+        if isinstance(severity, str):
+            by_severity[severity] = by_severity.get(severity, 0) + 1
+
+        action = finding.get("action")
+        if isinstance(action, str):
+            by_action[action] = by_action.get(action, 0) + 1
+
+        reason_code = finding.get("reason_code")
+        if isinstance(reason_code, str):
+            by_reason_code[reason_code] = by_reason_code.get(reason_code, 0) + 1
+
+    return {
+        "total": len(policy_findings),
+        "by_severity": dict(sorted(by_severity.items())),
+        "by_action": dict(sorted(by_action.items())),
+        "by_reason_code": dict(sorted(by_reason_code.items())),
+    }
+
+
 def write_report(report_path: Path, data: ReportData) -> None:
     payload = asdict(data)
     if not payload["reason_code_counts"]:
         payload["reason_code_counts"] = build_reason_code_counts(
             included_files=payload["included_files"],
             skipped_files=payload["skipped_files"],
+        )
+    if payload["policy_findings"] and not payload["policy_finding_counts"]:
+        payload["policy_finding_counts"] = build_policy_finding_counts(
+            policy_findings=payload["policy_findings"],
         )
     with open(report_path, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2)

@@ -9,6 +9,7 @@ from foldermix.report import (
     SKIP_REASONS,
     ReportData,
     build_included_file_entry,
+    build_policy_finding_counts,
     build_skipped_file_entry,
     write_report,
 )
@@ -92,3 +93,96 @@ def test_write_report_backfills_unknown_reason_code_for_non_string_reason(tmp_pa
     payload = json.loads(report_path.read_text(encoding="utf-8"))
 
     assert payload["reason_code_counts"] == {"SKIP_UNKNOWN": 1}
+
+
+def test_build_policy_finding_counts_groups_by_key_dimensions() -> None:
+    counts = build_policy_finding_counts(
+        policy_findings=[
+            {
+                "rule_id": "a",
+                "severity": "high",
+                "action": "warn",
+                "reason_code": "POLICY_RULE_MATCH",
+            },
+            {
+                "rule_id": "b",
+                "severity": "high",
+                "action": "deny",
+                "reason_code": "POLICY_RULE_MATCH",
+            },
+            {
+                "rule_id": "c",
+                "severity": "low",
+                "action": "warn",
+                "reason_code": "POLICY_CONTENT_REGEX_MATCH",
+            },
+        ]
+    )
+
+    assert counts == {
+        "total": 3,
+        "by_severity": {"high": 2, "low": 1},
+        "by_action": {"deny": 1, "warn": 2},
+        "by_reason_code": {
+            "POLICY_CONTENT_REGEX_MATCH": 1,
+            "POLICY_RULE_MATCH": 2,
+        },
+    }
+
+
+def test_build_policy_finding_counts_ignores_non_string_dimensions() -> None:
+    counts = build_policy_finding_counts(
+        policy_findings=[
+            {
+                "rule_id": "a",
+                "severity": 1,
+                "action": None,
+                "reason_code": ["x"],
+            },
+            {
+                "rule_id": "b",
+                "severity": "medium",
+                "action": "warn",
+                "reason_code": "POLICY_RULE_MATCH",
+            },
+        ]
+    )
+
+    assert counts == {
+        "total": 2,
+        "by_severity": {"medium": 1},
+        "by_action": {"warn": 1},
+        "by_reason_code": {"POLICY_RULE_MATCH": 1},
+    }
+
+
+def test_write_report_backfills_policy_finding_counts_when_missing(tmp_path: Path) -> None:
+    report_path = tmp_path / "report.json"
+    data = ReportData(
+        included_count=0,
+        skipped_count=0,
+        total_bytes=0,
+        included_files=[],
+        skipped_files=[],
+        policy_findings=[
+            {
+                "rule_id": "r1",
+                "severity": "medium",
+                "action": "warn",
+                "stage": "scan",
+                "path": "a.txt",
+                "reason_code": "POLICY_RULE_MATCH",
+                "message": "hit",
+            }
+        ],
+    )
+
+    write_report(report_path, data)
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+
+    assert payload["policy_finding_counts"] == {
+        "total": 1,
+        "by_severity": {"medium": 1},
+        "by_action": {"warn": 1},
+        "by_reason_code": {"POLICY_RULE_MATCH": 1},
+    }
