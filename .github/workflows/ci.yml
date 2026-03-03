@@ -256,7 +256,7 @@ jobs:
     permissions:
       contents: read
     env:
-      TAP_REPOSITORY: shaypal5/homebrew-tap
+      TAP_REPOSITORY: foldermix/homebrew-foldermix
       HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
     steps:
       - name: Detect whether tap updates are enabled
@@ -455,9 +455,9 @@ jobs:
 
           echo "Release consumer smoke (Homebrew) for version: ${RELEASE_VERSION}"
           brew update
-          brew tap shaypal5/tap
+          brew tap foldermix/foldermix
           brew uninstall --ignore-dependencies foldermix || true
-          brew install shaypal5/tap/foldermix
+          brew install foldermix/foldermix/foldermix
 
           version_out="$(run_expect_zero foldermix version)"
           assert_contains "$version_out" "foldermix ${RELEASE_VERSION}"
