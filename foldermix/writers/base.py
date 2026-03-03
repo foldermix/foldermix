@@ -25,6 +25,7 @@ class FileBundleItem:
     converter_name: str
     original_mime: str
     warnings: list[str] = field(default_factory=list)
+    warning_entries: list[dict[str, str]] = field(default_factory=list)
     truncated: bool = False
     redacted: bool = False
 

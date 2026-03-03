@@ -11,6 +11,7 @@ from foldermix.report import (
     build_included_file_entry,
     build_policy_finding_counts,
     build_skipped_file_entry,
+    build_warning_code_counts,
     write_report,
 )
 
@@ -76,7 +77,31 @@ def test_build_included_file_entry_deduplicates_outcome_codes() -> None:
     )
 
     assert entry["outcome_codes"] == ["OUTCOME_CONVERSION_WARNING"]
+    assert entry["warning_codes"] == ["unclassified_warning"]
     assert len(entry["outcomes"]) == 2
+    assert entry["outcomes"][0]["warning_code"] == "unclassified_warning"
+
+
+def test_build_warning_code_counts_groups_warning_codes() -> None:
+    counts = build_warning_code_counts(
+        included_files=[
+            {
+                "warning_codes": ["encoding_fallback"],
+                "outcomes": [],
+            },
+            {
+                "warning_codes": [],
+                "outcomes": [
+                    {
+                        "code": "OUTCOME_CONVERSION_WARNING",
+                        "warning_code": "ocr_no_text",
+                        "message": "Page 1 has no extractable text and OCR produced no text.",
+                    }
+                ],
+            },
+        ]
+    )
+    assert counts == {"encoding_fallback": 1, "ocr_no_text": 1}
 
 
 def test_write_report_backfills_unknown_reason_code_for_non_string_reason(tmp_path: Path) -> None:
@@ -186,3 +211,4 @@ def test_write_report_backfills_policy_finding_counts_when_missing(tmp_path: Pat
         "by_action": {"warn": 1},
         "by_reason_code": {"POLICY_RULE_MATCH": 1},
     }
+    assert payload["warning_code_counts"] == {}

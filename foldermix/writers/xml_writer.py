@@ -29,6 +29,22 @@ class XmlWriter(Writer):
             out.write(f"      <converter>{saxutils.escape(item.converter_name)}</converter>\n")
             if item.truncated:
                 out.write("      <truncated>true</truncated>\n")
+            warning_entries = item.warning_entries
+            if not warning_entries and item.warnings:
+                warning_entries = [
+                    {
+                        "code": "unclassified_warning",
+                        "message": warning,
+                    }
+                    for warning in item.warnings
+                ]
+            if warning_entries:
+                out.write("      <warnings>\n")
+                for warning in warning_entries:
+                    code = saxutils.escape(str(warning.get("code", "unclassified_warning")))
+                    message = saxutils.escape(str(warning.get("message", "")))
+                    out.write(f'        <warning code="{code}">{message}</warning>\n')
+                out.write("      </warnings>\n")
             safe_content = item.content.replace("]]>", "]]]]><![CDATA[>")
             out.write(f"      <content><![CDATA[{safe_content}]]></content>\n")
             out.write("    </file>\n")

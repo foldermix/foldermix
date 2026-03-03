@@ -207,17 +207,17 @@ foldermix version
 
 `--report` writes a versioned schema with machine-actionable reason codes and policy findings while preserving existing human-readable fields.
 
-- Current schema: `schema_version = 3`
+- Current schema: `schema_version = 4`
 - Compatibility policy:
   - Existing keys are preserved (`included_count`, `skipped_count`, `total_bytes`, `included_files`, `skipped_files`).
-  - New top-level fields are additive (`schema_version`, `reason_code_counts`, `policy_findings`, `policy_finding_counts`).
-  - New per-entry fields are additive (`reason_code`, `message`, `outcome_codes`, `outcomes`).
+  - New top-level fields are additive (`schema_version`, `reason_code_counts`, `warning_code_counts`, `policy_findings`, `policy_finding_counts`).
+  - New per-entry fields are additive (`reason_code`, `message`, `outcome_codes`, `warning_codes`, `outcomes`).
 
 Example `report.json` shape:
 
 ```json
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "included_count": 2,
   "skipped_count": 1,
   "total_bytes": 1234,
@@ -227,6 +227,7 @@ Example `report.json` shape:
       "size": 900,
       "ext": ".txt",
       "outcome_codes": ["OUTCOME_TRUNCATED", "OUTCOME_REDACTED"],
+      "warning_codes": [],
       "outcomes": [
         {"code": "OUTCOME_TRUNCATED", "message": "File content was truncated to satisfy --max-bytes."},
         {"code": "OUTCOME_REDACTED", "message": "Content was redacted using mode 'emails'."}
@@ -246,6 +247,7 @@ Example `report.json` shape:
     "OUTCOME_TRUNCATED": 1,
     "SKIP_EXCLUDED_EXT": 1
   },
+  "warning_code_counts": {},
   "policy_findings": [
     {
       "rule_id": "convert-secret",
@@ -270,6 +272,8 @@ Canonical reason-code groups:
 
 - Skip reasons: `SKIP_HIDDEN`, `SKIP_EXCLUDED_DIR`, `SKIP_SENSITIVE`, `SKIP_GITIGNORED`, `SKIP_EXCLUDED_GLOB`, `SKIP_EXCLUDED_EXT`, `SKIP_UNREADABLE`, `SKIP_OVERSIZE`, `SKIP_OUTSIDE_ROOT`, `SKIP_MISSING`, `SKIP_NOT_FILE`, `SKIP_UNKNOWN` (fallback when a skip reason cannot be mapped to a specific code)
 - Included-file outcomes: `OUTCOME_TRUNCATED`, `OUTCOME_REDACTED`, `OUTCOME_CONVERSION_WARNING`
+- Warning taxonomy codes:
+  `encoding_fallback`, `converter_unavailable`, `ocr_disabled`, `ocr_dependencies_missing`, `ocr_initialization_failed`, `ocr_failed`, `ocr_no_text`, `unclassified_warning`
 - Policy finding reason codes: `POLICY_RULE_MATCH`, `POLICY_SKIP_REASON_MATCH`, `POLICY_CONTENT_REGEX_MATCH`, `POLICY_FILE_SIZE_EXCEEDED`, `POLICY_TOTAL_BYTES_EXCEEDED`, `POLICY_FILE_COUNT_EXCEEDED`
 
 ## Policy Engine Core
