@@ -333,7 +333,8 @@ foldermix pack . \
 Semantics:
 
 - `--fail-on-policy-violation` enables enforcement mode.
-- `--policy-fail-level` sets the minimum severity that fails the command (`low`, `medium`, `high`, `critical`).
+- Only policy findings with `action = "deny"` are enforcement-failing.
+- `--policy-fail-level` sets the minimum severity for those deny findings (`low`, `medium`, `high`, `critical`).
 - Findings are still reported in terminal summary and `--report` output before exiting.
 - Enforcement failures exit with code `4`.
 

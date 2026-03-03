@@ -56,6 +56,14 @@ def _count_failing_policy_findings(
     return failing_count
 
 
+def _deny_policy_findings(policy_findings: list[dict[str, object]]) -> list[dict[str, object]]:
+    return [
+        finding
+        for finding in policy_findings
+        if isinstance(finding.get("action"), str) and finding.get("action") == "deny"
+    ]
+
+
 def _format_policy_severity_summary(by_severity: dict[str, int]) -> str:
     ordered_keys = [key for key in _POLICY_SEVERITY_ORDER if key in by_severity]
     ordered_keys.extend(sorted(key for key in by_severity if key not in _POLICY_SEVERITY_RANK))
@@ -398,14 +406,15 @@ def pack(config: PackConfig) -> None:
         console.print(f"Report written to {config.report}")
 
     if config.fail_on_policy_violation and policy_finding_entries:
+        deny_policy_findings = _deny_policy_findings(policy_finding_entries)
         failing_count = _count_failing_policy_findings(
-            policy_finding_entries,
+            deny_policy_findings,
             min_severity=config.policy_fail_level,
         )
         if failing_count > 0:
             console.print(
                 "[red]Policy enforcement failed:[/red] "
-                f"{failing_count} finding(s) at or above "
+                f"{failing_count} deny finding(s) at or above "
                 f"--policy-fail-level={config.policy_fail_level!r}"
             )
             raise typer.Exit(code=4)
