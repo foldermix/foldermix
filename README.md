@@ -18,7 +18,7 @@ pip install "foldermix[office]" # docx/xlsx/pptx support
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew tap shaypal5/tap
+brew tap foldermix/foldermix
 brew install foldermix
 ```
 
@@ -436,9 +436,9 @@ tests/integration/fixtures/
 - **`package-smoke`** – Builds a wheel with `python -m build`, installs it in a clean venv, then exercises the CLI with black-box shell assertions.
 - **`full`** – Runs the complete pytest suite with `--cov-report=xml` and uploads the coverage report to Codecov. Requires all earlier jobs to pass.
 - **`publish-pypi`** – Runs only on pushes to `main`. Detects a version bump in `pyproject.toml` by comparing `HEAD` against `HEAD^`. If a bump is detected, builds and publishes to PyPI via OIDC trusted publishing.
-- **`update-homebrew-tap`** – Runs after a successful `publish-pypi`. Calls `scripts/render_homebrew_formula.py` to generate a new Homebrew formula and pushes it to `shaypal5/homebrew-tap` using the `HOMEBREW_TAP_GITHUB_TOKEN` secret.
+- **`update-homebrew-tap`** – Runs after a successful `publish-pypi`. Calls `scripts/render_homebrew_formula.py` to generate a new Homebrew formula and pushes it to `foldermix/homebrew-foldermix` using the `HOMEBREW_TAP_GITHUB_TOKEN` secret.
 - **`release-consumer-smoke-pypi`** – Runs on release publish pushes (`main` + version bump). Installs `foldermix==<released_version>` from PyPI on Linux and runs black-box `version`/`list`/`pack` checks.
-- **`release-consumer-smoke-homebrew`** – Runs on release publish pushes after tap update. Installs from `shaypal5/tap` on macOS and runs black-box `version`/`list`/`pack` checks.
+- **`release-consumer-smoke-homebrew`** – Runs on release publish pushes after tap update. Installs from `foldermix/foldermix` on macOS and runs black-box `version`/`list`/`pack` checks.
 - Both release-consumer jobs upload diagnostic artifacts (`release-consumer-logs`) to simplify install/runtime failure triage.
 
 ### Release PR Process
@@ -467,7 +467,7 @@ A release is triggered by merging a PR to `main` that bumps the `version` field 
 
 5. **Merge to `main`**. The `publish-pypi` job will detect the version bump, build the wheel, and publish to PyPI automatically. The `update-homebrew-tap` job will then update the Homebrew formula, and release-consumer smoke jobs will validate fresh installs from PyPI and, when tap credentials are configured, from Homebrew.
 
-> **Note:** If `HOMEBREW_TAP_GITHUB_TOKEN` is not configured, both tap update and Homebrew release-consumer smoke are skipped. Configure it as a repository secret with write access to `shaypal5/homebrew-tap` before the first release.
+> **Note:** If `HOMEBREW_TAP_GITHUB_TOKEN` is not configured, both tap update and Homebrew release-consumer smoke are skipped. Configure it as a repository secret with write access to `foldermix/homebrew-foldermix` before the first release.
 
 ## License
 

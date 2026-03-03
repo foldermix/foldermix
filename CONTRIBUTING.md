@@ -65,7 +65,7 @@ On `main` pushes that bump `pyproject.toml` version:
 
 Required one-time setup:
 
-- Create tap repo: `shaypal5/homebrew-tap`.
+- Create tap repo: `foldermix/homebrew-foldermix`.
 - Add Actions secret in this repo:
   - `HOMEBREW_TAP_GITHUB_TOKEN`: classic PAT (or fine-grained token) with write access to the tap repo.
 
