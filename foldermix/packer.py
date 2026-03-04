@@ -29,6 +29,7 @@ from .report import (
 )
 from .scanner import FileRecord, scan
 from .utils import mtime_iso, sha256_file, utcnow_iso
+from .warning_taxonomy import normalize_warning_entries
 from .writers.base import FileBundleItem, HeaderInfo
 from .writers.jsonl_writer import JsonlWriter
 from .writers.markdown_writer import MarkdownWriter
@@ -195,6 +196,7 @@ def _convert_record(
         converter_name=converter_name,
         original_mime=original_mime,
         warnings=warnings,
+        warning_entries=normalize_warning_entries(warnings),
         truncated=truncated,
         redacted=redacted,
     )
@@ -380,7 +382,7 @@ def pack(config: PackConfig) -> None:
                 ext=item.ext,
                 truncated=item.truncated,
                 redacted=item.redacted,
-                warning_messages=item.warnings,
+                warning_entries=item.warning_entries,
                 redact_mode=config.redact,
             )
             for item in items

@@ -30,6 +30,7 @@ class JsonlWriter(Writer):
                 "converter": item.converter_name,
                 "original_mime": item.original_mime,
                 "warnings": item.warnings,
+                "warning_entries": item.warning_entries,
                 "truncated": item.truncated,
                 "content": item.content,
             }

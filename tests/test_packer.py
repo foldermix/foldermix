@@ -103,6 +103,7 @@ def test_pack_continue_on_error_true_writes_error_item(tmp_path: Path, monkeypat
     assert file_line["converter"] == "error"
     assert "Error converting file: boom" in file_line["content"]
     assert file_line["warnings"] == ["boom"]
+    assert file_line["warning_entries"] == [{"code": "unclassified_warning", "message": "boom"}]
 
 
 def test_pack_report_included_count_matches_written_items_on_post_convert_error(
@@ -157,7 +158,7 @@ def test_pack_writes_report_json(tmp_path: Path) -> None:
     packer.pack(config)
 
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["schema_version"] == 3
+    assert report["schema_version"] == 4
     assert report["included_count"] == 1
     assert report["skipped_count"] == 1
     assert report["included_files"] == [
@@ -166,6 +167,7 @@ def test_pack_writes_report_json(tmp_path: Path) -> None:
             "size": 3,
             "ext": ".txt",
             "outcome_codes": [],
+            "warning_codes": [],
             "outcomes": [],
         }
     ]
@@ -178,6 +180,7 @@ def test_pack_writes_report_json(tmp_path: Path) -> None:
         }
     ]
     assert report["reason_code_counts"] == {"SKIP_EXCLUDED_EXT": 1}
+    assert report["warning_code_counts"] == {}
 
 
 def test_pack_report_includes_structured_outcomes(tmp_path: Path) -> None:
@@ -207,16 +210,20 @@ def test_pack_report_includes_structured_outcomes(tmp_path: Path) -> None:
     assert "OUTCOME_REDACTED" in by_path["big.txt"]["outcome_codes"]
     assert "OUTCOME_CONVERSION_WARNING" in by_path["latin1.txt"]["outcome_codes"]
 
-    warning_messages = [
-        outcome["message"]
+    warning_outcomes = [
+        outcome
         for outcome in by_path["latin1.txt"]["outcomes"]
         if outcome["code"] == "OUTCOME_CONVERSION_WARNING"
     ]
+    warning_messages = [outcome["message"] for outcome in warning_outcomes]
     assert any("Encoding fallback" in message for message in warning_messages)
+    assert [outcome.get("warning_code") for outcome in warning_outcomes] == ["encoding_fallback"]
 
     assert report["reason_code_counts"]["OUTCOME_TRUNCATED"] == 1
     assert report["reason_code_counts"]["OUTCOME_REDACTED"] == 1
     assert report["reason_code_counts"]["OUTCOME_CONVERSION_WARNING"] == 1
+    assert report["reason_code_counts"]["encoding_fallback"] == 1
+    assert report["warning_code_counts"] == {"encoding_fallback": 1}
 
 
 def test_pack_report_includes_policy_findings(tmp_path: Path) -> None:
@@ -261,7 +268,7 @@ def test_pack_report_includes_policy_findings(tmp_path: Path) -> None:
     packer.pack(config)
 
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["schema_version"] == 3
+    assert report["schema_version"] == 4
     assert len(report["policy_findings"]) == 3
     assert report["policy_finding_counts"] == {
         "total": 3,

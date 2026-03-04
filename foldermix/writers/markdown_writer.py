@@ -81,9 +81,16 @@ class MarkdownWriter(Writer):
                 out.write(f"- **Converter**: {item.converter_name}\n")
             if item.truncated:
                 out.write("- **⚠️ TRUNCATED**\n")
-            if item.warnings:
-                for w in item.warnings:
-                    out.write(f"- **⚠️ Warning**: {w}\n")
+            if item.warning_entries:
+                for warning in item.warning_entries:
+                    raw_code = warning.get("code", "")
+                    code = str(raw_code).strip() or "unclassified_warning"
+                    raw_message = warning.get("message")
+                    message = "" if raw_message is None else str(raw_message)
+                    out.write(f"- **⚠️ Warning [{code}]**: {message}\n")
+            elif item.warnings:
+                for warning in item.warnings:
+                    out.write(f"- **⚠️ Warning**: {warning}\n")
             out.write("\n")
 
             lang = LANG_MAP.get(item.ext, "")

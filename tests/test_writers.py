@@ -187,6 +187,7 @@ class TestJsonlWriter:
         assert file_line["type"] == "file"
         assert file_line["path"] == "hello.py"
         assert "print('hello')" in file_line["content"]
+        assert file_line["warning_entries"] == []
 
     def test_empty_items(self) -> None:
         writer = JsonlWriter()
