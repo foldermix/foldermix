@@ -195,7 +195,8 @@ def test_pack_writes_report_json(tmp_path: Path) -> None:
 
 
 def test_pack_report_includes_structured_outcomes(tmp_path: Path) -> None:
-    (tmp_path / "big.txt").write_text("Contact foo@example.com.\n" * 32, encoding="utf-8")
+    # Write bytes directly so truncation/redaction counts are stable on LF/CRLF platforms.
+    (tmp_path / "big.txt").write_bytes(b"Contact foo@example.com.\n" * 32)
     (tmp_path / "latin1.txt").write_bytes("café\n".encode("latin-1"))
     out_path = tmp_path / "out.jsonl"
     report_path = tmp_path / "report.json"
