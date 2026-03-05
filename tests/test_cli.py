@@ -63,6 +63,32 @@ def test_pack_rejects_invalid_policy_fail_level(tmp_path: Path) -> None:
     assert "--help" in result.output
 
 
+def test_pack_rejects_invalid_policy_output(tmp_path: Path) -> None:
+    result = runner.invoke(app, ["pack", str(tmp_path), "--policy-output", "yaml"])
+    assert result.exit_code == 1
+    assert "Invalid --policy-output" in result.output
+    assert "text, json" in result.output
+    assert "--help" in result.output
+
+
+def test_pack_rejects_policy_output_without_policy_dry_run(tmp_path: Path) -> None:
+    result = runner.invoke(app, ["pack", str(tmp_path), "--policy-output", "json"])
+    assert result.exit_code == 1
+    assert "--policy-output requires --policy-dry-run" in result.output
+
+
+def test_pack_rejects_policy_output_text_without_policy_dry_run(tmp_path: Path) -> None:
+    result = runner.invoke(app, ["pack", str(tmp_path), "--policy-output", "text"])
+    assert result.exit_code == 1
+    assert "--policy-output requires --policy-dry-run" in result.output
+
+
+def test_pack_rejects_combining_dry_run_and_policy_dry_run(tmp_path: Path) -> None:
+    result = runner.invoke(app, ["pack", str(tmp_path), "--dry-run", "--policy-dry-run"])
+    assert result.exit_code == 1
+    assert "--dry-run cannot be combined with --policy-dry-run" in result.output
+
+
 def test_pack_builds_config_and_calls_packer(monkeypatch, tmp_path: Path) -> None:
     captured = {}
 
@@ -95,6 +121,9 @@ def test_pack_builds_config_and_calls_packer(monkeypatch, tmp_path: Path) -> Non
             "--fail-on-policy-violation",
             "--policy-fail-level",
             "high",
+            "--policy-dry-run",
+            "--policy-output",
+            "json",
         ],
     )
 
@@ -113,6 +142,8 @@ def test_pack_builds_config_and_calls_packer(monkeypatch, tmp_path: Path) -> Non
     assert config.pdf_ocr_strict is True
     assert config.fail_on_policy_violation is True
     assert config.policy_fail_level == "high"
+    assert config.policy_dry_run is True
+    assert config.policy_output == "json"
 
 
 def test_pack_loads_values_from_config_file(monkeypatch, tmp_path: Path) -> None:
@@ -135,6 +166,8 @@ def test_pack_loads_values_from_config_file(monkeypatch, tmp_path: Path) -> None
                 'policy_pack = "legal-hold"',
                 "fail_on_policy_violation = true",
                 'policy_fail_level = "critical"',
+                "policy_dry_run = true",
+                'policy_output = "json"',
                 "",
                 "[[pack.policy_rules]]",
                 'rule_id = "scan-large"',
@@ -158,6 +191,8 @@ def test_pack_loads_values_from_config_file(monkeypatch, tmp_path: Path) -> None
     assert config.policy_pack == "legal-hold"
     assert config.fail_on_policy_violation is True
     assert config.policy_fail_level == "critical"
+    assert config.policy_dry_run is True
+    assert config.policy_output == "json"
     assert config.policy_rules == [
         {
             "rule_id": "scan-large",
@@ -268,6 +303,24 @@ def test_pack_applies_config_only_fields_encoding_and_line_ending(
     config = captured["config"]
     assert config.encoding == "latin-1"
     assert config.line_ending == "crlf"
+
+
+def test_pack_rejects_configured_policy_output_without_policy_dry_run(tmp_path: Path) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                'policy_output = "text"',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["pack", str(tmp_path), "--config", str(config_path)])
+    assert result.exit_code == 1
+    assert "--policy-output requires --policy-dry-run" in result.output
 
 
 def test_pack_print_effective_config_outputs_sources_and_exits(monkeypatch, tmp_path: Path) -> None:
@@ -567,6 +620,8 @@ def test_pack_help_all_options_documented(tmp_path: Path) -> None:
     assert "--stdin" in output
     assert "--null" in output
     assert "--policy-fail-level" in output
+    assert "--policy-dry-run" in output
+    assert "--policy-output" in output
 
 
 def test_list_help_all_options_documented() -> None:

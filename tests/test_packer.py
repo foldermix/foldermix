@@ -43,6 +43,113 @@ def test_pack_dry_run_does_not_write_output(tmp_path: Path) -> None:
     assert not out_path.exists()
 
 
+def test_pack_policy_dry_run_text_summarizes_findings_and_skips_output(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _write(tmp_path / "a.txt", "TOP_SECRET_123\n")
+    out_path = tmp_path / "out.md"
+    config = PackConfig(
+        root=tmp_path,
+        out=out_path,
+        workers=1,
+        policy_dry_run=True,
+        policy_output="text",
+        policy_rules=[
+            {
+                "rule_id": "convert-secret",
+                "description": "Flag secret marker",
+                "stage": "convert",
+                "content_regex": "SECRET_[0-9]+",
+                "severity": "high",
+                "action": "deny",
+            },
+            {
+                "rule_id": "pack-total",
+                "description": "Total bytes too high",
+                "stage": "pack",
+                "max_total_bytes": 1,
+                "severity": "low",
+                "action": "warn",
+            },
+        ],
+    )
+
+    packer.pack(config)
+
+    assert not out_path.exists()
+    captured = capsys.readouterr()
+    assert "Policy dry run complete." in captured.err
+    assert "Policy findings: 2" in captured.err
+    assert captured.err.count("Policy findings:") == 1
+    assert "Affected files: 1" in captured.err
+    assert "a.txt" in captured.err
+    assert "Non-file findings: 1" in captured.err
+
+
+def test_pack_policy_dry_run_json_emits_machine_readable_output(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _write(tmp_path / "a.txt", "TOP_SECRET_123\n")
+    out_path = tmp_path / "out.md"
+    config = PackConfig(
+        root=tmp_path,
+        out=out_path,
+        workers=1,
+        policy_dry_run=True,
+        policy_output="json",
+        policy_rules=[
+            {
+                "rule_id": "convert-secret",
+                "description": "Flag secret marker",
+                "stage": "convert",
+                "content_regex": "SECRET_[0-9]+",
+                "severity": "high",
+                "action": "deny",
+            }
+        ],
+    )
+
+    packer.pack(config)
+
+    assert not out_path.exists()
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert payload["mode"] == "policy_dry_run"
+    assert payload["finding_count"] == 1
+    assert payload["by_stage"] == {"convert": 1}
+    assert payload["affected_files"] == [{"path": "a.txt", "finding_count": 1}]
+    assert payload["findings"][0]["rule_id"] == "convert-secret"
+    assert "Policy findings:" not in captured.err
+
+
+def test_pack_policy_dry_run_text_handles_zero_findings(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _write(tmp_path / "a.txt", "hello\n")
+    config = PackConfig(
+        root=tmp_path,
+        workers=1,
+        policy_dry_run=True,
+        policy_output="text",
+        policy_rules=[
+            {
+                "rule_id": "md-only",
+                "description": "Only match markdown files",
+                "stage": "convert",
+                "path_glob": "*.md",
+                "severity": "low",
+                "action": "warn",
+            }
+        ],
+    )
+
+    packer.pack(config)
+
+    captured = capsys.readouterr()
+    assert "Policy findings: 0" in captured.err
+    assert "Affected files: 0" in captured.err
+
+
 def test_pack_respects_max_files_limit(tmp_path: Path) -> None:
     _write(tmp_path / "a.txt", "hello\n")
     config = PackConfig(root=tmp_path, max_files=0, workers=1)
@@ -534,6 +641,33 @@ def test_pack_policy_enforcement_ignores_warn_findings(tmp_path: Path) -> None:
     assert out_path.exists()
 
 
+def test_pack_policy_dry_run_honors_enforcement_threshold(tmp_path: Path) -> None:
+    (tmp_path / "secret.txt").write_text("token SECRET_123\n", encoding="utf-8")
+    config = PackConfig(
+        root=tmp_path,
+        workers=1,
+        policy_dry_run=True,
+        policy_output="json",
+        fail_on_policy_violation=True,
+        policy_fail_level="high",
+        policy_rules=[
+            {
+                "rule_id": "deny-secret",
+                "description": "Reject secret marker",
+                "stage": "convert",
+                "content_regex": "SECRET_[0-9]+",
+                "severity": "high",
+                "action": "deny",
+            }
+        ],
+    )
+
+    with pytest.raises(typer.Exit) as exc_info:
+        packer.pack(config)
+
+    assert exc_info.value.exit_code == 4
+
+
 def test_pack_policy_findings_do_not_fail_without_enforcement_flag(tmp_path: Path) -> None:
     (tmp_path / "data.txt").write_text("token SECRET_123\n", encoding="utf-8")
     out_path = tmp_path / "out.jsonl"
@@ -591,6 +725,18 @@ def test_format_policy_severity_summary_orders_by_defined_severity() -> None:
         {"critical": 2, "low": 1, "zzz": 3, "medium": 4}
     )
     assert summary == "low=1, medium=4, critical=2, zzz=3"
+
+
+def test_build_policy_stage_counts_ignores_non_string_stage_values() -> None:
+    counts = packer._build_policy_stage_counts(
+        [
+            {"stage": "convert"},
+            {"stage": 1},
+            {},
+        ]
+    )
+
+    assert counts == {"convert": 1}
 
 
 def test_pack_keeps_deterministic_order_after_parallel_conversion(
