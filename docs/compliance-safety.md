@@ -48,7 +48,7 @@ Policy data appears in:
 
 - `policy_findings[]`: one entry per finding (`rule_id`, `severity`, `action`, `stage`, `path`, `reason_code`, `message`)
 - `policy_finding_counts`: aggregate counters (`total`, `by_severity`, `by_action`, `by_reason_code`)
-- `reason_code_counts`: cross-cutting skip/outcome/policy event totals
+- `reason_code_counts`: cross-cutting skip/outcome/warning reason-code totals (policy reason codes are under `policy_finding_counts.by_reason_code`)
 - `warning_code_counts`: extraction/conversion warning totals
 
 Recommended review order:
