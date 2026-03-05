@@ -340,10 +340,12 @@ jobs:
         if: steps.tap_guard.outputs.tap_update_enabled == 'true'
         env:
           TAP_REMOTE_URL: https://x-access-token:${{ env.HOMEBREW_TAP_GITHUB_TOKEN }}@github.com/${{ env.TAP_REPOSITORY }}.git
+          TAP_BRANCH: ${{ steps.tap_repo_ref.outputs.tap_branch }}
+          TAP_HAS_BRANCH: ${{ steps.tap_repo_ref.outputs.tap_repo_has_branch }}
         run: |
           set -euo pipefail
-          tap_branch="${{ steps.tap_repo_ref.outputs.tap_branch }}"
-          if [ "${{ steps.tap_repo_ref.outputs.tap_repo_has_branch }}" != "true" ]; then
+          tap_branch="${TAP_BRANCH}"
+          if [ "${TAP_HAS_BRANCH}" != "true" ]; then
             rm -rf homebrew-tap
             git init homebrew-tap
             cd homebrew-tap
