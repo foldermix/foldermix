@@ -695,6 +695,28 @@ def test_preview_respects_explicit_path_order_for_jsonl(tmp_path: Path) -> None:
     assert json.loads(lines[2])["path"] == "a.txt"
 
 
+def test_preview_deduplicates_duplicate_explicit_paths(tmp_path: Path) -> None:
+    (tmp_path / "a.txt").write_text("A", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "preview",
+            str(tmp_path),
+            "a.txt",
+            "a.txt",
+            "--format",
+            "jsonl",
+            "--no-include-sha256",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    lines = [line for line in result.output.splitlines() if line.strip()]
+    assert len(lines) == 2
+    assert json.loads(lines[1])["path"] == "a.txt"
+
+
 def test_preview_reads_file_paths_from_stdin(tmp_path: Path) -> None:
     (tmp_path / "a.txt").write_text("A", encoding="utf-8")
     (tmp_path / "b.txt").write_text("B", encoding="utf-8")
