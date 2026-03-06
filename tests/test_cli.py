@@ -556,8 +556,10 @@ def test_list_rejects_non_positive_max_bytes_cli(tmp_path: Path) -> None:
     result = runner.invoke(app, ["list", str(tmp_path), "--max-bytes", "0"])
 
     assert result.exit_code == 2
-    assert "Invalid value for '--max-bytes'" in result.output
-    assert "x>=1" in result.output
+    output = _strip_ansi(result.output)
+    assert "Invalid value for" in output
+    assert "--max-bytes" in output
+    assert "x>=1" in output
 
 
 def test_list_rejects_non_positive_max_bytes_from_pack_config(tmp_path: Path) -> None:
