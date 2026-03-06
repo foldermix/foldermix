@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict
+from io import StringIO
 from pathlib import Path
 from typing import cast
 
@@ -381,6 +382,25 @@ def _convert_record(
         redaction_event_count=redaction_event_count,
         redaction_categories=redaction_categories,
     )
+
+
+def render_preview(config: PackConfig, records: list[FileRecord]) -> str:
+    """Render selected records into the configured output format."""
+    registry = _build_registry()
+    writer = _get_writer(config.format, include_toc=config.include_toc)
+    items = [_convert_record(record, registry, config) for record in records]
+    total_bytes = sum(item.size_bytes for item in items)
+    header = HeaderInfo(
+        root=str(config.root),
+        generated_at=utcnow_iso(),
+        version=__version__,
+        args={},
+        file_count=len(items),
+        total_bytes=total_bytes,
+    )
+    output = StringIO()
+    writer.write(output, header, items)
+    return output.getvalue()
 
 
 def pack(config: PackConfig) -> None:

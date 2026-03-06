@@ -13,7 +13,7 @@ For a deeper orientation see [docs/agents.md](docs/agents.md).
 - Purpose: pack folders into LLM-friendly output formats (`md`, `xml`, `jsonl`)
 - Python: `>=3.10`
 - Optional extras: `pdf`, `ocr`, `office`, `markitdown`, `all`
-- Entry point: `foldermix` CLI (`foldermix/cli.py`) — commands: `init`, `pack`, `list`, `skiplist`, `stats`, `version`
+- Entry point: `foldermix` CLI (`foldermix/cli.py`) — commands: `init`, `pack`, `list`, `skiplist`, `preview`, `stats`, `version`
 
 ## Repository layout
 

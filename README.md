@@ -82,6 +82,7 @@ foldermix pack . --config foldermix.toml --print-effective-config
 ```bash
 foldermix list . --config foldermix.toml
 foldermix skiplist . --config foldermix.toml
+foldermix preview . README.md
 foldermix stats . --config foldermix.toml
 ```
 
@@ -244,6 +245,28 @@ foldermix skiplist [OPTIONS] [PATH]
   --hidden
   --respect-gitignore / --no-respect-gitignore
   --conversion-check / --scan-only
+  --stdin
+  --null
+  --print-effective-config
+
+foldermix preview [OPTIONS] [PATH] [FILES]...
+  --config PATH
+  --format TEXT
+  --include-ext TEXT
+  --exclude-ext TEXT
+  --hidden
+  --respect-gitignore / --no-respect-gitignore
+  --max-bytes INTEGER
+  --on-oversize TEXT
+  --continue-on-error
+  --redact TEXT
+  --drop-line-containing TEXT
+  --min-line-length INTEGER
+  --strip-frontmatter
+  --include-sha256 / --no-include-sha256
+  --include-toc / --no-include-toc
+  --pdf-ocr / --no-pdf-ocr
+  --pdf-ocr-strict / --no-pdf-ocr-strict
   --stdin
   --null
   --print-effective-config
@@ -525,7 +548,7 @@ python -m mutmut results
 
 | File | Marker | What it covers |
 |------|--------|----------------|
-| `test_cli.py` | — | CLI argument validation, config construction, `pack`/`list`/`stats`/`version` commands |
+| `test_cli.py` | — | CLI argument validation, config construction, `pack`/`list`/`skiplist`/`preview`/`stats`/`version` commands |
 | `test_cli_entrypoint.py` | — | CLI entry-point smoke (`foldermix --help`) |
 | `test_converters.py` | — | Converter registry: PDF, Office, markitdown, plain-text |
 | `test_converters_fallback.py` | — | Fallback behaviour when optional extras are absent |

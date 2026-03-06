@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shlex
 import sys
 from pathlib import Path
@@ -30,6 +31,7 @@ app = typer.Typer(
         "  pack    – Scan a directory and write all files into one output file.\n\n"
         "  list    – Preview which files would be included without packing.\n\n"
         "  skiplist – Preview which files would be skipped, with reasons.\n\n"
+        "  preview – Render selected files to stdout in pack output format.\n\n"
         "  stats   – Show file-count and byte-size statistics for a directory.\n\n"
         "  version – Print the installed foldermix version.\n\n"
         "Run 'foldermix COMMAND --help' for detailed options on any command.\n\n"
@@ -192,6 +194,33 @@ def _build_skiplist_entries(
             converter_missing_count += 1
     entries.sort(key=lambda entry: entry["path"].casefold())
     return entries, converter_missing_count
+
+
+def _resolve_preview_paths(root: Path, files: list[Path]) -> list[Path]:
+    resolved: list[Path] = []
+    for file_path in files:
+        candidate = file_path.expanduser()
+        if not candidate.is_absolute():
+            candidate = root / candidate
+        resolved.append(candidate.resolve())
+    return resolved
+
+
+def _sort_records_by_explicit_path_order(
+    records: list[FileRecord], explicit_paths: list[Path]
+) -> list[FileRecord]:
+    order: dict[str, int] = {}
+    for idx, path in enumerate(explicit_paths):
+        key = os.path.normcase(str(path))
+        if key not in order:
+            order[key] = idx
+    return sorted(
+        records,
+        key=lambda record: (
+            order.get(os.path.normcase(str(record.path.resolve())), len(order)),
+            record.relpath.casefold(),
+        ),
+    )
 
 
 @app.command("pack")
@@ -833,6 +862,252 @@ def skiplist_cmd(
         )
     else:
         console.print(f"\n{len(skip_entries)} files would be skipped.")
+
+
+@app.command("preview")
+def preview_cmd(
+    ctx: typer.Context,
+    path: Path = typer.Argument(
+        Path("."), help="Directory root used to resolve relative file paths"
+    ),
+    files: list[Path] | None = typer.Argument(
+        None,
+        help=(
+            "One or more file paths to preview. Relative paths are resolved against PATH. "
+            "Can be combined with --stdin."
+        ),
+    ),
+    config_path: Path | None = typer.Option(
+        None, "--config", help="Path to a foldermix TOML config file"
+    ),
+    format: str = typer.Option(
+        "md", "--format", "-f", help="Output format: md, xml, jsonl [default: md]"
+    ),
+    include_ext: str | None = typer.Option(
+        None, "--include-ext", help="Comma-separated file extensions to include (e.g. '.py,.md')"
+    ),
+    exclude_ext: str | None = typer.Option(
+        None, "--exclude-ext", help="Comma-separated file extensions to exclude (e.g. '.png,.zip')"
+    ),
+    hidden: bool = typer.Option(
+        False, "--hidden", help="Include hidden files and directories (names starting with '.')"
+    ),
+    respect_gitignore: bool = typer.Option(
+        True,
+        "--respect-gitignore/--no-respect-gitignore",
+        help="Skip files listed in .gitignore [default: respect]",
+    ),
+    max_bytes: int = typer.Option(
+        10_000_000,
+        "--max-bytes",
+        help="Maximum size in bytes (10 MB) for a single file [default: 10_000_000]",
+    ),
+    on_oversize: str = typer.Option(
+        "skip",
+        "--on-oversize",
+        help="What to do when a file exceeds --max-bytes: skip, truncate [default: skip]",
+    ),
+    continue_on_error: bool = typer.Option(
+        False,
+        "--continue-on-error",
+        help="Skip files that fail to read or convert instead of aborting",
+    ),
+    redact: str = typer.Option(
+        "none",
+        "--redact",
+        help="Redact sensitive patterns before rendering: none, emails, phones, all [default: none]",
+    ),
+    drop_line_containing: list[str] | None = typer.Option(
+        None,
+        "--drop-line-containing",
+        help=(
+            "Drop lines that contain any provided literal substring. "
+            "May be repeated; each value can also be comma-separated."
+        ),
+    ),
+    min_line_length: int = typer.Option(
+        0,
+        "--min-line-length",
+        help="Drop lines shorter than this length [default: 0]",
+    ),
+    strip_frontmatter: bool = typer.Option(
+        False,
+        "--strip-frontmatter",
+        help="Strip YAML frontmatter blocks from Markdown files before rendering",
+    ),
+    include_sha256: bool = typer.Option(
+        True,
+        "--include-sha256/--no-include-sha256",
+        help="Include SHA-256 checksums in output [default: include]",
+    ),
+    include_toc: bool = typer.Option(
+        True,
+        "--include-toc/--no-include-toc",
+        help="Include a TOC in Markdown output [default: include]",
+    ),
+    pdf_ocr: bool = typer.Option(
+        False,
+        "--pdf-ocr/--no-pdf-ocr",
+        help="Attempt OCR for PDFs when dependencies are installed [default: disabled]",
+    ),
+    pdf_ocr_strict: bool = typer.Option(
+        False,
+        "--pdf-ocr-strict/--no-pdf-ocr-strict",
+        help="Fail conversion when OCR is required but unavailable [default: disabled]",
+    ),
+    stdin: bool = typer.Option(
+        False,
+        "--stdin",
+        help="Read additional file paths from standard input.",
+    ),
+    null_delimited: bool = typer.Option(
+        False,
+        "--null",
+        help="Parse stdin paths as NUL-delimited entries (compatible with find -print0). Requires --stdin.",
+    ),
+    print_effective_config: bool = typer.Option(
+        False,
+        "--print-effective-config",
+        help="Print merged effective configuration with value sources and exit",
+    ),
+) -> None:
+    """Render selected file(s) to stdout in packed-output format.
+
+    Examples:
+
+    \b
+      # Preview a single file as Markdown (default)
+      foldermix preview . README.md
+
+    \b
+      # Preview multiple files as JSONL
+      foldermix preview . src/a.py src/b.py --format jsonl
+
+    \b
+      # Preview files from stdin
+      printf 'README.md\nsrc/a.py\n' | foldermix preview . --stdin
+    """
+    from .packer import render_preview
+    from .scanner import scan
+
+    values: dict[str, object] = {
+        "root": path,
+        "format": format,
+        "include_ext": _parse_csv(include_ext),
+        "exclude_ext": _parse_csv(exclude_ext) or list(DEFAULT_EXCLUDE_EXT),
+        "hidden": hidden,
+        "respect_gitignore": respect_gitignore,
+        "line_ending": "lf",
+        "encoding": "utf-8",
+        "max_bytes": max_bytes,
+        "on_oversize": on_oversize,
+        "continue_on_error": continue_on_error,
+        "redact": redact,
+        "drop_line_containing": _parse_repeatable_csv(drop_line_containing),
+        "min_line_length": min_line_length,
+        "strip_frontmatter": strip_frontmatter,
+        "include_sha256": include_sha256,
+        "include_toc": include_toc,
+        "pdf_ocr": pdf_ocr,
+        "pdf_ocr_strict": pdf_ocr_strict,
+    }
+    try:
+        overrides, used_config_path = load_command_config(
+            "pack", root=path, config_path=config_path
+        )
+    except ConfigLoadError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1) from exc
+    merged = merge_config_layers(
+        ctx,
+        defaults=values,
+        config_overrides=overrides,
+        key_to_param_name=_PACK_PARAM_BY_KEY,
+    )
+    if print_effective_config:
+        _print_effective_config("preview", merged, used_config_path)
+        return
+    values = merged.values
+
+    if values["format"] not in ("md", "xml", "jsonl"):
+        console.print(
+            "[red]Invalid format:"
+            f" {values['format']!r}. Valid choices are: md, xml, jsonl.[/red]\n"
+            "Run 'foldermix preview --help' for full usage information."
+        )
+        raise typer.Exit(code=1)
+    if values["on_oversize"] not in ("skip", "truncate"):
+        console.print(
+            "[red]Invalid --on-oversize:"
+            f" {values['on_oversize']!r}. Valid choices are: skip, truncate.[/red]\n"
+            "Run 'foldermix preview --help' for full usage information."
+        )
+        raise typer.Exit(code=1)
+    if values["redact"] not in ("none", "emails", "phones", "all"):
+        console.print(
+            "[red]Invalid --redact:"
+            f" {values['redact']!r}. Valid choices are: none, emails, phones, all.[/red]\n"
+            "Run 'foldermix preview --help' for full usage information."
+        )
+        raise typer.Exit(code=1)
+    if values["min_line_length"] < 0:
+        console.print(
+            "[red]Invalid --min-line-length:"
+            f" {values['min_line_length']!r}. Value must be a non-negative integer.[/red]\n"
+            "Run 'foldermix preview --help' for full usage information."
+        )
+        raise typer.Exit(code=1)
+
+    arg_files = list(files or [])
+    stdin_paths = _read_stdin_paths(stdin, null_delimited) or []
+    explicit_paths = _resolve_preview_paths(path.resolve(), arg_files) + stdin_paths
+    if not explicit_paths:
+        console.print(
+            "[red]No input files provided.[/red]\n"
+            "Provide one or more FILE paths as arguments, or use --stdin."
+        )
+        raise typer.Exit(code=1)
+
+    preview_config = PackConfig(
+        root=values["root"],  # type: ignore[arg-type]
+        format=values["format"],  # type: ignore[arg-type]
+        include_ext=values["include_ext"],  # type: ignore[arg-type]
+        exclude_ext=values["exclude_ext"],  # type: ignore[arg-type]
+        hidden=values["hidden"],  # type: ignore[arg-type]
+        respect_gitignore=values["respect_gitignore"],  # type: ignore[arg-type]
+        line_ending=values["line_ending"],  # type: ignore[arg-type]
+        encoding=values["encoding"],  # type: ignore[arg-type]
+        max_bytes=values["max_bytes"],  # type: ignore[arg-type]
+        on_oversize=values["on_oversize"],  # type: ignore[arg-type]
+        continue_on_error=values["continue_on_error"],  # type: ignore[arg-type]
+        redact=values["redact"],  # type: ignore[arg-type]
+        drop_line_containing=values["drop_line_containing"],  # type: ignore[arg-type]
+        min_line_length=values["min_line_length"],  # type: ignore[arg-type]
+        strip_frontmatter=values["strip_frontmatter"],  # type: ignore[arg-type]
+        include_sha256=values["include_sha256"],  # type: ignore[arg-type]
+        include_toc=values["include_toc"],  # type: ignore[arg-type]
+        pdf_ocr=values["pdf_ocr"],  # type: ignore[arg-type]
+        pdf_ocr_strict=values["pdf_ocr_strict"],  # type: ignore[arg-type]
+        stdin_paths=explicit_paths,
+    )
+    included, skipped = scan(preview_config)
+    if skipped:
+        skip_entries = sorted(
+            (build_skipped_file_entry(path=skip.relpath, reason=skip.reason) for skip in skipped),
+            key=lambda entry: entry["path"].casefold(),
+        )
+        for entry in skip_entries:
+            console.print(
+                f"{entry['path']}  [{entry['reason_code']}] {entry['message']}",
+                markup=False,
+            )
+        console.print(
+            "\n[red]Preview aborted:[/red] one or more selected files cannot be previewed."
+        )
+        raise typer.Exit(code=1)
+
+    ordered_records = _sort_records_by_explicit_path_order(included, explicit_paths)
+    typer.echo(render_preview(preview_config, ordered_records), nl=False)
 
 
 @app.command("init")
