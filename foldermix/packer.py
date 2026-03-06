@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict
+from io import StringIO
 from pathlib import Path
 from typing import cast
 
@@ -381,6 +382,40 @@ def _convert_record(
         redaction_event_count=redaction_event_count,
         redaction_categories=redaction_categories,
     )
+
+
+def render_preview(config: PackConfig, records: list[FileRecord]) -> str:
+    """Render selected records into the configured output format."""
+    registry = _build_registry()
+    writer = _get_writer(config.format, include_toc=config.include_toc)
+    items: list[FileBundleItem] = []
+    errors: list[str] = []
+    for record in records:
+        try:
+            items.append(_convert_record(record, registry, config))
+        except Exception as exc:
+            errors.append(f"{record.relpath}: {exc}")
+            console.print(f"[red]Error[/red] converting {record.relpath}: {exc}")
+
+    if errors and not config.continue_on_error:
+        console.print(
+            f"[red]{len(errors)} preview conversion error(s). "
+            "Use --continue-on-error to skip.[/red]"
+        )
+        raise typer.Exit(code=2)
+
+    total_bytes = sum(item.size_bytes for item in items)
+    header = HeaderInfo(
+        root=str(config.root),
+        generated_at=utcnow_iso(),
+        version=__version__,
+        args={},
+        file_count=len(items),
+        total_bytes=total_bytes,
+    )
+    output = StringIO()
+    writer.write(output, header, items)
+    return output.getvalue()
 
 
 def pack(config: PackConfig) -> None:

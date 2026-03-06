@@ -613,6 +613,289 @@ def test_skiplist_conversion_check_uses_real_converter_registry(tmp_path: Path) 
     assert "supported converter." in result.output
 
 
+def test_preview_renders_selected_file_markdown_by_default(tmp_path: Path) -> None:
+    (tmp_path / "note.md").write_text("# Note\n", encoding="utf-8")
+
+    result = runner.invoke(app, ["preview", str(tmp_path), "note.md", "--no-include-sha256"])
+
+    assert result.exit_code == 0, result.output
+    assert "# FolderPack Context" in result.output
+    assert "## note.md" in result.output
+    assert "```markdown" in result.output
+
+
+def test_preview_rejects_invalid_format(tmp_path: Path) -> None:
+    (tmp_path / "note.md").write_text("# Note\n", encoding="utf-8")
+
+    result = runner.invoke(app, ["preview", str(tmp_path), "note.md", "--format", "bad"])
+
+    assert result.exit_code == 1
+    assert "Invalid format" in result.output
+    assert "md, xml, jsonl" in result.output
+
+
+def test_preview_rejects_invalid_on_oversize(tmp_path: Path) -> None:
+    (tmp_path / "note.md").write_text("# Note\n", encoding="utf-8")
+
+    result = runner.invoke(app, ["preview", str(tmp_path), "note.md", "--on-oversize", "bad"])
+
+    assert result.exit_code == 1
+    assert "Invalid --on-oversize" in result.output
+    assert "skip, truncate" in result.output
+
+
+def test_preview_rejects_invalid_redact(tmp_path: Path) -> None:
+    (tmp_path / "note.md").write_text("# Note\n", encoding="utf-8")
+
+    result = runner.invoke(app, ["preview", str(tmp_path), "note.md", "--redact", "bad"])
+
+    assert result.exit_code == 1
+    assert "Invalid --redact" in result.output
+    assert "none, emails, phones, all" in result.output
+
+
+def test_preview_rejects_negative_min_line_length(tmp_path: Path) -> None:
+    (tmp_path / "note.md").write_text("# Note\n", encoding="utf-8")
+
+    result = runner.invoke(app, ["preview", str(tmp_path), "note.md", "--min-line-length", "-1"])
+
+    assert result.exit_code == 1
+    assert "Invalid --min-line-length" in result.output
+    assert "non-negative integer" in result.output
+
+
+def test_preview_requires_input_paths(tmp_path: Path) -> None:
+    result = runner.invoke(app, ["preview", str(tmp_path)])
+
+    assert result.exit_code == 1
+    assert "No input files provided" in result.output
+    assert "--stdin" in result.output
+
+
+def test_preview_respects_explicit_path_order_for_jsonl(tmp_path: Path) -> None:
+    (tmp_path / "a.txt").write_text("A", encoding="utf-8")
+    (tmp_path / "b.txt").write_text("B", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "preview",
+            str(tmp_path),
+            "b.txt",
+            "a.txt",
+            "--format",
+            "jsonl",
+            "--no-include-sha256",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    lines = [line for line in result.output.splitlines() if line.strip()]
+    assert json.loads(lines[1])["path"] == "b.txt"
+    assert json.loads(lines[2])["path"] == "a.txt"
+
+
+def test_preview_deduplicates_duplicate_explicit_paths(tmp_path: Path) -> None:
+    (tmp_path / "a.txt").write_text("A", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "preview",
+            str(tmp_path),
+            "a.txt",
+            "a.txt",
+            "--format",
+            "jsonl",
+            "--no-include-sha256",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    lines = [line for line in result.output.splitlines() if line.strip()]
+    assert len(lines) == 2
+    assert json.loads(lines[1])["path"] == "a.txt"
+
+
+def test_preview_reads_file_paths_from_stdin(tmp_path: Path) -> None:
+    (tmp_path / "a.txt").write_text("A", encoding="utf-8")
+    (tmp_path / "b.txt").write_text("B", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        ["preview", str(tmp_path), "--stdin", "--format", "jsonl", "--no-include-sha256"],
+        input=f"{tmp_path / 'a.txt'}\n{tmp_path / 'b.txt'}\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    lines = [line for line in result.output.splitlines() if line.strip()]
+    assert json.loads(lines[0])["type"] == "header"
+    assert json.loads(lines[1])["path"] == "a.txt"
+    assert json.loads(lines[2])["path"] == "b.txt"
+
+
+def test_preview_stdin_relative_paths_resolve_against_preview_root(
+    tmp_path: Path, monkeypatch
+) -> None:
+    other_cwd = tmp_path / "elsewhere"
+    other_cwd.mkdir()
+    (tmp_path / "a.txt").write_text("A", encoding="utf-8")
+    monkeypatch.chdir(other_cwd)
+
+    result = runner.invoke(
+        app,
+        ["preview", str(tmp_path), "--stdin", "--format", "jsonl", "--no-include-sha256"],
+        input="a.txt\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    lines = [line for line in result.output.splitlines() if line.strip()]
+    assert json.loads(lines[1])["path"] == "a.txt"
+
+
+def test_preview_reports_missing_not_file_and_outside_root(tmp_path: Path) -> None:
+    root = tmp_path / "root"
+    root.mkdir()
+    outside_file = tmp_path / "outside.txt"
+    outside_file.write_text("outside", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "preview",
+            str(root),
+            "missing.txt",
+            ".",
+            str(outside_file),
+        ],
+    )
+
+    assert result.exit_code == 1, result.output
+    assert "SKIP_MISSING" in result.output
+    assert "SKIP_NOT_FILE" in result.output
+    assert "SKIP_OUTSIDE_ROOT" in result.output
+    assert "Preview aborted" in result.output
+
+
+def test_preview_print_effective_config_outputs_sources_and_exits(
+    monkeypatch, tmp_path: Path
+) -> None:
+    def fail_scan(_config):
+        raise AssertionError("scan() should not be called in --print-effective-config mode")
+
+    monkeypatch.setattr(scanner_module, "scan", fail_scan)
+
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                'format = "xml"',
+                "include_toc = false",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "preview",
+            str(tmp_path),
+            "file.txt",
+            "--config",
+            str(config_path),
+            "--format",
+            "jsonl",
+            "--print-effective-config",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    effective = payload["effective_config"]
+
+    assert payload["command"] == "preview"
+    assert effective["format"]["value"] == "jsonl"
+    assert effective["format"]["source"] == "cli"
+    assert effective["include_toc"]["value"] is False
+    assert effective["include_toc"]["source"] == "config"
+
+
+def test_preview_reports_invalid_config(tmp_path: Path) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                'hidden = "yes"',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        ["preview", str(tmp_path), "file.txt", "--config", str(config_path)],
+    )
+
+    assert result.exit_code == 1
+    assert "Invalid config at" in result.output
+    assert "hidden: expected a boolean" in result.output
+
+
+def test_preview_honors_pack_config_filter_overrides(tmp_path: Path) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "exclude_dirs = []",
+                'exclude_glob = ["*.tmp"]',
+                'include_glob = ["node_modules/**"]',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    included = tmp_path / "node_modules" / "keep.txt"
+    excluded = tmp_path / "other.tmp"
+    included.parent.mkdir(parents=True)
+    included.write_text("keep", encoding="utf-8")
+    excluded.write_text("skip", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "preview",
+            str(tmp_path),
+            "node_modules/keep.txt",
+            "--config",
+            str(config_path),
+            "--no-include-sha256",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "node_modules/keep.txt" in result.output
+
+    blocked_result = runner.invoke(
+        app,
+        [
+            "preview",
+            str(tmp_path),
+            "other.tmp",
+            "--config",
+            str(config_path),
+        ],
+    )
+
+    assert blocked_result.exit_code == 1, blocked_result.output
+    assert "SKIP_EXCLUDED_GLOB" in blocked_result.output
+
+
 def test_list_discovers_default_config(tmp_path: Path) -> None:
     config_path = tmp_path / "foldermix.toml"
     config_path.write_text(
@@ -824,6 +1107,21 @@ def test_skiplist_help_all_options_documented() -> None:
     assert "Examples:" in output
 
 
+def test_preview_help_all_options_documented() -> None:
+    result = runner.invoke(app, ["preview", "--help"])
+    assert result.exit_code == 0
+    output = _strip_ansi(result.output)
+    assert "--format" in output
+    assert "--include-ext" in output
+    assert "--exclude-ext" in output
+    assert "--max-bytes" in output
+    assert "--on-oversize" in output
+    assert "--redact" in output
+    assert "--stdin" in output
+    assert "--null" in output
+    assert "Examples:" in output
+
+
 def test_stats_help_all_options_documented() -> None:
     result = runner.invoke(app, ["stats", "--help"])
     assert result.exit_code == 0
@@ -843,6 +1141,7 @@ def test_root_help_lists_all_commands() -> None:
     assert "pack" in result.output
     assert "list" in result.output
     assert "skiplist" in result.output
+    assert "preview" in result.output
     assert "stats" in result.output
     assert "version" in result.output
     assert "foldermix COMMAND" in result.output
