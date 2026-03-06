@@ -9,7 +9,8 @@
 ```bash
 pip install foldermix
 # With optional extras:
-pip install "foldermix[all]"   # adds PDF, OCR, Office, tqdm
+pip install "foldermix[all]"   # adds PDF, OCR, Office, tqdm (excludes markitdown)
+pip install "foldermix[all,markitdown]"  # full optional converter stack
 pip install "foldermix[pdf]"   # pypdf only
 pip install "foldermix[ocr]"   # OCR for image-based PDF pages (includes pypdf + rapidocr + pypdfium2)
 pip install "foldermix[office]" # docx/xlsx/pptx support
@@ -21,6 +22,44 @@ pip install "foldermix[office]" # docx/xlsx/pptx support
 brew tap foldermix/foldermix
 brew install foldermix
 ```
+
+Homebrew installs the **core** feature set. Optional converter extras (`pdf`, `ocr`, `office`, `markitdown`) are not included in the Homebrew formula.
+
+### Full Optional Feature Support
+
+If you need optional converter stacks, use a Python tool installer path (`uv tool`, `pipx`, or a virtualenv install):
+
+```bash
+# uv (recommended)
+uv tool install "foldermix[all,markitdown]"
+
+# pipx
+pipx install "foldermix[all,markitdown]"
+
+# virtualenv
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install "foldermix[all,markitdown]"
+```
+
+`all` covers `pdf`, `ocr`, `office`, and `tqdm`. `markitdown` is a separate extra, so include it explicitly when needed.
+
+If `foldermix` is already installed via Homebrew and you want extras, the cleanest path is:
+
+```bash
+brew uninstall foldermix
+uv tool install "foldermix[all,markitdown]"
+```
+
+Install-method summary:
+
+| Method | Optional extras support | Best for |
+|---|---|---|
+| `brew install foldermix` | Core only | Fast system-level CLI install |
+| `uv tool install "foldermix[all]"` | Most optional converters (`pdf`/`ocr`/`office`), excludes `markitdown` | Isolated global CLI with common optional features |
+| `uv tool install "foldermix[all,markitdown]"` | Full optional converter support | Isolated global CLI with all optional features |
+| `pipx install "foldermix[all,markitdown]"` | Full optional converter support | Isolated global CLI (pipx workflow) |
+| `pip install "foldermix[all,markitdown]"` in venv | Full optional converter support | Project-scoped environments |
 
 ## Quick Start (Config-First)
 
@@ -406,7 +445,10 @@ Semantics:
 - `--null` requires `--stdin`
   - `--null` is only valid when reading explicit paths from standard input.
 - `No module named ...` or converter-specific warnings for PDF/Office/OCR
-  - install matching extras, for example: `pip install "foldermix[pdf]"`, `pip install "foldermix[ocr]"`, or `pip install "foldermix[office]"`.
+  - Homebrew installs core-only. For optional converter stacks, use one of:
+    - `uv tool install "foldermix[all,markitdown]"`
+    - `pipx install "foldermix[all,markitdown]"`
+    - `pip install "foldermix[pdf]"`, `pip install "foldermix[ocr]"`, `pip install "foldermix[office]"` in a virtualenv
 - Expected files are missing from output
   - run `foldermix list . --config foldermix.toml` first to inspect skip behavior.
   - check `.gitignore`, hidden-path defaults, extension/glob filters, and sensitive-file protection.
