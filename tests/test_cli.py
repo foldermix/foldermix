@@ -608,7 +608,9 @@ def test_skiplist_conversion_check_uses_real_converter_registry(tmp_path: Path) 
     assert result.exit_code == 0, result.output
     assert "SKIP_UNSUPPORTED_EXTENSION" not in result.output
     assert "SKIP_OPTIONAL_DEPENDENCY_MISSING" not in result.output
-    assert "0 files would be skipped." in result.output
+    assert "0 files would be skipped by scanning;" in result.output
+    assert "0 additional files currently lack a" in result.output
+    assert "supported converter." in result.output
 
 
 def test_list_discovers_default_config(tmp_path: Path) -> None:

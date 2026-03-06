@@ -12,12 +12,7 @@ from . import __version__
 from .config import DEFAULT_EXCLUDE_DIRS, DEFAULT_EXCLUDE_EXT, PackConfig
 from .config_loader import ConfigLoadError, load_command_config
 from .converters.base import ConverterRegistry
-from .converters.docx_fallback import DocxFallbackConverter
-from .converters.markitdown_conv import MarkitdownConverter
-from .converters.pdf_fallback import PdfFallbackConverter
-from .converters.pptx_fallback import PptxFallbackConverter
-from .converters.text import TextConverter
-from .converters.xlsx_fallback import XlsxFallbackConverter
+from .converters.registry import build_converter_registry
 from .effective_config import EffectiveConfig, effective_config_payload, merge_config_layers
 from .init_profiles import available_profiles, has_profile, render_profile_config
 from .report import build_skipped_file_entry
@@ -153,54 +148,50 @@ def _read_stdin_paths(use_stdin: bool, null_delimited: bool) -> list[Path] | Non
 
 
 def _build_converter_registry() -> ConverterRegistry:
-    registry = ConverterRegistry()
-    registry.register(MarkitdownConverter())
-    registry.register(PdfFallbackConverter())
-    registry.register(DocxFallbackConverter())
-    registry.register(XlsxFallbackConverter())
-    registry.register(PptxFallbackConverter())
-    registry.register(TextConverter())
-    return registry
+    return build_converter_registry()
 
 
 def _conversion_skip_entry(record: FileRecord) -> dict[str, str]:
     ext = record.ext.lower()
     optional_hint = _OPTIONAL_CONVERTER_HINTS.get(ext)
     if optional_hint is not None:
-        return {
-            "path": record.relpath,
-            "reason": "optional_dependency_missing",
-            "reason_code": "SKIP_OPTIONAL_DEPENDENCY_MISSING",
-            "message": f"No converter is available for extension {ext!r}. {optional_hint}",
-        }
+        entry = build_skipped_file_entry(
+            path=record.relpath,
+            reason="optional_dependency_missing",
+        )
+        detail = f"No converter is available for extension {ext!r}. {optional_hint}"
+        entry["message"] = f"{entry['message']} {detail}".strip()
+        return entry
     if ext:
-        message = f"No converter is available for extension {ext!r} with current install."
+        detail = f"No converter is available for extension {ext!r} with current install."
     else:
-        message = "No converter is available for files without an extension with current install."
-    return {
-        "path": record.relpath,
-        "reason": "unsupported_extension",
-        "reason_code": "SKIP_UNSUPPORTED_EXTENSION",
-        "message": message,
-    }
+        detail = "No converter is available for files without an extension with current install."
+    entry = build_skipped_file_entry(
+        path=record.relpath,
+        reason="unsupported_extension",
+    )
+    entry["message"] = f"{entry['message']} {detail}".strip()
+    return entry
 
 
 def _build_skiplist_entries(
     *, included: list[FileRecord], skipped: list[SkipRecord], conversion_check: bool
-) -> list[dict[str, str]]:
+) -> tuple[list[dict[str, str]], int]:
     entries = [
         build_skipped_file_entry(path=skip.relpath, reason=skip.reason)
         for skip in sorted(skipped, key=lambda record: record.relpath.casefold())
     ]
     if not conversion_check:
-        return entries
+        return entries, 0
 
     registry = _build_converter_registry()
+    converter_missing_count = 0
     for record in included:
         if registry.get_converter(record.ext) is None:
             entries.append(_conversion_skip_entry(record))
+            converter_missing_count += 1
     entries.sort(key=lambda entry: entry["path"].casefold())
-    return entries
+    return entries, converter_missing_count
 
 
 @app.command("pack")
@@ -824,7 +815,7 @@ def skiplist_cmd(
         respect_gitignore=values["respect_gitignore"],  # type: ignore[arg-type]
     )
     included, skipped = scan(pack_config)
-    skip_entries = _build_skiplist_entries(
+    skip_entries, converter_missing_count = _build_skiplist_entries(
         included=included,
         skipped=skipped,
         conversion_check=conversion_check,
@@ -834,7 +825,14 @@ def skiplist_cmd(
             f"{entry['path']}  [{entry['reason_code']}] {entry['message']}",
             markup=False,
         )
-    console.print(f"\n{len(skip_entries)} files would be skipped.")
+    if conversion_check:
+        console.print(
+            "\n"
+            f"{len(skipped)} files would be skipped by scanning; "
+            f"{converter_missing_count} additional files currently lack a supported converter."
+        )
+    else:
+        console.print(f"\n{len(skip_entries)} files would be skipped.")
 
 
 @app.command("init")
