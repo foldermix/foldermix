@@ -40,7 +40,6 @@ Section guidance:
 
 - put file-selection settings used by `pack`, `list`, and `skiplist` under `[pack]`
 - keep `[stats]` for stats-specific defaults
-- `foldermix init` no longer emits a separate `[list]` section because `list` now follows `[pack]`
 
 ## 3) Preview Before Pack
 

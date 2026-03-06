@@ -159,6 +159,16 @@ def _print_effective_config(
     )
 
 
+def _validate_positive_max_bytes(command: str, value: object) -> None:
+    if value <= 0:
+        console.print(
+            "[red]Invalid --max-bytes:"
+            f" {value!r}. Value must be a positive integer.[/red]\n"
+            f"Run 'foldermix {command} --help' for full usage information."
+        )
+        raise typer.Exit(code=1)
+
+
 def _read_stdin_paths(use_stdin: bool, null_delimited: bool) -> list[Path] | None:
     if not use_stdin:
         if null_delimited:
@@ -288,6 +298,7 @@ def pack_cmd(
         10_000_000,
         "--max-bytes",
         help="Maximum size in bytes (10 MB) for a single file. Files larger than this are handled according to --on-oversize [default: 10_000_000]",
+        min=1,
     ),
     max_total_bytes: int | None = typer.Option(
         None,
@@ -506,6 +517,7 @@ def pack_cmd(
         _print_effective_config("pack", merged, used_config_path)
         return
     values = merged.values
+    _validate_positive_max_bytes("pack", values["max_bytes"])
     policy_output_explicitly_set = merged.sources.get("policy_output") != "default"
 
     if values["format"] not in ("md", "xml", "jsonl"):
@@ -693,13 +705,7 @@ def list_cmd(
         _print_effective_config("list", merged, used_config_path)
         return
     values = merged.values
-    if values["max_bytes"] <= 0:
-        console.print(
-            "[red]Invalid --max-bytes:"
-            f" {values['max_bytes']!r}. Value must be a positive integer.[/red]\n"
-            "Run 'foldermix list --help' for full usage information."
-        )
-        raise typer.Exit(code=1)
+    _validate_positive_max_bytes("list", values["max_bytes"])
     if values["on_oversize"] not in ("skip", "truncate"):
         console.print(
             "[red]Invalid --on-oversize:"
@@ -854,6 +860,7 @@ def skiplist_cmd(
         10_000_000,
         "--max-bytes",
         help="Maximum size in bytes (10 MB) for a single file [default: 10_000_000]",
+        min=1,
     ),
     hidden: bool = typer.Option(
         False, "--hidden", help="Include hidden files and directories (names starting with '.')"
@@ -944,6 +951,7 @@ def skiplist_cmd(
         _print_effective_config("skiplist", merged, used_config_path)
         return
     values = merged.values
+    _validate_positive_max_bytes("skiplist", values["max_bytes"])
     if values["on_oversize"] not in ("skip", "truncate"):
         console.print(
             "[red]Invalid --on-oversize:"
@@ -1025,6 +1033,7 @@ def preview_cmd(
         10_000_000,
         "--max-bytes",
         help="Maximum size in bytes (10 MB) for a single file [default: 10_000_000]",
+        min=1,
     ),
     on_oversize: str = typer.Option(
         "skip",

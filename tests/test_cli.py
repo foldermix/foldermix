@@ -55,6 +55,36 @@ def test_pack_rejects_invalid_on_oversize(tmp_path: Path) -> None:
     assert "--help" in result.output
 
 
+def test_pack_rejects_non_positive_max_bytes_cli(tmp_path: Path) -> None:
+    result = runner.invoke(app, ["pack", str(tmp_path), "--max-bytes", "0"])
+
+    assert result.exit_code == 2
+    output = _strip_ansi(result.output)
+    assert "Invalid value for" in output
+    assert "--max-bytes" in output
+    assert "x>=1" in output
+
+
+def test_pack_rejects_non_positive_max_bytes_from_pack_config(tmp_path: Path) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "max_bytes = 0",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["pack", str(tmp_path), "--config", str(config_path)])
+
+    assert result.exit_code == 1
+    assert "Invalid --max-bytes" in result.output
+    assert "positive integer" in result.output
+
+
 def test_pack_rejects_invalid_redact(tmp_path: Path) -> None:
     result = runner.invoke(app, ["pack", str(tmp_path), "--redact", "bad"])
     assert result.exit_code == 1
@@ -745,6 +775,36 @@ def test_skiplist_rejects_invalid_on_oversize(tmp_path: Path) -> None:
     assert "skip, truncate" in result.output
 
 
+def test_skiplist_rejects_non_positive_max_bytes_cli(tmp_path: Path) -> None:
+    result = runner.invoke(app, ["skiplist", str(tmp_path), "--max-bytes", "0"])
+
+    assert result.exit_code == 2
+    output = _strip_ansi(result.output)
+    assert "Invalid value for" in output
+    assert "--max-bytes" in output
+    assert "x>=1" in output
+
+
+def test_skiplist_rejects_non_positive_max_bytes_from_pack_config(tmp_path: Path) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "max_bytes = 0",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["skiplist", str(tmp_path), "--config", str(config_path)])
+
+    assert result.exit_code == 1
+    assert "Invalid --max-bytes" in result.output
+    assert "positive integer" in result.output
+
+
 def test_skiplist_reports_glob_excluded_files_from_pack_config(tmp_path: Path) -> None:
     config_path = tmp_path / "foldermix.toml"
     config_path.write_text(
@@ -1283,10 +1343,10 @@ def test_pack_help_all_options_documented(tmp_path: Path) -> None:
     assert "convert" in output  # --continue-on-error
     assert "frontmatter" in output  # --strip-frontmatter
     assert "SHA-256" in output  # --include-sha256
-    assert "table of" in output  # --include-toc
+    assert "--include-toc" in output
     assert "--stdin" in output
     assert "--null" in output
-    assert "--policy-fail-level" in output
+    assert "critical" in output
     assert "--policy-dry-run" in output
     assert "--policy-output" in output
 
