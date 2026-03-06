@@ -734,6 +734,25 @@ def test_preview_reads_file_paths_from_stdin(tmp_path: Path) -> None:
     assert json.loads(lines[2])["path"] == "b.txt"
 
 
+def test_preview_stdin_relative_paths_resolve_against_preview_root(
+    tmp_path: Path, monkeypatch
+) -> None:
+    other_cwd = tmp_path / "elsewhere"
+    other_cwd.mkdir()
+    (tmp_path / "a.txt").write_text("A", encoding="utf-8")
+    monkeypatch.chdir(other_cwd)
+
+    result = runner.invoke(
+        app,
+        ["preview", str(tmp_path), "--stdin", "--format", "jsonl", "--no-include-sha256"],
+        input="a.txt\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    lines = [line for line in result.output.splitlines() if line.strip()]
+    assert json.loads(lines[1])["path"] == "a.txt"
+
+
 def test_preview_reports_missing_not_file_and_outside_root(tmp_path: Path) -> None:
     root = tmp_path / "root"
     root.mkdir()

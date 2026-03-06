@@ -1062,9 +1062,20 @@ def preview_cmd(
         )
         raise typer.Exit(code=1)
 
+    preview_root = path.resolve()
     arg_files = list(files or [])
-    stdin_paths = _read_stdin_paths(stdin, null_delimited) or []
-    explicit_paths = _resolve_preview_paths(path.resolve(), arg_files) + stdin_paths
+    stdin_paths: list[Path] = []
+    if stdin:
+        data = sys.stdin.buffer.read()
+        stdin_paths = parse_stdin_paths(
+            data,
+            null_delimited=null_delimited,
+            cwd=preview_root,
+        )
+    elif null_delimited:
+        console.print("[red]--null requires --stdin.[/red]")
+        raise typer.Exit(code=1)
+    explicit_paths = _resolve_preview_paths(preview_root, arg_files) + stdin_paths
     if not explicit_paths:
         console.print(
             "[red]No input files provided.[/red]\n"
