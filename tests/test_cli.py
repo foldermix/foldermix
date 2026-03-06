@@ -827,6 +827,56 @@ def test_preview_reports_invalid_config(tmp_path: Path) -> None:
     assert "hidden: expected a boolean" in result.output
 
 
+def test_preview_honors_pack_config_filter_overrides(tmp_path: Path) -> None:
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "exclude_dirs = []",
+                'exclude_glob = ["*.tmp"]',
+                'include_glob = ["node_modules/**"]',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    included = tmp_path / "node_modules" / "keep.txt"
+    excluded = tmp_path / "other.tmp"
+    included.parent.mkdir(parents=True)
+    included.write_text("keep", encoding="utf-8")
+    excluded.write_text("skip", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "preview",
+            str(tmp_path),
+            "node_modules/keep.txt",
+            "--config",
+            str(config_path),
+            "--no-include-sha256",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "node_modules/keep.txt" in result.output
+
+    blocked_result = runner.invoke(
+        app,
+        [
+            "preview",
+            str(tmp_path),
+            "other.tmp",
+            "--config",
+            str(config_path),
+        ],
+    )
+
+    assert blocked_result.exit_code == 1, blocked_result.output
+    assert "SKIP_EXCLUDED_GLOB" in blocked_result.output
+
+
 def test_list_discovers_default_config(tmp_path: Path) -> None:
     config_path = tmp_path / "foldermix.toml"
     config_path.write_text(

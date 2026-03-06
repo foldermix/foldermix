@@ -388,7 +388,22 @@ def render_preview(config: PackConfig, records: list[FileRecord]) -> str:
     """Render selected records into the configured output format."""
     registry = _build_registry()
     writer = _get_writer(config.format, include_toc=config.include_toc)
-    items = [_convert_record(record, registry, config) for record in records]
+    items: list[FileBundleItem] = []
+    errors: list[str] = []
+    for record in records:
+        try:
+            items.append(_convert_record(record, registry, config))
+        except Exception as exc:
+            errors.append(f"{record.relpath}: {exc}")
+            console.print(f"[red]Error[/red] converting {record.relpath}: {exc}")
+
+    if errors and not config.continue_on_error:
+        console.print(
+            f"[red]{len(errors)} preview conversion error(s). "
+            "Use --continue-on-error to skip.[/red]"
+        )
+        raise typer.Exit(code=2)
+
     total_bytes = sum(item.size_bytes for item in items)
     header = HeaderInfo(
         root=str(config.root),

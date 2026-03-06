@@ -10,6 +10,8 @@ import typer
 from foldermix import packer
 from foldermix.config import PackConfig
 from foldermix.converters.base import ConversionResult
+from foldermix.scanner import FileRecord
+from foldermix.writers.base import FileBundleItem
 
 
 def _write(path: Path, content: str) -> None:
@@ -31,6 +33,17 @@ class _SingleConverterRegistry:
 
     def get_converter(self, ext: str):
         return self._converter
+
+
+def _record(path: Path) -> FileRecord:
+    stat = path.stat()
+    return FileRecord(
+        path=path,
+        relpath=path.name,
+        ext=path.suffix.lower(),
+        size=stat.st_size,
+        mtime=stat.st_mtime,
+    )
 
 
 def test_pack_dry_run_does_not_write_output(tmp_path: Path) -> None:
@@ -211,6 +224,67 @@ def test_pack_continue_on_error_true_writes_error_item(tmp_path: Path, monkeypat
     assert "Error converting file: boom" in file_line["content"]
     assert file_line["warnings"] == ["boom"]
     assert file_line["warning_entries"] == [{"code": "unclassified_warning", "message": "boom"}]
+
+
+def test_render_preview_continue_on_error_false_exits_cleanly(
+    tmp_path: Path, monkeypatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    path = tmp_path / "a.txt"
+    _write(path, "hello\n")
+
+    def fail_convert(
+        record: FileRecord, registry, config: PackConfig
+    ) -> FileBundleItem:  # pragma: no cover - exercised by call
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(packer, "_convert_record", fail_convert)
+
+    with pytest.raises(typer.Exit) as exc_info:
+        packer.render_preview(PackConfig(root=tmp_path), [_record(path)])
+
+    assert exc_info.value.exit_code == 2
+    captured = capsys.readouterr()
+    assert "Error converting a.txt: boom" in captured.err
+    assert "preview conversion error(s). Use --continue-on-error to skip." in captured.err
+
+
+def test_render_preview_continue_on_error_true_skips_failed_records(
+    tmp_path: Path, monkeypatch
+) -> None:
+    ok_path = tmp_path / "ok.txt"
+    bad_path = tmp_path / "bad.txt"
+    _write(ok_path, "ok\n")
+    _write(bad_path, "bad\n")
+
+    def convert_or_fail(record: FileRecord, registry, config: PackConfig) -> FileBundleItem:
+        if record.relpath == "bad.txt":
+            raise RuntimeError("boom")
+        return FileBundleItem(
+            relpath=record.relpath,
+            ext=record.ext,
+            size_bytes=record.size,
+            mtime="2024-01-01T00:00:00+00:00",
+            sha256=None,
+            content="ok\n",
+            converter_name="text",
+            original_mime="text/plain",
+            warnings=[],
+            warning_entries=[],
+            truncated=False,
+            redacted=False,
+            redaction_mode="none",
+            redaction_event_count=0,
+            redaction_categories=[],
+        )
+
+    monkeypatch.setattr(packer, "_convert_record", convert_or_fail)
+    rendered = packer.render_preview(
+        PackConfig(root=tmp_path, continue_on_error=True, include_sha256=False),
+        [_record(ok_path), _record(bad_path)],
+    )
+
+    assert "## ok.txt" in rendered
+    assert "## bad.txt" not in rendered
 
 
 def test_pack_report_included_count_matches_written_items_on_post_convert_error(

@@ -995,7 +995,11 @@ def preview_cmd(
         "format": format,
         "include_ext": _parse_csv(include_ext),
         "exclude_ext": _parse_csv(exclude_ext) or list(DEFAULT_EXCLUDE_EXT),
+        "exclude_dirs": list(DEFAULT_EXCLUDE_DIRS),
+        "exclude_glob": [],
+        "include_glob": [],
         "hidden": hidden,
+        "follow_symlinks": False,
         "respect_gitignore": respect_gitignore,
         "line_ending": "lf",
         "encoding": "utf-8",
@@ -1073,7 +1077,11 @@ def preview_cmd(
         format=values["format"],  # type: ignore[arg-type]
         include_ext=values["include_ext"],  # type: ignore[arg-type]
         exclude_ext=values["exclude_ext"],  # type: ignore[arg-type]
+        exclude_dirs=values["exclude_dirs"],  # type: ignore[arg-type]
+        exclude_glob=values["exclude_glob"],  # type: ignore[arg-type]
+        include_glob=values["include_glob"],  # type: ignore[arg-type]
         hidden=values["hidden"],  # type: ignore[arg-type]
+        follow_symlinks=values["follow_symlinks"],  # type: ignore[arg-type]
         respect_gitignore=values["respect_gitignore"],  # type: ignore[arg-type]
         line_ending=values["line_ending"],  # type: ignore[arg-type]
         encoding=values["encoding"],  # type: ignore[arg-type]
