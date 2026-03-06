@@ -93,6 +93,11 @@ Required one-time setup:
 - Add Actions secret in this repo:
   - `HOMEBREW_TAP_GITHUB_TOKEN`: classic PAT (or fine-grained token) with write access to the tap repo.
 
+Policy note:
+
+- The Homebrew formula intentionally ships the core dependency set.
+- Optional converter extras are documented as Python-tool installs (`uv tool`, `pipx`, or virtualenv pip) in the README installation section.
+
 ## Maintainer PR Checklist
 
 Use [docs/maintainer-playbook.md](docs/maintainer-playbook.md) as the canonical operational runbook. Before merge:
