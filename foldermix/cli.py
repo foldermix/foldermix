@@ -608,6 +608,7 @@ def list_cmd(
         10_000_000,
         "--max-bytes",
         help="Maximum size in bytes (10 MB) for a single file [default: 10_000_000]",
+        min=1,
     ),
     hidden: bool = typer.Option(
         False, "--hidden", help="Include hidden files and directories (names starting with '.')"
@@ -692,6 +693,13 @@ def list_cmd(
         _print_effective_config("list", merged, used_config_path)
         return
     values = merged.values
+    if values["max_bytes"] <= 0:
+        console.print(
+            "[red]Invalid --max-bytes:"
+            f" {values['max_bytes']!r}. Value must be a positive integer.[/red]\n"
+            "Run 'foldermix list --help' for full usage information."
+        )
+        raise typer.Exit(code=1)
     if values["on_oversize"] not in ("skip", "truncate"):
         console.print(
             "[red]Invalid --on-oversize:"

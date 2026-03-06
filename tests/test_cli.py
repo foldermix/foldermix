@@ -552,6 +552,36 @@ def test_list_rejects_invalid_on_oversize(tmp_path: Path) -> None:
     assert "skip, truncate" in result.output
 
 
+def test_list_rejects_non_positive_max_bytes_cli(tmp_path: Path) -> None:
+    result = runner.invoke(app, ["list", str(tmp_path), "--max-bytes", "0"])
+
+    assert result.exit_code == 2
+    assert "Invalid value for '--max-bytes'" in result.output
+    assert "x>=1" in result.output
+
+
+def test_list_rejects_non_positive_max_bytes_from_pack_config(tmp_path: Path) -> None:
+    root = tmp_path / "root"
+    root.mkdir()
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "max_bytes = 0",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["list", str(root), "--config", str(config_path)])
+
+    assert result.exit_code == 1
+    assert "Invalid --max-bytes" in result.output
+    assert "positive integer" in result.output
+
+
 def test_list_reports_glob_excluded_files_from_pack_config(tmp_path: Path) -> None:
     root = tmp_path / "root"
     root.mkdir()
