@@ -48,7 +48,9 @@ class XlsxFallbackConverter:
         for sheet_name in wb.sheetnames:
             ws = wb[sheet_name]
             parts.append(f"## Sheet: {sheet_name}")
-            parts.append("\n".join(_iter_compacted_rows(ws.iter_rows(values_only=True))))
+            body = "\n".join(_iter_compacted_rows(ws.iter_rows(values_only=True)))
+            if body:
+                parts.append(body)
         return ConversionResult(
             content="\n\n".join(parts),
             converter_name="openpyxl",
