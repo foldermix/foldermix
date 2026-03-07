@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shlex
+from fnmatch import fnmatch
 from pathlib import Path
 
 import pytest
@@ -192,10 +193,13 @@ def test_course_refresh_profile_sets_exclusion_defaults(tmp_path: Path) -> None:
         "submissions",
     ]
     assert parsed["pack"]["exclude_glob"] == [
-        "**/*[Gg]rade*",
-        "**/*[Rr]oster*",
-        "**/*[Rr]esponse*",
-        "**/*[Ff]eedback*",
-        "**/*[Ss]ubmission*",
-        "**/*[Ss]tudent*",
+        "*[Gg]rade*",
+        "*[Rr]oster*",
+        "*[Rr]esponse*",
+        "*[Ff]eedback*",
+        "*[Ss]ubmission*",
+        "*[Ss]tudent*",
     ]
+    patterns = parsed["pack"]["exclude_glob"]
+    assert any(fnmatch("Grades.xlsx", pattern) for pattern in patterns)
+    assert any(fnmatch("nested/course/Feedback Notes.docx", pattern) for pattern in patterns)
