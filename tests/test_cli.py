@@ -168,6 +168,7 @@ def test_pack_builds_config_and_calls_packer(monkeypatch, tmp_path: Path) -> Non
             "8",
             "--no-include-sha256",
             "--no-include-toc",
+            "--dedupe-content",
             "--pdf-ocr",
             "--pdf-ocr-strict",
             "--fail-on-policy-violation",
@@ -196,6 +197,7 @@ def test_pack_builds_config_and_calls_packer(monkeypatch, tmp_path: Path) -> Non
     assert config.min_line_length == 8
     assert config.include_sha256 is False
     assert config.include_toc is False
+    assert config.dedupe_content is True
     assert config.pdf_ocr is True
     assert config.pdf_ocr_strict is True
     assert config.fail_on_policy_violation is True
@@ -220,6 +222,7 @@ def test_pack_loads_values_from_config_file(monkeypatch, tmp_path: Path) -> None
                 'format = "xml"',
                 'include_ext = [".py", ".md"]',
                 "include_sha256 = false",
+                "dedupe_content = true",
                 "pdf_ocr = true",
                 'drop_line_containing = ["generated marker", "trace id: "]',
                 "min_line_length = 6",
@@ -247,6 +250,7 @@ def test_pack_loads_values_from_config_file(monkeypatch, tmp_path: Path) -> None
     assert config.format == "xml"
     assert config.include_ext == [".py", ".md"]
     assert config.include_sha256 is False
+    assert config.dedupe_content is True
     assert config.pdf_ocr is True
     assert config.drop_line_containing == ["generated marker", "trace id: "]
     assert config.min_line_length == 6

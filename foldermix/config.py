@@ -142,6 +142,7 @@ class PackConfig:
     strip_frontmatter: bool = False
     include_sha256: bool = True
     include_toc: bool = True
+    dedupe_content: bool = False
     pdf_ocr: bool = False
     pdf_ocr_strict: bool = False
     policy_pack: str | None = None
