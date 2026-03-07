@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -283,8 +284,10 @@ def test_pdf_fallback_prefers_pdftotext_for_rtl_native_text(monkeypatch, tmp_pat
     monkeypatch.setattr(
         "foldermix.converters.pdf_fallback.shutil.which", lambda exe: "/usr/bin/pdftotext"
     )
+    run_kwargs = {}
 
     def _run(*_args, **_kwargs):
+        run_kwargs.update(_kwargs)
         return SimpleNamespace(stdout="\u202bכריית טקסט\u202c\n\u202bדרישות קדם\u202c\f")
 
     monkeypatch.setattr("foldermix.converters.pdf_fallback.subprocess.run", _run)
@@ -293,6 +296,9 @@ def test_pdf_fallback_prefers_pdftotext_for_rtl_native_text(monkeypatch, tmp_pat
     assert result.content == "### Page 1\nכריית טקסט\nדרישות קדם"
     assert result.converter_name == "pdftotext"
     assert result.warnings == []
+    assert run_kwargs["encoding"] == "utf-8"
+    assert run_kwargs["errors"] == "replace"
+    assert run_kwargs["timeout"] == 60
 
 
 def test_pdf_fallback_clean_poppler_page_text_strips_controls_and_blank_edges() -> None:
@@ -314,6 +320,24 @@ def test_pdf_fallback_extract_poppler_pages_returns_none_on_subprocess_failure(
 
     def _run(*_args, **_kwargs):
         raise OSError("boom")
+
+    monkeypatch.setattr("foldermix.converters.pdf_fallback.subprocess.run", _run)
+
+    assert PdfFallbackConverter._extract_poppler_pages(path) is None
+
+
+def test_pdf_fallback_extract_poppler_pages_returns_none_on_timeout(
+    monkeypatch, tmp_path: Path
+) -> None:
+    path = tmp_path / "f.pdf"
+    path.write_text("placeholder", encoding="utf-8")
+
+    monkeypatch.setattr(
+        "foldermix.converters.pdf_fallback.shutil.which", lambda exe: "/usr/bin/pdftotext"
+    )
+
+    def _run(*_args, **_kwargs):
+        raise subprocess.TimeoutExpired(cmd="pdftotext", timeout=60)
 
     monkeypatch.setattr("foldermix.converters.pdf_fallback.subprocess.run", _run)
 

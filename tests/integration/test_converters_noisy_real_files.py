@@ -85,8 +85,6 @@ def test_noisy_pdf_hebrew_rtl_extraction_quality() -> None:
     assert "שי פלצ'י אפק" in result.content
     assert "nop@chau.ac.jl" in result.content
     assert result.converter_name == "pdftotext"
-    assert "Text Mining" in result.content
-    assert "דרישות קדם" in result.content
     assert "דרישות קדם" in result.content.split("Text Mining", 1)[1]
     assert "ם:דרישות קד" not in result.content
 

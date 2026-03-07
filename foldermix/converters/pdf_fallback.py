@@ -103,8 +103,11 @@ class PdfFallbackConverter:
                 check=True,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=60,
             )
-        except (OSError, subprocess.CalledProcessError):
+        except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
             return None
 
         raw_pages = completed.stdout.split("\f")
