@@ -459,7 +459,7 @@ jobs:
           test -f release_consumer_output.md || fail "Expected output file release_consumer_output.md was not created."
       - name: Upload PyPI consumer smoke logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-consumer-smoke-pypi-${{ github.run_id }}
           path: release-consumer-logs
@@ -534,7 +534,7 @@ jobs:
           test -f release_consumer_output.md || fail "Expected output file release_consumer_output.md was not created."
       - name: Upload Homebrew consumer smoke logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-consumer-smoke-homebrew-${{ github.run_id }}
           path: release-consumer-logs
