@@ -232,7 +232,7 @@ def test_xlsx_fallback_skips_copy_of_sheet_by_default(monkeypatch, tmp_path: Pat
                 ("Bob", "456", "20"),
             ]
 
-    class _CopyWorksheet:
+    class _SecondaryWorksheet:
         @staticmethod
         def iter_rows(values_only: bool = True):
             assert values_only is True
@@ -250,7 +250,7 @@ def test_xlsx_fallback_skips_copy_of_sheet_by_default(monkeypatch, tmp_path: Pat
             if name == "Scores":
                 return _PrimaryWorksheet()
             if name == "Copy of Scores":
-                return _CopyWorksheet()
+                return _SecondaryWorksheet()
             raise AssertionError(name)
 
     fake_openpyxl = SimpleNamespace(load_workbook=lambda *_args, **_kwargs: _Workbook())
@@ -274,7 +274,7 @@ def test_xlsx_fallback_keeps_non_copy_sheet(monkeypatch, tmp_path: Path) -> None
                 ("Alice", "123", "10"),
             ]
 
-    class _CopyWorksheet:
+    class _SecondaryWorksheet:
         @staticmethod
         def iter_rows(values_only: bool = True):
             assert values_only is True
@@ -291,7 +291,7 @@ def test_xlsx_fallback_keeps_non_copy_sheet(monkeypatch, tmp_path: Path) -> None
             if name == "Scores":
                 return _PrimaryWorksheet()
             if name == "Detailed Scores":
-                return _CopyWorksheet()
+                return _SecondaryWorksheet()
             raise AssertionError(name)
 
     fake_openpyxl = SimpleNamespace(load_workbook=lambda *_args, **_kwargs: _Workbook())

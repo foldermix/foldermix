@@ -50,10 +50,10 @@ class XlsxFallbackConverter:
         wb = openpyxl.load_workbook(str(path), read_only=True, data_only=True)
         parts: list[str] = []
         for sheet_name in wb.sheetnames:
-            ws = wb[sheet_name]
-            body_rows = list(_iter_compacted_rows(ws.iter_rows(values_only=True)))
             if _sheet_name_is_low_signal_copy(sheet_name):
                 continue
+            ws = wb[sheet_name]
+            body_rows = list(_iter_compacted_rows(ws.iter_rows(values_only=True)))
 
             parts.append(f"## Sheet: {sheet_name}")
             body = "\n".join(body_rows)
