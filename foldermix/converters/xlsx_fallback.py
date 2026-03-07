@@ -31,6 +31,10 @@ def _iter_compacted_rows(
         yield line
 
 
+def _sheet_name_is_low_signal_copy(sheet_name: str) -> bool:
+    return sheet_name.strip().casefold().startswith("copy of ")
+
+
 class XlsxFallbackConverter:
     def can_convert(self, ext: str) -> bool:
         try:
@@ -47,8 +51,12 @@ class XlsxFallbackConverter:
         parts: list[str] = []
         for sheet_name in wb.sheetnames:
             ws = wb[sheet_name]
+            body_rows = list(_iter_compacted_rows(ws.iter_rows(values_only=True)))
+            if _sheet_name_is_low_signal_copy(sheet_name):
+                continue
+
             parts.append(f"## Sheet: {sheet_name}")
-            body = "\n".join(_iter_compacted_rows(ws.iter_rows(values_only=True)))
+            body = "\n".join(body_rows)
             if body:
                 parts.append(body)
         return ConversionResult(
