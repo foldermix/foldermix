@@ -1004,6 +1004,13 @@ def test_preview_reads_file_paths_from_stdin(tmp_path: Path) -> None:
     assert json.loads(lines[2])["path"] == "b.txt"
 
 
+def test_preview_rejects_null_without_stdin(tmp_path: Path) -> None:
+    result = runner.invoke(app, ["preview", str(tmp_path), "--null"])
+
+    assert result.exit_code == 1
+    assert "--null requires --stdin" in result.output
+
+
 def test_preview_stdin_relative_paths_resolve_against_preview_root(
     tmp_path: Path, monkeypatch
 ) -> None:

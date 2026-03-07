@@ -142,7 +142,6 @@ class PackConfig:
     strip_frontmatter: bool = False
     include_sha256: bool = True
     include_toc: bool = True
-    dedupe_content: bool = False
     pdf_ocr: bool = False
     pdf_ocr_strict: bool = False
     policy_pack: str | None = None
@@ -151,3 +150,4 @@ class PackConfig:
     policy_fail_level: Literal["low", "medium", "high", "critical"] = "low"
     policy_dry_run: bool = False
     policy_output: Literal["text", "json"] = "text"
+    dedupe_content: bool = False

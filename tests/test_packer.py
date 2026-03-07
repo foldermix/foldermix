@@ -407,6 +407,29 @@ def test_pack_dedupe_content_skips_later_duplicate_files_and_reports_them(tmp_pa
     assert report["reason_code_counts"] == {"SKIP_DUPLICATE_CONTENT": 1}
 
 
+def test_pack_dedupe_content_keeps_all_files_when_no_duplicates_exist(tmp_path: Path) -> None:
+    (tmp_path / "a.txt").write_text("one\n", encoding="utf-8")
+    (tmp_path / "b.txt").write_text("two\n", encoding="utf-8")
+    out_path = tmp_path / "out.jsonl"
+    report_path = tmp_path / "report.json"
+    config = PackConfig(
+        root=tmp_path,
+        out=out_path,
+        format="jsonl",
+        report=report_path,
+        workers=1,
+        include_sha256=False,
+        dedupe_content=True,
+    )
+
+    packer.pack(config)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["included_count"] == 2
+    assert report["skipped_files"] == []
+    assert report["reason_code_counts"] == {}
+
+
 def test_dedupe_content_keeps_files_when_hashing_fails(tmp_path: Path, monkeypatch) -> None:
     a_path = tmp_path / "a.txt"
     b_path = tmp_path / "b.txt"
