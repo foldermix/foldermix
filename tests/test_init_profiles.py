@@ -11,6 +11,7 @@ def test_available_profiles_matches_expected_order() -> None:
         "research",
         "support",
         "engineering-docs",
+        "course-refresh",
     )
 
 
