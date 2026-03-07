@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ._normalize import collapse_blank_runs
+from ._normalize import normalize_whitespace_line
 from .base import ConversionResult
 
 
@@ -19,7 +19,11 @@ class DocxFallbackConverter:
         import docx
 
         doc = docx.Document(str(path))
-        paragraphs = [line for line in collapse_blank_runs(p.text for p in doc.paragraphs) if line]
+        paragraphs = [
+            line
+            for paragraph in doc.paragraphs
+            if (line := normalize_whitespace_line(paragraph.text)).strip()
+        ]
         return ConversionResult(
             content="\n\n".join(paragraphs),
             converter_name="python-docx",

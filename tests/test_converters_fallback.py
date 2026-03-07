@@ -112,9 +112,8 @@ def test_xlsx_fallback_convert(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setitem(sys.modules, "openpyxl", fake_openpyxl)
 
     result = XlsxFallbackConverter().convert(path)
-    assert "## Sheet: Sheet1" in result.content
-    assert "a\t1" in result.content
-    assert "b" in result.content
+    assert result.content == "## Sheet: Sheet1\n\na\t1\nb"
+    assert "b\t" not in result.content
     assert result.converter_name == "openpyxl"
 
 
