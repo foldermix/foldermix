@@ -87,6 +87,58 @@ def test_convert_record_truncate_when_converter_deletes_tmp_file(tmp_path: Path)
     assert not (tmp_path / "big.txt.truncated.tmp").exists()
 
 
+def test_convert_record_truncate_structured_file_uses_original_path(tmp_path: Path) -> None:
+    path = tmp_path / "deck.pptx"
+    path.write_bytes(b"placeholder")
+    seen_paths: list[Path] = []
+
+    class _Conv:
+        @staticmethod
+        def convert(p: Path, encoding: str = "utf-8") -> ConversionResult:
+            seen_paths.append(p)
+            return ConversionResult(content="slide text", converter_name="fake")
+
+    config = PackConfig(
+        root=tmp_path,
+        on_oversize="truncate",
+        max_bytes=12,
+        include_sha256=False,
+    )
+    record = FileRecord(path=path, relpath="deck.pptx", ext=".pptx", size=16, mtime=0.0)
+    item = packer._convert_record(record, _RegistryOne(_Conv()), config)
+
+    assert seen_paths == [path]
+    assert item.content == "slide text"
+    assert item.truncated is False
+    assert not (tmp_path / "deck.pptx.truncated.tmp").exists()
+
+
+def test_convert_record_truncate_structured_file_truncates_rendered_text(tmp_path: Path) -> None:
+    path = tmp_path / "deck.pptx"
+    path.write_bytes(b"placeholder")
+    seen_paths: list[Path] = []
+
+    class _Conv:
+        @staticmethod
+        def convert(p: Path, encoding: str = "utf-8") -> ConversionResult:
+            seen_paths.append(p)
+            return ConversionResult(content="A" * 64, converter_name="fake")
+
+    config = PackConfig(
+        root=tmp_path,
+        on_oversize="truncate",
+        max_bytes=24,
+        include_sha256=False,
+    )
+    record = FileRecord(path=path, relpath="deck.pptx", ext=".pptx", size=128, mtime=0.0)
+    item = packer._convert_record(record, _RegistryOne(_Conv()), config)
+
+    assert seen_paths == [path]
+    assert item.truncated is True
+    assert "[TRUNCATED]" in item.content
+    assert not (tmp_path / "deck.pptx.truncated.tmp").exists()
+
+
 def test_convert_record_applies_frontmatter_redaction_and_crlf(tmp_path: Path) -> None:
     path = tmp_path / "doc.md"
     path.write_text("x", encoding="utf-8")
