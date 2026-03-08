@@ -13,6 +13,7 @@ from rich.console import Console
 from . import __version__
 from .config import PackConfig
 from .converters.base import ConverterRegistry
+from .converters.ipynb import NotebookConverter
 from .converters.pdf_fallback import PdfFallbackConverter
 from .converters.registry import build_converter_registry
 from .policy import PolicyEvaluator, normalize_policy_rules
@@ -290,6 +291,8 @@ def _convert_record(
 ) -> FileBundleItem:
     converter = registry.get_converter(record.ext)
     warnings: list[str] = []
+    if isinstance(converter, NotebookConverter):
+        converter = NotebookConverter(include_outputs=config.ipynb_include_outputs)
     if record.ext == ".pdf" and config.pdf_ocr:
         pdf_converter = PdfFallbackConverter()
         if pdf_converter.can_convert(record.ext):

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .base import ConverterRegistry
 from .docx_fallback import DocxFallbackConverter
+from .ipynb import NotebookConverter
 from .markitdown_conv import MarkitdownConverter
 from .pdf_fallback import PdfFallbackConverter
 from .pptx_fallback import PptxFallbackConverter
@@ -16,5 +17,6 @@ def build_converter_registry() -> ConverterRegistry:
     registry.register(DocxFallbackConverter())
     registry.register(XlsxFallbackConverter())
     registry.register(PptxFallbackConverter())
+    registry.register(NotebookConverter())
     registry.register(TextConverter())
     return registry

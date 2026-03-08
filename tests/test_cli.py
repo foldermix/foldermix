@@ -168,6 +168,7 @@ def test_pack_builds_config_and_calls_packer(monkeypatch, tmp_path: Path) -> Non
             "8",
             "--no-include-sha256",
             "--no-include-toc",
+            "--ipynb-include-outputs",
             "--dedupe-content",
             "--pdf-ocr",
             "--pdf-ocr-strict",
@@ -197,6 +198,7 @@ def test_pack_builds_config_and_calls_packer(monkeypatch, tmp_path: Path) -> Non
     assert config.min_line_length == 8
     assert config.include_sha256 is False
     assert config.include_toc is False
+    assert config.ipynb_include_outputs is True
     assert config.dedupe_content is True
     assert config.pdf_ocr is True
     assert config.pdf_ocr_strict is True
@@ -222,6 +224,7 @@ def test_pack_loads_values_from_config_file(monkeypatch, tmp_path: Path) -> None
                 'format = "xml"',
                 'include_ext = [".py", ".md"]',
                 "include_sha256 = false",
+                "ipynb_include_outputs = true",
                 "dedupe_content = true",
                 "pdf_ocr = true",
                 'drop_line_containing = ["generated marker", "trace id: "]',
@@ -250,6 +253,7 @@ def test_pack_loads_values_from_config_file(monkeypatch, tmp_path: Path) -> None
     assert config.format == "xml"
     assert config.include_ext == [".py", ".md"]
     assert config.include_sha256 is False
+    assert config.ipynb_include_outputs is True
     assert config.dedupe_content is True
     assert config.pdf_ocr is True
     assert config.drop_line_containing == ["generated marker", "trace id: "]
@@ -1410,6 +1414,8 @@ def test_preview_help_all_options_documented() -> None:
     assert "--include-ext" in output
     assert "--exclude-ext" in output
     assert "--max-bytes" in output
+    assert "--ipynb-include-" in output
+    assert "Jupyter" in output
     assert "--on-oversize" in output
     assert "--redact" in output
     assert "--stdin" in output

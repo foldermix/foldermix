@@ -1,0 +1,109 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from ._normalize import normalize_whitespace_line
+from .base import ConversionResult
+
+
+def _coerce_text(value: object) -> str:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        return "".join(str(part) for part in value)
+    return ""
+
+
+def _normalize_block(text: str) -> str:
+    lines = [normalize_whitespace_line(line) for line in text.splitlines()]
+    return "\n".join(lines).strip()
+
+
+def _render_output(output: dict[str, object]) -> str:
+    output_type = output.get("output_type")
+    if output_type == "stream":
+        return _normalize_block(_coerce_text(output.get("text", "")))
+    if output_type in {"display_data", "execute_result"}:
+        data = output.get("data")
+        if isinstance(data, dict):
+            text_plain = data.get("text/plain")
+            rendered = _normalize_block(_coerce_text(text_plain))
+            if rendered:
+                return rendered
+        return _normalize_block(json.dumps(output, ensure_ascii=False, indent=2))
+    if output_type == "error":
+        traceback = output.get("traceback")
+        if isinstance(traceback, list):
+            rendered = _normalize_block("\n".join(str(line) for line in traceback))
+            if rendered:
+                return rendered
+        ename = output.get("ename", "Error")
+        evalue = output.get("evalue", "")
+        return _normalize_block(f"{ename}: {evalue}")
+    return _normalize_block(json.dumps(output, ensure_ascii=False, indent=2))
+
+
+class NotebookConverter:
+    def __init__(self, *, include_outputs: bool = False) -> None:
+        self.include_outputs = include_outputs
+
+    def can_convert(self, ext: str) -> bool:
+        return ext.lower() == ".ipynb"
+
+    def convert(self, path: Path, encoding: str = "utf-8") -> ConversionResult:
+        raw = json.loads(path.read_text(encoding=encoding))
+        if not isinstance(raw, dict):
+            raise RuntimeError("Notebook root must be a JSON object")
+
+        metadata = raw.get("metadata")
+        language = "python"
+        if isinstance(metadata, dict):
+            language_info = metadata.get("language_info")
+            if isinstance(language_info, dict):
+                language = str(language_info.get("name", language)) or language
+
+        sections: list[str] = []
+        cells = raw.get("cells")
+        if not isinstance(cells, list):
+            raise RuntimeError("Notebook must contain a list of cells")
+
+        for index, cell in enumerate(cells, start=1):
+            if not isinstance(cell, dict):
+                continue
+            cell_type = str(cell.get("cell_type", "raw"))
+            source = _normalize_block(_coerce_text(cell.get("source", "")))
+            outputs = cell.get("outputs")
+
+            if cell_type == "markdown":
+                if source:
+                    sections.append(f"### Markdown Cell {index}\n\n{source}")
+                continue
+
+            if cell_type == "raw":
+                if source:
+                    sections.append(f"### Raw Cell {index}\n\n{source}")
+                continue
+
+            if cell_type != "code":
+                if source:
+                    sections.append(f"### {cell_type.title()} Cell {index}\n\n{source}")
+                continue
+
+            code_lines = [f"### Code Cell {index}", "", f"```{language}", source, "```"]
+            section_parts = ["\n".join(code_lines)]
+            if self.include_outputs and isinstance(outputs, list):
+                rendered_outputs = [
+                    rendered for output in outputs if (rendered := _render_output(output))
+                ]
+                if rendered_outputs:
+                    output_block = "\n\n".join(rendered_outputs)
+                    section_parts.append(f"#### Outputs\n\n```text\n{output_block}\n```")
+            if source or len(section_parts) > 1:
+                sections.append("\n\n".join(section_parts))
+
+        return ConversionResult(
+            content="\n\n".join(sections).strip(),
+            converter_name="ipynb",
+            original_mime="application/x-ipynb+json",
+        )
