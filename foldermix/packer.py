@@ -13,7 +13,6 @@ from rich.console import Console
 from . import __version__
 from .config import PackConfig
 from .converters.base import ConverterRegistry
-from .converters.ipynb import NotebookConverter
 from .converters.pdf_fallback import PdfFallbackConverter
 from .converters.registry import build_converter_registry
 from .policy import PolicyEvaluator, normalize_policy_rules
@@ -272,8 +271,8 @@ def _enforce_policy_threshold_if_requested(
         raise typer.Exit(code=4)
 
 
-def _build_registry() -> ConverterRegistry:
-    return build_converter_registry()
+def _build_registry(config: PackConfig) -> ConverterRegistry:
+    return build_converter_registry(ipynb_include_outputs=config.ipynb_include_outputs)
 
 
 def _get_writer(fmt: str, include_toc: bool = True):
@@ -291,8 +290,6 @@ def _convert_record(
 ) -> FileBundleItem:
     converter = registry.get_converter(record.ext)
     warnings: list[str] = []
-    if isinstance(converter, NotebookConverter):
-        converter = NotebookConverter(include_outputs=config.ipynb_include_outputs)
     if record.ext == ".pdf" and config.pdf_ocr:
         pdf_converter = PdfFallbackConverter()
         if pdf_converter.can_convert(record.ext):
@@ -416,7 +413,7 @@ def _convert_record(
 
 def render_preview(config: PackConfig, records: list[FileRecord]) -> str:
     """Render selected records into the configured output format."""
-    registry = _build_registry()
+    registry = _build_registry(config)
     writer = _get_writer(config.format, include_toc=config.include_toc)
     items: list[FileBundleItem] = []
     errors: list[str] = []
@@ -515,7 +512,7 @@ def pack(config: PackConfig) -> None:
         console.print(f"\n[bold]Dry run complete.[/bold] Would pack {len(included)} files.")
         return
 
-    registry = _build_registry()
+    registry = _build_registry(config)
     writer = _get_writer(config.format, include_toc=config.include_toc)
 
     # Convert files

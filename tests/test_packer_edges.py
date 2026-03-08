@@ -7,7 +7,6 @@ from types import SimpleNamespace
 from foldermix import packer
 from foldermix.config import DEFAULT_INCLUDE_EXT, PackConfig
 from foldermix.converters.base import ConversionResult
-from foldermix.converters.ipynb import NotebookConverter
 from foldermix.scanner import FileRecord
 
 
@@ -205,9 +204,7 @@ def test_convert_record_pdf_ocr_prefers_pdf_fallback_over_markitdown(
     assert "markitdown" not in item.content
 
 
-def test_convert_record_reconfigures_notebook_converter_from_pack_config(
-    tmp_path: Path,
-) -> None:
+def test_build_registry_configures_notebook_converter_from_pack_config(tmp_path: Path) -> None:
     path = tmp_path / "demo.ipynb"
     path.write_text(
         (
@@ -220,10 +217,12 @@ def test_convert_record_reconfigures_notebook_converter_from_pack_config(
     )
 
     record = FileRecord(path=path, relpath="demo.ipynb", ext=".ipynb", size=1, mtime=0.0)
+    config = PackConfig(root=tmp_path, include_sha256=False, ipynb_include_outputs=True)
+    registry = packer._build_registry(config)
     item = packer._convert_record(
         record,
-        _RegistryOne(NotebookConverter(include_outputs=False)),
-        PackConfig(root=tmp_path, include_sha256=False, ipynb_include_outputs=True),
+        registry,
+        config,
     )
 
     assert item.converter_name == "ipynb"

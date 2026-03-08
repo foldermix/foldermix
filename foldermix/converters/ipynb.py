@@ -45,6 +45,20 @@ def _summarize_rich_output(output: dict[str, object]) -> str:
     return _normalize_block("\n".join(lines))
 
 
+def _summarize_unknown_output(output: dict[str, object]) -> str:
+    lines = [f"output_type: {output.get('output_type', 'unknown')}"]
+    top_level_keys = ", ".join(sorted(str(key) for key in output if key != "output_type"))
+    if top_level_keys:
+        lines.append(f"top-level keys: {top_level_keys}")
+    data = output.get("data")
+    if isinstance(data, dict) and data:
+        lines.append(f"data keys: {', '.join(sorted(str(key) for key in data))}")
+    metadata = output.get("metadata")
+    if isinstance(metadata, dict) and metadata:
+        lines.append(f"metadata keys: {', '.join(sorted(str(key) for key in metadata))}")
+    return _normalize_block("\n".join(lines))
+
+
 def _render_output(output: dict[str, object]) -> str:
     output_type = output.get("output_type")
     if output_type == "stream":
@@ -66,7 +80,7 @@ def _render_output(output: dict[str, object]) -> str:
         ename = output.get("ename", "Error")
         evalue = output.get("evalue", "")
         return _normalize_block(f"{ename}: {evalue}")
-    return _normalize_block(json.dumps(output, ensure_ascii=False, indent=2))
+    return _summarize_unknown_output(output)
 
 
 class NotebookConverter:

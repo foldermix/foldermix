@@ -237,7 +237,9 @@ class TestNotebookConverter:
         assert "data keys: application/json" in result.content
         assert "Trace 1" in result.content
         assert "Trace 2" in result.content
-        assert '"output_type": "mystery"' in result.content
+        assert "output_type: mystery" in result.content
+        assert "top-level keys: payload" in result.content
+        assert '"ok": true' not in result.content
 
     def test_convert_notebook_summarizes_empty_data_without_dumping_payloads(
         self, tmp_path: Path
@@ -387,6 +389,51 @@ class TestNotebookConverter:
         assert "data keys: image/png, text/html" in result.content
         assert "metadata keys: width" in result.content
         assert '"image/png": "AAAA"' not in result.content
+
+    def test_convert_notebook_summarizes_unknown_outputs_without_dumping_payloads(
+        self, tmp_path: Path
+    ) -> None:
+        from foldermix.converters.ipynb import NotebookConverter
+
+        notebook = tmp_path / "unknown-output.ipynb"
+        notebook.write_text(
+            (
+                '{"metadata":{},"cells":['
+                '{"cell_type":"code","source":["show()\\n"],"outputs":['
+                '{"output_type":"vendor_blob","payload":"AAAA","data":{"image/png":"BBBB"},"metadata":{"width":100}}'
+                "]}]}"
+            ),
+            encoding="utf-8",
+        )
+
+        result = NotebookConverter(include_outputs=True).convert(notebook)
+
+        assert "output_type: vendor_blob" in result.content
+        assert "top-level keys: data, metadata, payload" in result.content
+        assert "data keys: image/png" in result.content
+        assert "metadata keys: width" in result.content
+        assert '"payload": "AAAA"' not in result.content
+
+    def test_convert_notebook_summarizes_unknown_output_without_extra_keys(
+        self, tmp_path: Path
+    ) -> None:
+        from foldermix.converters.ipynb import NotebookConverter
+
+        notebook = tmp_path / "unknown-minimal.ipynb"
+        notebook.write_text(
+            (
+                '{"metadata":{},"cells":['
+                '{"cell_type":"code","source":["show()\\n"],"outputs":['
+                '{"output_type":"vendor_blob"}'
+                "]}]}"
+            ),
+            encoding="utf-8",
+        )
+
+        result = NotebookConverter(include_outputs=True).convert(notebook)
+
+        assert "output_type: vendor_blob" in result.content
+        assert "top-level keys:" not in result.content
 
     def test_convert_notebook_skips_empty_rendered_outputs(self, tmp_path: Path) -> None:
         from foldermix.converters.ipynb import NotebookConverter
