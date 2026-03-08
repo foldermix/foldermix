@@ -49,7 +49,7 @@ def _render_output(output: dict[str, object]) -> str:
     output_type = output.get("output_type")
     if output_type == "stream":
         return _normalize_block(_coerce_text(output.get("text", "")))
-    if output_type in {"display_data", "execute_result"}:
+    if output_type in {"display_data", "execute_result", "update_display_data"}:
         data = output.get("data")
         if isinstance(data, dict):
             text_plain = data.get("text/plain")
@@ -77,7 +77,8 @@ class NotebookConverter:
         return ext.lower() == ".ipynb"
 
     def convert(self, path: Path, encoding: str = "utf-8") -> ConversionResult:
-        raw = json.loads(path.read_text(encoding=encoding))
+        with path.open("rb") as handle:
+            raw = json.load(handle)
         if not isinstance(raw, dict):
             raise RuntimeError("Notebook root must be a JSON object")
 

@@ -350,6 +350,44 @@ class TestNotebookConverter:
         assert '"image/png": "AAAA"' not in result.content
         assert "skip-me" not in result.content
 
+    def test_convert_notebook_reads_utf8_bom_independent_of_text_encoding(
+        self, tmp_path: Path
+    ) -> None:
+        from foldermix.converters.ipynb import NotebookConverter
+
+        notebook = tmp_path / "bom.ipynb"
+        notebook.write_bytes(
+            ('\ufeff{"metadata":{},"cells":[{"cell_type":"markdown","source":["שלום"]}]}').encode()
+        )
+
+        result = NotebookConverter().convert(notebook, encoding="latin-1")
+
+        assert "### Markdown Cell 1" in result.content
+        assert "שלום" in result.content
+
+    def test_convert_notebook_treats_update_display_data_as_rich_output(
+        self, tmp_path: Path
+    ) -> None:
+        from foldermix.converters.ipynb import NotebookConverter
+
+        notebook = tmp_path / "update-display.ipynb"
+        notebook.write_text(
+            (
+                '{"metadata":{},"cells":['
+                '{"cell_type":"code","source":["show()\\n"],"outputs":['
+                '{"output_type":"update_display_data","data":{"image/png":"AAAA","text/html":"<b>x</b>"},"metadata":{"width":100}}'
+                "]}]}"
+            ),
+            encoding="utf-8",
+        )
+
+        result = NotebookConverter(include_outputs=True).convert(notebook)
+
+        assert "output_type: update_display_data" in result.content
+        assert "data keys: image/png, text/html" in result.content
+        assert "metadata keys: width" in result.content
+        assert '"image/png": "AAAA"' not in result.content
+
     def test_convert_notebook_skips_empty_rendered_outputs(self, tmp_path: Path) -> None:
         from foldermix.converters.ipynb import NotebookConverter
 
