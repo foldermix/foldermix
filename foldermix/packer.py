@@ -43,6 +43,7 @@ from .writers.xml_writer import XmlWriter
 console = Console(stderr=True)
 _POLICY_SEVERITY_ORDER: tuple[str, ...] = ("low", "medium", "high", "critical")
 _POLICY_SEVERITY_RANK = {severity: idx for idx, severity in enumerate(_POLICY_SEVERITY_ORDER)}
+_STRUCTURED_TRUNCATE_AFTER_CONVERT_EXTS = {".pdf", ".docx", ".xlsx", ".pptx", ".ipynb"}
 
 
 def _count_failing_policy_findings(
@@ -83,6 +84,24 @@ def _build_policy_stage_counts(policy_findings: list[dict[str, object]]) -> dict
         if isinstance(stage, str):
             counts[stage] = counts.get(stage, 0) + 1
     return dict(sorted(counts.items()))
+
+
+def _truncate_text_middle(content: str, max_bytes: int, encoding: str) -> tuple[str, bool]:
+    encoded = content.encode(encoding, errors="replace")
+    if len(encoded) <= max_bytes:
+        return content, False
+
+    sep = "\n\n... [TRUNCATED] ...\n\n"
+    sep_bytes = sep.encode(encoding, errors="replace")
+    budget = max_bytes - len(sep_bytes)
+    if budget <= 0:
+        return sep_bytes[:max_bytes].decode(encoding, errors="ignore"), True
+
+    head_budget = budget // 2
+    tail_budget = budget - head_budget
+    head = encoded[:head_budget].decode(encoding, errors="ignore")
+    tail = encoded[-tail_budget:].decode(encoding, errors="ignore")
+    return head + sep + tail, True
 
 
 def _build_affected_files(policy_findings: list[dict[str, object]]) -> list[dict[str, object]]:
@@ -325,7 +344,11 @@ def _convert_record(
             return converter.convert(path, config.encoding)
 
         try:
-            if config.on_oversize == "truncate" and record.size > config.max_bytes:
+            if (
+                config.on_oversize == "truncate"
+                and record.size > config.max_bytes
+                and record.ext not in _STRUCTURED_TRUNCATE_AFTER_CONVERT_EXTS
+            ):
                 # Truncate: read first K and last K bytes
                 k = config.max_bytes // 2
                 with open(record.path, "rb") as f:
@@ -370,6 +393,15 @@ def _convert_record(
                 redaction_categories = sorted(category_counts)
                 redacted = redaction_event_count > 0
                 content = redacted_content
+
+            if (
+                config.on_oversize == "truncate"
+                and record.size > config.max_bytes
+                and record.ext in _STRUCTURED_TRUNCATE_AFTER_CONVERT_EXTS
+            ):
+                content, truncated = _truncate_text_middle(
+                    content, config.max_bytes, config.encoding
+                )
 
             if config.line_ending == "crlf":
                 content = content.replace("\r\n", "\n").replace("\n", "\r\n")
