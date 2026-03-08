@@ -1414,8 +1414,9 @@ def test_preview_help_all_options_documented() -> None:
     assert "--include-ext" in output
     assert "--exclude-ext" in output
     assert "--max-bytes" in output
-    assert "--ipynb-include-" in output
+    assert "--ipynb" in output
     assert "Jupyter" in output
+    assert ".ipynb" in output
     assert "--on-oversize" in output
     assert "--redact" in output
     assert "--stdin" in output
