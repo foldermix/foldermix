@@ -220,9 +220,9 @@ jobs:
       contents: read
       actions: read
       pull-requests: write
-    uses: shaypal5/pr-agent-context/.github/workflows/pr-agent-context.yml@v1
+    uses: shaypal5/pr-agent-context/.github/workflows/pr-agent-context.yml@v4
     with:
-      tool_ref: v1
+      tool_ref: v4
       target_patch_coverage: "100"
       include_review_comments: true
       include_failing_jobs: true
