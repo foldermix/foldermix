@@ -115,6 +115,94 @@ class TestMarkitdownConverter:
             assert conv.can_convert(".txt") is False
 
 
+class TestImageOcrConverter:
+    def test_can_convert_supported_extensions_when_installed(self) -> None:
+        from foldermix.converters.image_ocr import ImageOcrConverter
+
+        converter = ImageOcrConverter()
+        mock_mod = MagicMock()
+        with patch.dict(sys.modules, {"rapidocr_onnxruntime": mock_mod}):
+            assert converter.can_convert(".png") is True
+            assert converter.can_convert(".jpg") is True
+            assert converter.can_convert(".jpeg") is True
+            assert converter.can_convert(".gif") is False
+
+    def test_can_convert_returns_false_when_not_installed(self) -> None:
+        from foldermix.converters.image_ocr import ImageOcrConverter
+
+        converter = ImageOcrConverter()
+        with patch.dict(sys.modules, {"rapidocr_onnxruntime": None}):
+            assert converter.can_convert(".png") is False
+
+    def test_convert_returns_ocr_text(self, tmp_path: Path) -> None:
+        from foldermix.converters.image_ocr import ImageOcrConverter
+
+        image = tmp_path / "scan.png"
+        image.write_bytes(b"fake-image")
+
+        class _RapidOCR:
+            def __call__(self, image_bytes):
+                assert image_bytes == b"fake-image"
+                return ([[None, "hello world", 0.99]], 0.01)
+
+        with patch.dict(sys.modules, {"rapidocr_onnxruntime": MagicMock(RapidOCR=_RapidOCR)}):
+            result = ImageOcrConverter().convert(image)
+
+        assert result.content == "hello world"
+        assert result.warnings == []
+        assert result.converter_name == "rapidocr"
+        assert result.original_mime == "image/png"
+
+    def test_convert_warns_when_ocr_returns_no_text(self, tmp_path: Path) -> None:
+        from foldermix.converters.image_ocr import ImageOcrConverter
+
+        image = tmp_path / "scan.jpg"
+        image.write_bytes(b"fake-image")
+
+        class _RapidOCR:
+            def __call__(self, _image_bytes):
+                return ([], 0.01)
+
+        with patch.dict(sys.modules, {"rapidocr_onnxruntime": MagicMock(RapidOCR=_RapidOCR)}):
+            result = ImageOcrConverter().convert(image)
+
+        assert result.content == ""
+        assert result.warnings == ["Image OCR produced no text."]
+        assert result.original_mime == "image/jpeg"
+
+    def test_convert_warns_when_engine_init_fails(self, tmp_path: Path) -> None:
+        from foldermix.converters.image_ocr import ImageOcrConverter
+
+        image = tmp_path / "scan.jpeg"
+        image.write_bytes(b"fake-image")
+
+        class _RapidOCR:
+            def __init__(self) -> None:
+                raise RuntimeError("init boom")
+
+        with patch.dict(sys.modules, {"rapidocr_onnxruntime": MagicMock(RapidOCR=_RapidOCR)}):
+            result = ImageOcrConverter().convert(image)
+
+        assert result.content == ""
+        assert result.warnings == ["OCR engine initialization failed: init boom"]
+
+    def test_convert_warns_when_runtime_fails(self, tmp_path: Path) -> None:
+        from foldermix.converters.image_ocr import ImageOcrConverter
+
+        image = tmp_path / "scan.png"
+        image.write_bytes(b"fake-image")
+
+        class _RapidOCR:
+            def __call__(self, _image_bytes):
+                raise RuntimeError("ocr boom")
+
+        with patch.dict(sys.modules, {"rapidocr_onnxruntime": MagicMock(RapidOCR=_RapidOCR)}):
+            result = ImageOcrConverter().convert(image)
+
+        assert result.content == ""
+        assert result.warnings == ["Image OCR failed: ocr boom"]
+
+
 class TestNotebookConverter:
     def test_can_convert_ipynb(self) -> None:
         from foldermix.converters.ipynb import NotebookConverter

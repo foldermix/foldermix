@@ -100,6 +100,13 @@ def test_binary_ext_excluded(sample_dir: Path) -> None:
     assert "image.png" not in relpaths
 
 
+def test_image_ocr_include_ext_overrides_default_image_exclude(sample_dir: Path) -> None:
+    config = PackConfig(root=sample_dir, include_ext=[".png"], image_ocr=True)
+    included, skipped = scan(config)
+    relpaths = [r.relpath for r in included]
+    assert "image.png" in relpaths
+
+
 def test_exclude_dirs(sample_dir: Path) -> None:
     config = PackConfig(root=sample_dir, exclude_dirs=["excluded_dir"])
     included, skipped = scan(config)

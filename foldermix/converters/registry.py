@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .base import ConverterRegistry
 from .docx_fallback import DocxFallbackConverter
+from .image_ocr import ImageOcrConverter
 from .ipynb import NotebookConverter
 from .markitdown_conv import MarkitdownConverter
 from .pdf_fallback import PdfFallbackConverter
@@ -14,6 +15,7 @@ def build_converter_registry(*, ipynb_include_outputs: bool = False) -> Converte
     registry = ConverterRegistry()
     registry.register(MarkitdownConverter())
     registry.register(PdfFallbackConverter())
+    registry.register(ImageOcrConverter())
     registry.register(DocxFallbackConverter())
     registry.register(XlsxFallbackConverter())
     registry.register(PptxFallbackConverter())

@@ -301,6 +301,81 @@ def test_convert_record_pdf_without_ocr_keeps_registry_converter(tmp_path: Path)
     assert item.content == "markitdown"
 
 
+def test_convert_record_image_ocr_uses_image_converter_when_enabled(
+    monkeypatch, tmp_path: Path
+) -> None:
+    path = tmp_path / "scan.png"
+    path.write_bytes(b"fake-image")
+
+    class _RapidOCR:
+        def __call__(self, image_bytes):
+            assert image_bytes == b"fake-image"
+            return ([[None, "image text", 0.99]], 0.01)
+
+    monkeypatch.setitem(sys.modules, "rapidocr_onnxruntime", SimpleNamespace(RapidOCR=_RapidOCR))
+    record = FileRecord(path=path, relpath="scan.png", ext=".png", size=10, mtime=0.0)
+    item = packer._convert_record(
+        record,
+        _RegistryNone(),
+        PackConfig(root=tmp_path, include_sha256=False, image_ocr=True),
+    )
+
+    assert item.converter_name == "rapidocr"
+    assert item.content == "image text"
+    assert item.warnings == []
+
+
+def test_convert_record_image_without_ocr_stays_non_convertible(tmp_path: Path) -> None:
+    path = tmp_path / "scan.jpg"
+    path.write_bytes(b"fake-image")
+
+    record = FileRecord(path=path, relpath="scan.jpg", ext=".jpg", size=10, mtime=0.0)
+    item = packer._convert_record(
+        record,
+        _RegistryNone(),
+        PackConfig(root=tmp_path, include_sha256=False, image_ocr=False),
+    )
+
+    assert item.converter_name == "none"
+    assert item.content == "[No converter available for .jpg]"
+    assert item.warnings == ["Image OCR is disabled; use --image-ocr to attempt OCR."]
+
+
+def test_convert_record_image_ocr_with_missing_deps_warns(tmp_path: Path) -> None:
+    path = tmp_path / "scan.jpeg"
+    path.write_bytes(b"fake-image")
+
+    record = FileRecord(path=path, relpath="scan.jpeg", ext=".jpeg", size=10, mtime=0.0)
+    item = packer._convert_record(
+        record,
+        _RegistryNone(),
+        PackConfig(root=tmp_path, include_sha256=False, image_ocr=True),
+    )
+
+    assert item.converter_name == "none"
+    assert item.content == "[No converter available for .jpeg]"
+    assert len(item.warnings) == 1
+    assert "Image OCR is enabled" in item.warnings[0]
+
+
+def test_convert_record_image_ocr_with_missing_deps_and_strict_raises(tmp_path: Path) -> None:
+    path = tmp_path / "scan.png"
+    path.write_bytes(b"fake-image")
+
+    record = FileRecord(path=path, relpath="scan.png", ext=".png", size=10, mtime=0.0)
+
+    try:
+        packer._convert_record(
+            record,
+            _RegistryNone(),
+            PackConfig(root=tmp_path, include_sha256=False, image_ocr=True, image_ocr_strict=True),
+        )
+    except RuntimeError as exc:
+        assert "Image OCR is enabled" in str(exc)
+    else:
+        raise AssertionError("expected RuntimeError when image_ocr_strict is enabled")
+
+
 def test_convert_record_pdf_ocr_with_missing_pypdf_keeps_registry_converter(
     monkeypatch, tmp_path: Path
 ) -> None:

@@ -16,6 +16,8 @@ include_sha256 = true
 include_toc = true
 pdf_ocr = true
 pdf_ocr_strict = false
+image_ocr = false
+image_ocr_strict = false
 exclude_dirs = ["Feedbacks", "feedbacks", "Responses", "responses", "Grades", "grades", "Rosters", "rosters", "Students", "students", "Submissions", "submissions"]
 exclude_glob = ["*[Gg]rade*", "*[Rr]oster*", "*[Rr]esponse*", "*[Ff]eedback*", "*[Ss]ubmission*", "*[Ss]tudent*"]
 

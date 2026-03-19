@@ -76,6 +76,8 @@ _PACK_PARAM_BY_KEY = {
     "dedupe_content": "dedupe_content",
     "pdf_ocr": "pdf_ocr",
     "pdf_ocr_strict": "pdf_ocr_strict",
+    "image_ocr": "image_ocr",
+    "image_ocr_strict": "image_ocr_strict",
     "policy_pack": "policy_pack",
     "policy_rules": "policy_rules",
     "fail_on_policy_violation": "fail_on_policy_violation",
@@ -123,6 +125,9 @@ _OPTIONAL_CONVERTER_HINTS: dict[str, str] = {
         "Install PDF support with 'pip install \"foldermix[pdf]\"' "
         "or OCR support with 'pip install \"foldermix[ocr]\"'."
     ),
+    ".png": "Install OCR support with 'pip install \"foldermix[ocr]\"' and enable --image-ocr.",
+    ".jpg": "Install OCR support with 'pip install \"foldermix[ocr]\"' and enable --image-ocr.",
+    ".jpeg": "Install OCR support with 'pip install \"foldermix[ocr]\"' and enable --image-ocr.",
     ".docx": "Install Office support with 'pip install \"foldermix[office]\"'.",
     ".xlsx": "Install Office support with 'pip install \"foldermix[office]\"'.",
     ".pptx": "Install Office support with 'pip install \"foldermix[office]\"'.",
@@ -402,6 +407,16 @@ def pack_cmd(
         "--pdf-ocr-strict/--no-pdf-ocr-strict",
         help="Fail conversion when OCR is required but unavailable or unsuccessful [default: disabled]",
     ),
+    image_ocr: bool = typer.Option(
+        False,
+        "--image-ocr/--no-image-ocr",
+        help="Attempt OCR for included PNG/JPEG files when OCR dependencies are installed [default: disabled]",
+    ),
+    image_ocr_strict: bool = typer.Option(
+        False,
+        "--image-ocr-strict/--no-image-ocr-strict",
+        help="Fail conversion when image OCR is required but unavailable or unsuccessful [default: disabled]",
+    ),
     policy_pack: str | None = typer.Option(
         None,
         "--policy-pack",
@@ -506,6 +521,8 @@ def pack_cmd(
         "dedupe_content": dedupe_content,
         "pdf_ocr": pdf_ocr,
         "pdf_ocr_strict": pdf_ocr_strict,
+        "image_ocr": image_ocr,
+        "image_ocr_strict": image_ocr_strict,
         "policy_pack": policy_pack,
         "policy_rules": [],
         "fail_on_policy_violation": fail_on_policy_violation,
@@ -1107,6 +1124,16 @@ def preview_cmd(
         "--pdf-ocr-strict/--no-pdf-ocr-strict",
         help="Fail conversion when OCR is required but unavailable [default: disabled]",
     ),
+    image_ocr: bool = typer.Option(
+        False,
+        "--image-ocr/--no-image-ocr",
+        help="Attempt OCR for included PNG/JPEG files when OCR dependencies are installed [default: disabled]",
+    ),
+    image_ocr_strict: bool = typer.Option(
+        False,
+        "--image-ocr-strict/--no-image-ocr-strict",
+        help="Fail conversion when image OCR is required but unavailable [default: disabled]",
+    ),
     stdin: bool = typer.Option(
         False,
         "--stdin",
@@ -1168,6 +1195,8 @@ def preview_cmd(
         "dedupe_content": False,
         "pdf_ocr": pdf_ocr,
         "pdf_ocr_strict": pdf_ocr_strict,
+        "image_ocr": image_ocr,
+        "image_ocr_strict": image_ocr_strict,
     }
     try:
         overrides, used_config_path = load_command_config(
@@ -1263,6 +1292,8 @@ def preview_cmd(
         dedupe_content=values["dedupe_content"],  # type: ignore[arg-type]
         pdf_ocr=values["pdf_ocr"],  # type: ignore[arg-type]
         pdf_ocr_strict=values["pdf_ocr_strict"],  # type: ignore[arg-type]
+        image_ocr=values["image_ocr"],  # type: ignore[arg-type]
+        image_ocr_strict=values["image_ocr_strict"],  # type: ignore[arg-type]
         stdin_paths=explicit_paths,
     )
     included, skipped = scan(preview_config)

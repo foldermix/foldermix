@@ -31,6 +31,8 @@ def test_build_profile_applies_extra_pack_and_stats_values() -> None:
         strip_frontmatter=False,
         pdf_ocr=False,
         pdf_ocr_strict=False,
+        image_ocr=False,
+        image_ocr_strict=False,
         extra_pack_values={"exclude_glob": ["*draft*"]},
         extra_stats_values={"hidden": True},
     )

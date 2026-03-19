@@ -43,6 +43,8 @@ _COMMAND_KEYS: dict[str, set[str]] = {
         "dedupe_content",
         "pdf_ocr",
         "pdf_ocr_strict",
+        "image_ocr",
+        "image_ocr_strict",
         "policy_pack",
         "policy_rules",
         "fail_on_policy_violation",
@@ -79,6 +81,8 @@ _BOOL_KEYS = {
     "dedupe_content",
     "pdf_ocr",
     "pdf_ocr_strict",
+    "image_ocr",
+    "image_ocr_strict",
     "fail_on_policy_violation",
     "policy_dry_run",
 }

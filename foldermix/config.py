@@ -146,6 +146,8 @@ class PackConfig:
     ipynb_include_outputs: bool = False
     pdf_ocr: bool = False
     pdf_ocr_strict: bool = False
+    image_ocr: bool = False
+    image_ocr_strict: bool = False
     policy_pack: str | None = None
     policy_rules: list[dict[str, object]] = field(default_factory=list)
     fail_on_policy_violation: bool = False
