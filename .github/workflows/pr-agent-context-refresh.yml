@@ -38,8 +38,8 @@ jobs:
     with:
       tool_ref: v4
       execution_mode: refresh
-      publish_mode: update_latest_scoped
-      publish_all_clear_comments_in_refresh: false
+      publish_mode: append
+      publish_all_clear_comments_in_refresh: true
       target_patch_coverage: "100"
       include_review_comments: true
       include_failing_checks: true
