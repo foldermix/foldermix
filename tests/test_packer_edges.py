@@ -308,8 +308,8 @@ def test_convert_record_image_ocr_uses_image_converter_when_enabled(
     path.write_bytes(b"fake-image")
 
     class _RapidOCR:
-        def __call__(self, image_bytes):
-            assert image_bytes == b"fake-image"
+        def __call__(self, image_path):
+            assert image_path == str(path)
             return ([[None, "image text", 0.99]], 0.01)
 
     monkeypatch.setitem(sys.modules, "rapidocr_onnxruntime", SimpleNamespace(RapidOCR=_RapidOCR))

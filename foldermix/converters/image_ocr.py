@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 from pathlib import Path
 from typing import Any
 
@@ -15,15 +16,19 @@ _IMAGE_MIME_TYPES = {
 
 
 class ImageOcrConverter:
+    @staticmethod
+    def _load_rapidocr() -> tuple[Any | None, str | None]:
+        try:
+            module = importlib.import_module("rapidocr_onnxruntime")
+        except (ImportError, OSError, RuntimeError) as exc:
+            return None, str(exc)
+        return getattr(module, "RapidOCR", None), None
+
     def can_convert(self, ext: str) -> bool:
         if ext.lower() not in IMAGE_OCR_EXTENSIONS:
             return False
-        try:
-            from rapidocr_onnxruntime import RapidOCR  # noqa: F401
-
-            return True
-        except ImportError:
-            return False
+        rapid_ocr_cls, _ = self._load_rapidocr()
+        return rapid_ocr_cls is not None
 
     @staticmethod
     def _extract_ocr_text(ocr_result: Any) -> str:
@@ -76,18 +81,18 @@ class ImageOcrConverter:
                 original_mime=_IMAGE_MIME_TYPES.get(path.suffix.lower(), ""),
             )
 
-        try:
-            from rapidocr_onnxruntime import RapidOCR
-        except ImportError as exc:  # pragma: no cover - guarded by can_convert/_convert_record
-            return unresolved_ocr(f"OCR dependencies missing: {exc}")
+        rapid_ocr_cls, import_error = self._load_rapidocr()
+        if rapid_ocr_cls is None:
+            suffix = f": {import_error}" if import_error else ""
+            return unresolved_ocr(f"OCR dependencies missing{suffix}")
 
         try:
-            ocr_engine = RapidOCR()
+            ocr_engine = rapid_ocr_cls()
         except Exception as exc:
             return unresolved_ocr(f"OCR engine initialization failed: {exc}")
 
         try:
-            ocr_text = self._extract_ocr_text(ocr_engine(path.read_bytes()))
+            ocr_text = self._extract_ocr_text(ocr_engine(str(path)))
         except Exception as exc:
             return unresolved_ocr(f"Image OCR failed: {exc}")
 

@@ -134,6 +134,16 @@ class TestImageOcrConverter:
         with patch.dict(sys.modules, {"rapidocr_onnxruntime": None}):
             assert converter.can_convert(".png") is False
 
+    def test_can_convert_returns_false_when_import_is_broken(self) -> None:
+        from foldermix.converters.image_ocr import ImageOcrConverter
+
+        converter = ImageOcrConverter()
+        with patch(
+            "foldermix.converters.image_ocr.importlib.import_module",
+            side_effect=OSError("dlopen boom"),
+        ):
+            assert converter.can_convert(".png") is False
+
     def test_convert_returns_ocr_text(self, tmp_path: Path) -> None:
         from foldermix.converters.image_ocr import ImageOcrConverter
 
@@ -141,8 +151,8 @@ class TestImageOcrConverter:
         image.write_bytes(b"fake-image")
 
         class _RapidOCR:
-            def __call__(self, image_bytes):
-                assert image_bytes == b"fake-image"
+            def __call__(self, image_path):
+                assert image_path == str(image)
                 return ([[None, "hello world", 0.99]], 0.01)
 
         with patch.dict(sys.modules, {"rapidocr_onnxruntime": MagicMock(RapidOCR=_RapidOCR)}):
@@ -160,7 +170,7 @@ class TestImageOcrConverter:
         image.write_bytes(b"fake-image")
 
         class _RapidOCR:
-            def __call__(self, _image_bytes):
+            def __call__(self, _image_path):
                 return ([], 0.01)
 
         with patch.dict(sys.modules, {"rapidocr_onnxruntime": MagicMock(RapidOCR=_RapidOCR)}):
@@ -186,6 +196,21 @@ class TestImageOcrConverter:
         assert result.content == ""
         assert result.warnings == ["OCR engine initialization failed: init boom"]
 
+    def test_convert_warns_when_import_is_broken(self, tmp_path: Path) -> None:
+        from foldermix.converters.image_ocr import ImageOcrConverter
+
+        image = tmp_path / "scan.png"
+        image.write_bytes(b"fake-image")
+
+        with patch(
+            "foldermix.converters.image_ocr.importlib.import_module",
+            side_effect=RuntimeError("native boom"),
+        ):
+            result = ImageOcrConverter().convert(image)
+
+        assert result.content == ""
+        assert result.warnings == ["OCR dependencies missing: native boom"]
+
     def test_convert_warns_when_runtime_fails(self, tmp_path: Path) -> None:
         from foldermix.converters.image_ocr import ImageOcrConverter
 
@@ -193,7 +218,7 @@ class TestImageOcrConverter:
         image.write_bytes(b"fake-image")
 
         class _RapidOCR:
-            def __call__(self, _image_bytes):
+            def __call__(self, _image_path):
                 raise RuntimeError("ocr boom")
 
         with patch.dict(sys.modules, {"rapidocr_onnxruntime": MagicMock(RapidOCR=_RapidOCR)}):

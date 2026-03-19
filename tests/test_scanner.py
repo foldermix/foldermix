@@ -102,7 +102,7 @@ def test_binary_ext_excluded(sample_dir: Path) -> None:
 
 def test_image_ocr_include_ext_overrides_default_image_exclude(sample_dir: Path) -> None:
     config = PackConfig(root=sample_dir, include_ext=[".png"], image_ocr=True)
-    included, skipped = scan(config)
+    included, _ = scan(config)
     relpaths = [r.relpath for r in included]
     assert "image.png" in relpaths
 
@@ -120,7 +120,7 @@ def test_include_glob_does_not_override_default_image_exclude_without_image_ocr(
 
 def test_include_glob_allows_image_when_image_ocr_enabled(sample_dir: Path) -> None:
     config = PackConfig(root=sample_dir, include_glob=["image.png"], image_ocr=True)
-    included, skipped = scan(config)
+    included, _ = scan(config)
     relpaths = [r.relpath for r in included]
     assert "image.png" in relpaths
 
