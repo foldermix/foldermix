@@ -1,0 +1,52 @@
+name: pr-agent-context-refresh
+
+on:
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  pull_request_review_comment:
+    types: [created, edited, deleted]
+  check_suite:
+    types: [completed]
+
+concurrency:
+  group: >-
+    ${{ github.workflow }}-${{
+      github.event.pull_request.number ||
+      github.event.check_suite.pull_requests[0].number ||
+      github.event.check_suite.head_sha ||
+      github.sha
+    }}
+  cancel-in-progress: true
+
+jobs:
+  pr-agent-context-refresh:
+    name: PR agent context refresh
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    if: >-
+      (github.event_name == 'pull_request_review' &&
+       github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'pull_request_review_comment' &&
+       github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'check_suite' &&
+       github.event.action == 'completed' &&
+       github.event.check_suite.app.slug != 'github-actions' &&
+       toJson(github.event.check_suite.pull_requests) != '[]')
+    uses: shaypal5/pr-agent-context/.github/workflows/pr-agent-context.yml@v4
+    with:
+      tool_ref: v4
+      execution_mode: refresh
+      publish_mode: update_latest_scoped
+      publish_all_clear_comments_in_refresh: false
+      target_patch_coverage: "100"
+      include_review_comments: true
+      include_failing_checks: true
+      include_patch_coverage: true
+      wait_for_reviews_to_settle: true
+      coverage_artifact_prefix: pr-agent-context-coverage
+      enable_cross_run_coverage_lookup: true
+      coverage_source_workflows: CI
+      prompt_template_file: .github/pr-agent-context-template.md
+      debug_artifacts: false
