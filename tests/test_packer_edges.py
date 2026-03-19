@@ -341,9 +341,10 @@ def test_convert_record_image_without_ocr_stays_non_convertible(tmp_path: Path) 
     assert item.warnings == ["Image OCR is disabled; use --image-ocr to attempt OCR."]
 
 
-def test_convert_record_image_ocr_with_missing_deps_warns(tmp_path: Path) -> None:
+def test_convert_record_image_ocr_with_missing_deps_warns(monkeypatch, tmp_path: Path) -> None:
     path = tmp_path / "scan.jpeg"
     path.write_bytes(b"fake-image")
+    monkeypatch.setitem(sys.modules, "rapidocr_onnxruntime", None)
 
     record = FileRecord(path=path, relpath="scan.jpeg", ext=".jpeg", size=10, mtime=0.0)
     item = packer._convert_record(
@@ -358,9 +359,12 @@ def test_convert_record_image_ocr_with_missing_deps_warns(tmp_path: Path) -> Non
     assert "Image OCR is enabled" in item.warnings[0]
 
 
-def test_convert_record_image_ocr_with_missing_deps_and_strict_raises(tmp_path: Path) -> None:
+def test_convert_record_image_ocr_with_missing_deps_and_strict_raises(
+    monkeypatch, tmp_path: Path
+) -> None:
     path = tmp_path / "scan.png"
     path.write_bytes(b"fake-image")
+    monkeypatch.setitem(sys.modules, "rapidocr_onnxruntime", None)
 
     record = FileRecord(path=path, relpath="scan.png", ext=".png", size=10, mtime=0.0)
 

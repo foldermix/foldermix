@@ -115,11 +115,10 @@ def _scan_candidate_file(
         return None, SkipRecord(rel_str, "excluded_glob")
 
     # Extension filters
-    if not included_by_glob:
-        if include_exts is not None and ext not in include_exts:
-            return None, SkipRecord(rel_str, "excluded_ext")
-        if ext in exclude_exts and not image_ocr_explicitly_included:
-            return None, SkipRecord(rel_str, "excluded_ext")
+    if not included_by_glob and include_exts is not None and ext not in include_exts:
+        return None, SkipRecord(rel_str, "excluded_ext")
+    if ext in exclude_exts and not image_ocr_explicitly_included:
+        return None, SkipRecord(rel_str, "excluded_ext")
 
     # Size check
     try:

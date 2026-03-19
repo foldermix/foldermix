@@ -107,6 +107,24 @@ def test_image_ocr_include_ext_overrides_default_image_exclude(sample_dir: Path)
     assert "image.png" in relpaths
 
 
+def test_include_glob_does_not_override_default_image_exclude_without_image_ocr(
+    sample_dir: Path,
+) -> None:
+    config = PackConfig(root=sample_dir, include_glob=["image.png"])
+    included, skipped = scan(config)
+    relpaths = [r.relpath for r in included]
+    skip_reasons = {r.relpath: r.reason for r in skipped}
+    assert "image.png" not in relpaths
+    assert skip_reasons["image.png"] == "excluded_ext"
+
+
+def test_include_glob_allows_image_when_image_ocr_enabled(sample_dir: Path) -> None:
+    config = PackConfig(root=sample_dir, include_glob=["image.png"], image_ocr=True)
+    included, skipped = scan(config)
+    relpaths = [r.relpath for r in included]
+    assert "image.png" in relpaths
+
+
 def test_exclude_dirs(sample_dir: Path) -> None:
     config = PackConfig(root=sample_dir, exclude_dirs=["excluded_dir"])
     included, skipped = scan(config)
