@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 from pathlib import Path
+from threading import local
 from typing import Any
 
 from .base import ConversionResult
@@ -16,6 +17,9 @@ _IMAGE_MIME_TYPES = {
 
 
 class ImageOcrConverter:
+    def __init__(self) -> None:
+        self._thread_local = local()
+
     @staticmethod
     def _load_rapidocr() -> tuple[Any | None, str | None]:
         try:
@@ -23,6 +27,17 @@ class ImageOcrConverter:
         except (ImportError, OSError, RuntimeError) as exc:
             return None, str(exc)
         return getattr(module, "RapidOCR", None), None
+
+    def _get_ocr_engine(self, rapid_ocr_cls: Any) -> Any:
+        cached_engine = getattr(self._thread_local, "ocr_engine", None)
+        cached_cls = getattr(self._thread_local, "ocr_engine_cls", None)
+        if cached_engine is not None and cached_cls is rapid_ocr_cls:
+            return cached_engine
+
+        ocr_engine = rapid_ocr_cls()
+        self._thread_local.ocr_engine = ocr_engine
+        self._thread_local.ocr_engine_cls = rapid_ocr_cls
+        return ocr_engine
 
     def can_convert(self, ext: str) -> bool:
         if ext.lower() not in IMAGE_OCR_EXTENSIONS:
@@ -87,7 +102,7 @@ class ImageOcrConverter:
             return unresolved_ocr(f"OCR dependencies missing{suffix}")
 
         try:
-            ocr_engine = rapid_ocr_cls()
+            ocr_engine = self._get_ocr_engine(rapid_ocr_cls)
         except Exception as exc:
             return unresolved_ocr(f"OCR engine initialization failed: {exc}")
 
