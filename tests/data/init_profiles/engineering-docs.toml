@@ -16,6 +16,8 @@ include_sha256 = true
 include_toc = true
 pdf_ocr = false
 pdf_ocr_strict = false
+image_ocr = false
+image_ocr_strict = false
 
 # Stats defaults for this profile.
 [stats]

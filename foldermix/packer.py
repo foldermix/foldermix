@@ -13,6 +13,7 @@ from rich.console import Console
 from . import __version__
 from .config import PackConfig
 from .converters.base import ConverterRegistry
+from .converters.image_ocr import IMAGE_OCR_EXTENSIONS, ImageOcrConverter
 from .converters.pdf_fallback import PdfFallbackConverter
 from .converters.registry import build_converter_registry
 from .policy import PolicyEvaluator, normalize_policy_rules
@@ -43,7 +44,14 @@ from .writers.xml_writer import XmlWriter
 console = Console(stderr=True)
 _POLICY_SEVERITY_ORDER: tuple[str, ...] = ("low", "medium", "high", "critical")
 _POLICY_SEVERITY_RANK = {severity: idx for idx, severity in enumerate(_POLICY_SEVERITY_ORDER)}
-_STRUCTURED_TRUNCATE_AFTER_CONVERT_EXTS = {".pdf", ".docx", ".xlsx", ".pptx", ".ipynb"}
+_STRUCTURED_TRUNCATE_AFTER_CONVERT_EXTS = {
+    ".pdf",
+    ".docx",
+    ".xlsx",
+    ".pptx",
+    ".ipynb",
+    *IMAGE_OCR_EXTENSIONS,
+}
 
 
 def _count_failing_policy_findings(
@@ -322,6 +330,23 @@ def _convert_record(
             if config.pdf_ocr_strict:
                 raise RuntimeError(message)
             warnings.append(message)
+    if record.ext in IMAGE_OCR_EXTENSIONS:
+        image_converter = ImageOcrConverter()
+        if config.image_ocr:
+            if image_converter.can_convert(record.ext):
+                converter = image_converter
+            else:
+                message = (
+                    "Image OCR is enabled, but OCR dependencies are unavailable. "
+                    "Install the OCR extras (for example, 'pip install foldermix[ocr]') "
+                    "or disable --image-ocr."
+                )
+                if config.image_ocr_strict:
+                    raise RuntimeError(message)
+                warnings.append(message)
+        else:
+            converter = None
+            warnings.append("Image OCR is disabled; use --image-ocr to attempt OCR.")
     truncated = False
     redacted = False
     redaction_event_count = 0
@@ -340,6 +365,12 @@ def _convert_record(
                     config.encoding,
                     enable_ocr=config.pdf_ocr,
                     ocr_strict=config.pdf_ocr_strict,
+                )
+            if isinstance(converter, ImageOcrConverter):
+                return converter.convert(
+                    path,
+                    config.encoding,
+                    ocr_strict=config.image_ocr_strict,
                 )
             return converter.convert(path, config.encoding)
 

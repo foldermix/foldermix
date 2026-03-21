@@ -17,4 +17,4 @@ Use `--redact=emails` to redact email addresses, `--redact=phones` for phone num
 
 ## Reporting Vulnerabilities
 
-Please report vulnerabilities by opening a GitHub issue.
+Please report vulnerabilities by opening GitHub issues.

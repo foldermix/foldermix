@@ -8,6 +8,7 @@ from pathlib import Path
 import pathspec
 
 from .config import PackConfig
+from .converters.image_ocr import IMAGE_OCR_EXTENSIONS
 
 SENSITIVE_PATTERNS: set[str] = {
     ".env",
@@ -104,15 +105,23 @@ def _scan_candidate_file(
 
     # Include glob override
     included_by_glob = any(fnmatch.fnmatch(rel_str, pattern) for pattern in config.include_glob)
+    image_ocr_explicitly_included = (
+        config.image_ocr
+        and ext in IMAGE_OCR_EXTENSIONS
+        and (included_by_glob or (include_exts is not None and ext in include_exts))
+    )
 
     if excluded_by_glob and not included_by_glob:
         return None, SkipRecord(rel_str, "excluded_glob")
 
     # Extension filters
-    if not included_by_glob:
-        if include_exts is not None and ext not in include_exts:
-            return None, SkipRecord(rel_str, "excluded_ext")
-        if ext in exclude_exts:
+    if not included_by_glob and include_exts is not None and ext not in include_exts:
+        return None, SkipRecord(rel_str, "excluded_ext")
+    if ext in exclude_exts:
+        if ext in IMAGE_OCR_EXTENSIONS:
+            if not image_ocr_explicitly_included:
+                return None, SkipRecord(rel_str, "excluded_ext")
+        elif not included_by_glob:
             return None, SkipRecord(rel_str, "excluded_ext")
 
     # Size check

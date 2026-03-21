@@ -24,6 +24,8 @@ def _build_profile(
     strip_frontmatter: bool,
     pdf_ocr: bool,
     pdf_ocr_strict: bool,
+    image_ocr: bool,
+    image_ocr_strict: bool,
     extra_pack_values: dict[str, object] | None = None,
     extra_stats_values: dict[str, object] | None = None,
 ) -> InitProfile:
@@ -41,6 +43,8 @@ def _build_profile(
         "include_toc": True,
         "pdf_ocr": pdf_ocr,
         "pdf_ocr_strict": pdf_ocr_strict,
+        "image_ocr": image_ocr,
+        "image_ocr_strict": image_ocr_strict,
     }
     if extra_pack_values:
         pack_values.update(extra_pack_values)
@@ -119,6 +123,8 @@ _PROFILES: dict[str, InitProfile] = {
         strip_frontmatter=True,
         pdf_ocr=True,
         pdf_ocr_strict=False,
+        image_ocr=False,
+        image_ocr_strict=False,
     ),
     "research": _build_profile(
         slug="research",
@@ -134,6 +140,8 @@ _PROFILES: dict[str, InitProfile] = {
         strip_frontmatter=False,
         pdf_ocr=True,
         pdf_ocr_strict=False,
+        image_ocr=False,
+        image_ocr_strict=False,
     ),
     "support": _build_profile(
         slug="support",
@@ -149,6 +157,8 @@ _PROFILES: dict[str, InitProfile] = {
         strip_frontmatter=False,
         pdf_ocr=False,
         pdf_ocr_strict=False,
+        image_ocr=False,
+        image_ocr_strict=False,
     ),
     "engineering-docs": _build_profile(
         slug="engineering-docs",
@@ -164,6 +174,8 @@ _PROFILES: dict[str, InitProfile] = {
         strip_frontmatter=True,
         pdf_ocr=False,
         pdf_ocr_strict=False,
+        image_ocr=False,
+        image_ocr_strict=False,
     ),
     "course-refresh": _build_profile(
         slug="course-refresh",
@@ -180,6 +192,8 @@ _PROFILES: dict[str, InitProfile] = {
         strip_frontmatter=False,
         pdf_ocr=True,
         pdf_ocr_strict=False,
+        image_ocr=False,
+        image_ocr_strict=False,
         extra_pack_values={
             "exclude_dirs": [
                 "Feedbacks",

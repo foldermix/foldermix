@@ -172,6 +172,8 @@ def test_pack_builds_config_and_calls_packer(monkeypatch, tmp_path: Path) -> Non
             "--dedupe-content",
             "--pdf-ocr",
             "--pdf-ocr-strict",
+            "--image-ocr",
+            "--image-ocr-strict",
             "--fail-on-policy-violation",
             "--policy-fail-level",
             "high",
@@ -202,6 +204,8 @@ def test_pack_builds_config_and_calls_packer(monkeypatch, tmp_path: Path) -> Non
     assert config.dedupe_content is True
     assert config.pdf_ocr is True
     assert config.pdf_ocr_strict is True
+    assert config.image_ocr is True
+    assert config.image_ocr_strict is True
     assert config.fail_on_policy_violation is True
     assert config.policy_fail_level == "high"
     assert config.policy_dry_run is True
@@ -227,6 +231,7 @@ def test_pack_loads_values_from_config_file(monkeypatch, tmp_path: Path) -> None
                 "ipynb_include_outputs = true",
                 "dedupe_content = true",
                 "pdf_ocr = true",
+                "image_ocr = true",
                 'drop_line_containing = ["generated marker", "trace id: "]',
                 "min_line_length = 6",
                 'policy_pack = "legal-hold"',
@@ -256,6 +261,7 @@ def test_pack_loads_values_from_config_file(monkeypatch, tmp_path: Path) -> None
     assert config.ipynb_include_outputs is True
     assert config.dedupe_content is True
     assert config.pdf_ocr is True
+    assert config.image_ocr is True
     assert config.drop_line_containing == ["generated marker", "trace id: "]
     assert config.min_line_length == 6
     assert config.policy_pack == "legal-hold"
@@ -448,6 +454,10 @@ def test_pack_print_effective_config_outputs_sources_and_exits(monkeypatch, tmp_
     assert effective["pdf_ocr"]["source"] == "default"
     assert effective["pdf_ocr_strict"]["value"] is False
     assert effective["pdf_ocr_strict"]["source"] == "default"
+    assert effective["image_ocr"]["value"] is False
+    assert effective["image_ocr"]["source"] == "default"
+    assert effective["image_ocr_strict"]["value"] is False
+    assert effective["image_ocr_strict"]["source"] == "default"
     assert effective["fail_on_policy_violation"]["value"] is False
     assert effective["fail_on_policy_violation"]["source"] == "default"
     assert effective["policy_fail_level"]["value"] == "low"
@@ -491,6 +501,7 @@ def test_list_print_effective_config_outputs_sources_and_exits(monkeypatch, tmp_
             [
                 "[pack]",
                 "hidden = true",
+                "image_ocr = true",
                 'include_ext = [".py"]',
                 'exclude_glob = ["*.tmp"]',
                 'format = "xml"',
@@ -522,6 +533,8 @@ def test_list_print_effective_config_outputs_sources_and_exits(monkeypatch, tmp_
     assert effective["include_ext"]["source"] == "cli"
     assert effective["hidden"]["value"] is True
     assert effective["hidden"]["source"] == "config"
+    assert effective["image_ocr"]["value"] is True
+    assert effective["image_ocr"]["source"] == "config"
     assert effective["exclude_glob"]["value"] == ["*.tmp"]
     assert effective["exclude_glob"]["source"] == "config"
     assert "format" not in effective
@@ -1102,6 +1115,10 @@ def test_preview_print_effective_config_outputs_sources_and_exits(
     assert effective["format"]["source"] == "cli"
     assert effective["include_toc"]["value"] is False
     assert effective["include_toc"]["source"] == "config"
+    assert effective["image_ocr"]["value"] is False
+    assert effective["image_ocr"]["source"] == "default"
+    assert effective["image_ocr_strict"]["value"] is False
+    assert effective["image_ocr_strict"]["source"] == "default"
 
 
 def test_preview_reports_invalid_config(tmp_path: Path) -> None:
@@ -1204,6 +1221,37 @@ def test_preview_builds_config_with_ipynb_include_outputs(monkeypatch, tmp_path:
     assert captured["config"].ipynb_include_outputs is True
 
 
+def test_preview_builds_config_with_image_ocr(monkeypatch, tmp_path: Path) -> None:
+    captured = {}
+    (tmp_path / "scan.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+
+    def fake_render_preview(config, records):
+        captured["config"] = config
+        captured["records"] = records
+        return "ok"
+
+    monkeypatch.setattr(packer_module, "render_preview", fake_render_preview)
+
+    result = runner.invoke(
+        app,
+        [
+            "preview",
+            str(tmp_path),
+            "scan.png",
+            "--include-ext",
+            ".png",
+            "--image-ocr",
+            "--image-ocr-strict",
+            "--no-include-sha256",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert result.output == "ok"
+    assert captured["config"].image_ocr is True
+    assert captured["config"].image_ocr_strict is True
+
+
 def test_list_discovers_default_config(tmp_path: Path) -> None:
     config_path = tmp_path / "foldermix.toml"
     config_path.write_text(
@@ -1281,6 +1329,7 @@ def test_skiplist_print_effective_config_outputs_sources_and_exits(
             [
                 "[pack]",
                 "hidden = true",
+                "image_ocr = true",
                 'include_ext = [".py"]',
                 'exclude_glob = ["*.tmp"]',
                 'format = "xml"',
@@ -1313,10 +1362,55 @@ def test_skiplist_print_effective_config_outputs_sources_and_exits(
     assert effective["include_ext"]["source"] == "cli"
     assert effective["hidden"]["value"] is True
     assert effective["hidden"]["source"] == "config"
+    assert effective["image_ocr"]["value"] is True
+    assert effective["image_ocr"]["source"] == "config"
     assert effective["exclude_glob"]["value"] == ["*.tmp"]
     assert effective["exclude_glob"]["source"] == "config"
     assert "format" not in effective
     assert "out" not in effective
+
+
+def test_list_uses_image_ocr_from_pack_config_for_scanning(tmp_path: Path) -> None:
+    (tmp_path / "image.png").write_bytes(b"fake-image")
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "image_ocr = true",
+                'include_glob = ["image.png"]',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["list", str(tmp_path), "--config", str(config_path)])
+
+    assert result.exit_code == 0, result.output
+    assert "image.png" in result.output
+
+
+def test_skiplist_uses_image_ocr_from_pack_config_for_scanning(tmp_path: Path) -> None:
+    (tmp_path / "image.png").write_bytes(b"fake-image")
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "image_ocr = true",
+                'include_glob = ["image.png"]',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["skiplist", str(tmp_path), "--config", str(config_path)])
+
+    assert result.exit_code == 0, result.output
+    assert "image.png" not in result.output
+    assert "0 files would be skipped." in result.output
 
 
 def test_stats_prints_summary_and_extensions(tmp_path: Path) -> None:
@@ -1391,6 +1485,9 @@ def test_pack_help_all_options_documented(tmp_path: Path) -> None:
     assert "critical" in output
     assert "--policy-dry-run" in output
     assert "--policy-output" in output
+    assert "--image-ocr" in output
+    assert "PNG/JPEG" in output
+    assert "no-image-ocr-st" in output
 
 
 def test_list_help_all_options_documented() -> None:
@@ -1446,6 +1543,9 @@ def test_preview_help_all_options_documented() -> None:
     assert "Jupyter" in output
     assert ".ipynb" in output
     assert "--on-oversize" in output
+    assert "--image-ocr" in output
+    assert "PNG/JPEG" in output
+    assert "no-image-ocr-st" in output
     assert "--redact" in output
     assert "--stdin" in output
     assert "--null" in output

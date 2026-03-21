@@ -14,7 +14,7 @@ pip install foldermix
 pip install "foldermix[all]"   # adds PDF, OCR, Office, tqdm (excludes markitdown)
 pip install "foldermix[all,markitdown]"  # full optional converter stack
 pip install "foldermix[pdf]"   # pypdf only
-pip install "foldermix[ocr]"   # OCR for image-based PDF pages (includes pypdf + rapidocr + pypdfium2)
+pip install "foldermix[ocr]"   # OCR for textless PDF pages and standalone PNG/JPEG images
 pip install "foldermix[office]" # docx/xlsx/pptx support
 ```
 
@@ -26,6 +26,11 @@ brew install foldermix
 ```
 
 Homebrew installs the **core** feature set. Optional converter extras (`pdf`, `ocr`, `office`, `markitdown`) are not included in the Homebrew formula.
+
+The `ocr` extra enables:
+
+- OCR fallback for textless PDF pages via `--pdf-ocr`
+- OCR for explicitly included `.png`, `.jpg`, and `.jpeg` files via `--image-ocr`
 
 ### Full Optional Feature Support
 
@@ -269,6 +274,8 @@ Options:
   --dedupe-content / --no-dedupe-content  Skip later files whose content exactly matches an earlier included file [default: disabled]
   --pdf-ocr / --no-pdf-ocr                Enable OCR fallback for textless PDF pages [default: disabled]
   --pdf-ocr-strict / --no-pdf-ocr-strict  Fail when OCR is needed but unavailable/empty [default: disabled]
+  --image-ocr / --no-image-ocr            Enable OCR for included PNG/JPEG files [default: disabled]
+  --image-ocr-strict / --no-image-ocr-strict  Fail when image OCR is needed but unavailable/empty [default: disabled]
   --fail-on-policy-violation / --no-fail-on-policy-violation  Fail command when policy findings meet threshold [default: disabled]
   --policy-fail-level TEXT     Minimum severity for policy-failure threshold: low, medium, high, critical [default: low]
   --policy-dry-run / --no-policy-dry-run  Evaluate policy outcomes without writing packed output [default: disabled]
@@ -332,6 +339,8 @@ foldermix preview [OPTIONS] [PATH] [FILES]...
   --include-toc / --no-include-toc
   --pdf-ocr / --no-pdf-ocr
   --pdf-ocr-strict / --no-pdf-ocr-strict
+  --image-ocr / --no-image-ocr
+  --image-ocr-strict / --no-image-ocr-strict
   --stdin
   --null
   --print-effective-config
@@ -549,6 +558,9 @@ Semantics:
     - `uv tool install "foldermix[all,markitdown]"`
     - `pipx install "foldermix[all,markitdown]"`
     - `pip install "foldermix[pdf]"`, `pip install "foldermix[ocr]"`, `pip install "foldermix[office]"` in a virtualenv
+- Need OCR for standalone images
+  - image files remain excluded by default; explicitly include them, for example:
+    `foldermix pack . --include-ext .png,.jpg,.jpeg --image-ocr`
 - Expected files are missing from output
   - run `foldermix list . --config foldermix.toml` and `foldermix skiplist . --config foldermix.toml` to inspect include/skip behavior.
   - check `.gitignore`, hidden-path defaults, extension/glob filters, and sensitive-file protection.
