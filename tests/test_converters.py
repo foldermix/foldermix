@@ -172,6 +172,15 @@ class TestImageOcrConverter:
 
         assert result == "alpha\nbeta"
 
+    def test_extract_ocr_text_skips_blank_line_entries_and_keeps_dict_text(self) -> None:
+        from foldermix.converters.image_ocr import ImageOcrConverter
+
+        result = ImageOcrConverter._extract_ocr_text(
+            [[None, "   ", 0.1], {"text": "gamma"}, object()]
+        )
+
+        assert result == "gamma"
+
     def test_convert_returns_ocr_text(self, tmp_path: Path) -> None:
         from foldermix.converters.image_ocr import ImageOcrConverter
 
