@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import sys
 import time
 from pathlib import Path
+from threading import Event, current_thread
+from types import SimpleNamespace
 
 import pytest
 import typer
@@ -969,6 +972,128 @@ def test_pack_keeps_deterministic_order_after_parallel_conversion(
     packer.pack(config)
 
     assert captured_order == ["a.txt", "b.txt"]
+
+
+def test_requires_serial_conversion_for_ocr_native_paths(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "doc.pdf"
+    image_path = tmp_path / "scan.jpg"
+    text_path = tmp_path / "note.txt"
+    _write(pdf_path, "pdf")
+    _write(image_path, "jpg")
+    _write(text_path, "txt")
+
+    assert packer._requires_serial_conversion(
+        _record(pdf_path), PackConfig(root=tmp_path, pdf_ocr=True)
+    )
+    assert packer._requires_serial_conversion(
+        _record(image_path),
+        PackConfig(root=tmp_path, include_ext=[".jpg"], image_ocr=True),
+    )
+    assert not packer._requires_serial_conversion(_record(text_path), PackConfig(root=tmp_path))
+
+
+def test_pack_runs_ocr_native_paths_outside_thread_pool(tmp_path: Path, monkeypatch) -> None:
+    _write(tmp_path / "note.txt", "txt")
+    _write(tmp_path / "doc.pdf", "pdf")
+
+    seen_threads: dict[str, str] = {}
+    parallel_started = Event()
+    serial_started = Event()
+
+    def fake_convert_record(record: FileRecord, registry, config: PackConfig) -> FileBundleItem:
+        seen_threads[record.relpath] = current_thread().name
+        if record.relpath == "note.txt":
+            parallel_started.set()
+            seen_threads["note_wait_saw_serial"] = str(serial_started.wait(timeout=0.5))
+        elif record.relpath == "doc.pdf":
+            seen_threads["serial_saw_parallel"] = str(parallel_started.wait(timeout=0.5))
+            serial_started.set()
+        return FileBundleItem(
+            relpath=record.relpath,
+            ext=record.ext,
+            size_bytes=record.size,
+            mtime="2026-03-22T00:00:00Z",
+            sha256=None,
+            content=record.relpath,
+            converter_name="fake",
+            original_mime="text/plain",
+            warnings=[],
+            warning_entries=[],
+            truncated=False,
+            redacted=False,
+            redaction_mode=config.redact,
+            redaction_event_count=0,
+            redaction_categories=[],
+        )
+
+    monkeypatch.setattr(packer, "_convert_record", fake_convert_record)
+
+    config = PackConfig(
+        root=tmp_path,
+        out=tmp_path / "out.md",
+        format="md",
+        workers=2,
+        include_ext=[".txt", ".pdf"],
+        include_sha256=False,
+        pdf_ocr=True,
+    )
+
+    packer.pack(config)
+
+    assert seen_threads["doc.pdf"] == "MainThread"
+    assert seen_threads["note.txt"] != "MainThread"
+    assert seen_threads["serial_saw_parallel"] == "True"
+    assert seen_threads["note_wait_saw_serial"] == "True"
+
+
+def test_pack_progress_handles_serial_ocr_records(tmp_path: Path, monkeypatch) -> None:
+    _write(tmp_path / "note.txt", "txt")
+    _write(tmp_path / "doc.pdf", "pdf")
+
+    progress_calls: list[tuple[int, str]] = []
+
+    def fake_tqdm(iterable, total: int, desc: str):
+        progress_calls.append((total, desc))
+        return iterable
+
+    monkeypatch.setitem(sys.modules, "tqdm", SimpleNamespace(tqdm=fake_tqdm))
+
+    def fake_convert_record(record: FileRecord, registry, config: PackConfig) -> FileBundleItem:
+        return FileBundleItem(
+            relpath=record.relpath,
+            ext=record.ext,
+            size_bytes=record.size,
+            mtime="2026-03-22T00:00:00Z",
+            sha256=None,
+            content=record.relpath,
+            converter_name="fake",
+            original_mime="text/plain",
+            warnings=[],
+            warning_entries=[],
+            truncated=False,
+            redacted=False,
+            redaction_mode=config.redact,
+            redaction_event_count=0,
+            redaction_categories=[],
+        )
+
+    monkeypatch.setattr(packer, "_convert_record", fake_convert_record)
+
+    config = PackConfig(
+        root=tmp_path,
+        out=tmp_path / "out.md",
+        format="md",
+        workers=2,
+        include_ext=[".txt", ".pdf"],
+        include_sha256=False,
+        pdf_ocr=True,
+        progress=True,
+    )
+
+    packer.pack(config)
+
+    assert (1, "Converting OCR/native files") in progress_calls
+    assert (1, "Converting") in progress_calls
 
 
 def test_pack_include_toc_false_omits_table_of_contents(tmp_path: Path) -> None:
