@@ -54,6 +54,14 @@ _STRUCTURED_TRUNCATE_AFTER_CONVERT_EXTS = {
 }
 
 
+def _requires_serial_conversion(record: FileRecord, config: PackConfig) -> bool:
+    if record.ext == ".pdf" and config.pdf_ocr:
+        return True
+    if record.ext in IMAGE_OCR_EXTENSIONS and config.image_ocr:
+        return True
+    return False
+
+
 def _count_failing_policy_findings(
     policy_findings: list[dict[str, object]], *, min_severity: str
 ) -> int:
@@ -597,18 +605,43 @@ def pack(config: PackConfig) -> None:
         except Exception as e:
             return record, e
 
-    if use_progress and has_tqdm:
-        from tqdm import tqdm
+    parallel_records = [
+        record for record in included if not _requires_serial_conversion(record, config)
+    ]
+    serial_records = [record for record in included if _requires_serial_conversion(record, config)]
 
-        with ThreadPoolExecutor(max_workers=config.workers) as executor:
-            futures = {executor.submit(convert_with_idx, r): r for r in included}
-            results = []
-            for future in tqdm(as_completed(futures), total=len(included), desc="Converting"):
-                results.append(future.result())
-    else:
-        with ThreadPoolExecutor(max_workers=config.workers) as executor:
-            futures = {executor.submit(convert_with_idx, r): r for r in included}
-            results = [f.result() for f in as_completed(futures)]
+    results: list[tuple[FileRecord, FileBundleItem | Exception]] = []
+
+    with ThreadPoolExecutor(max_workers=config.workers) as executor:
+        futures = [executor.submit(convert_with_idx, r) for r in parallel_records]
+
+        if serial_records:
+            if use_progress and has_tqdm:
+                from tqdm import tqdm
+
+                serial_iter = tqdm(
+                    serial_records,
+                    total=len(serial_records),
+                    desc="Converting OCR/native files",
+                )
+            else:
+                serial_iter = serial_records
+
+            for record in serial_iter:
+                results.append(convert_with_idx(record))
+
+        future_iter = as_completed(futures)
+        if use_progress and has_tqdm:
+            from tqdm import tqdm
+
+            future_iter = tqdm(
+                future_iter,
+                total=len(parallel_records),
+                desc="Converting",
+            )
+
+        for future in future_iter:
+            results.append(future.result())
 
     # Re-sort to maintain deterministic order
     record_to_item: dict[str, FileBundleItem | Exception] = {}
