@@ -501,6 +501,7 @@ def test_list_print_effective_config_outputs_sources_and_exits(monkeypatch, tmp_
             [
                 "[pack]",
                 "hidden = true",
+                "image_ocr = true",
                 'include_ext = [".py"]',
                 'exclude_glob = ["*.tmp"]',
                 'format = "xml"',
@@ -532,6 +533,8 @@ def test_list_print_effective_config_outputs_sources_and_exits(monkeypatch, tmp_
     assert effective["include_ext"]["source"] == "cli"
     assert effective["hidden"]["value"] is True
     assert effective["hidden"]["source"] == "config"
+    assert effective["image_ocr"]["value"] is True
+    assert effective["image_ocr"]["source"] == "config"
     assert effective["exclude_glob"]["value"] == ["*.tmp"]
     assert effective["exclude_glob"]["source"] == "config"
     assert "format" not in effective
@@ -1326,6 +1329,7 @@ def test_skiplist_print_effective_config_outputs_sources_and_exits(
             [
                 "[pack]",
                 "hidden = true",
+                "image_ocr = true",
                 'include_ext = [".py"]',
                 'exclude_glob = ["*.tmp"]',
                 'format = "xml"',
@@ -1358,10 +1362,55 @@ def test_skiplist_print_effective_config_outputs_sources_and_exits(
     assert effective["include_ext"]["source"] == "cli"
     assert effective["hidden"]["value"] is True
     assert effective["hidden"]["source"] == "config"
+    assert effective["image_ocr"]["value"] is True
+    assert effective["image_ocr"]["source"] == "config"
     assert effective["exclude_glob"]["value"] == ["*.tmp"]
     assert effective["exclude_glob"]["source"] == "config"
     assert "format" not in effective
     assert "out" not in effective
+
+
+def test_list_uses_image_ocr_from_pack_config_for_scanning(tmp_path: Path) -> None:
+    (tmp_path / "image.png").write_bytes(b"fake-image")
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "image_ocr = true",
+                'include_glob = ["image.png"]',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["list", str(tmp_path), "--config", str(config_path)])
+
+    assert result.exit_code == 0, result.output
+    assert "image.png" in result.output
+
+
+def test_skiplist_uses_image_ocr_from_pack_config_for_scanning(tmp_path: Path) -> None:
+    (tmp_path / "image.png").write_bytes(b"fake-image")
+    config_path = tmp_path / "foldermix.toml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "[pack]",
+                "image_ocr = true",
+                'include_glob = ["image.png"]',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["skiplist", str(tmp_path), "--config", str(config_path)])
+
+    assert result.exit_code == 0, result.output
+    assert "image.png" not in result.output
+    assert "0 files would be skipped." in result.output
 
 
 def test_stats_prints_summary_and_extensions(tmp_path: Path) -> None:

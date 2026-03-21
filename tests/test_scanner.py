@@ -83,6 +83,19 @@ def test_include_glob_overrides_exclude(sample_dir: Path) -> None:
     assert "sample.txt" in relpaths
 
 
+def test_include_glob_overrides_default_non_image_extension_exclude(tmp_path: Path) -> None:
+    (tmp_path / "archive.zip").write_text("placeholder", encoding="utf-8")
+
+    config = PackConfig(root=tmp_path, include_glob=["archive.zip"])
+    included, skipped = scan(config)
+
+    relpaths = [r.relpath for r in included]
+    skip_reasons = {r.relpath: r.reason for r in skipped}
+
+    assert "archive.zip" in relpaths
+    assert "archive.zip" not in skip_reasons
+
+
 def test_oversize_skip(sample_dir: Path) -> None:
     config = PackConfig(root=sample_dir, max_bytes=10, on_oversize="skip")
     included, skipped = scan(config)

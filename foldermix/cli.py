@@ -98,6 +98,7 @@ _LIST_PARAM_BY_KEY = {
     "follow_symlinks": "follow_symlinks",
     "respect_gitignore": "respect_gitignore",
     "on_oversize": "on_oversize",
+    "image_ocr": "image_ocr",
 }
 
 _SKIPLIST_PARAM_BY_KEY = {
@@ -112,6 +113,7 @@ _SKIPLIST_PARAM_BY_KEY = {
     "follow_symlinks": "follow_symlinks",
     "respect_gitignore": "respect_gitignore",
     "on_oversize": "on_oversize",
+    "image_ocr": "image_ocr",
 }
 
 _STATS_PARAM_BY_KEY = {
@@ -669,6 +671,11 @@ def list_cmd(
         "--on-oversize",
         help="What to do when a file exceeds --max-bytes: skip, truncate [default: skip]",
     ),
+    image_ocr: bool = typer.Option(
+        False,
+        "--image-ocr/--no-image-ocr",
+        help="Apply image OCR inclusion rules for PNG/JPEG files during scanning [default: disabled]",
+    ),
     stdin: bool = typer.Option(
         False,
         "--stdin",
@@ -717,6 +724,7 @@ def list_cmd(
         "follow_symlinks": follow_symlinks,
         "respect_gitignore": respect_gitignore,
         "on_oversize": on_oversize,
+        "image_ocr": image_ocr,
     }
     try:
         overrides, used_config_path = load_command_config(
@@ -759,6 +767,7 @@ def list_cmd(
         follow_symlinks=values["follow_symlinks"],  # type: ignore[arg-type]
         respect_gitignore=values["respect_gitignore"],  # type: ignore[arg-type]
         on_oversize=values["on_oversize"],  # type: ignore[arg-type]
+        image_ocr=values["image_ocr"],  # type: ignore[arg-type]
     )
     included, skipped = scan(pack_config)
     for r in included:
@@ -909,6 +918,11 @@ def skiplist_cmd(
         "--on-oversize",
         help="What to do when a file exceeds --max-bytes: skip, truncate [default: skip]",
     ),
+    image_ocr: bool = typer.Option(
+        False,
+        "--image-ocr/--no-image-ocr",
+        help="Apply image OCR inclusion rules for PNG/JPEG files during scanning [default: disabled]",
+    ),
     conversion_check: bool = typer.Option(
         False,
         "--conversion-check/--scan-only",
@@ -963,6 +977,7 @@ def skiplist_cmd(
         "follow_symlinks": follow_symlinks,
         "respect_gitignore": respect_gitignore,
         "on_oversize": on_oversize,
+        "image_ocr": image_ocr,
     }
     try:
         overrides, used_config_path = load_command_config(
@@ -1005,6 +1020,7 @@ def skiplist_cmd(
         follow_symlinks=values["follow_symlinks"],  # type: ignore[arg-type]
         respect_gitignore=values["respect_gitignore"],  # type: ignore[arg-type]
         on_oversize=values["on_oversize"],  # type: ignore[arg-type]
+        image_ocr=values["image_ocr"],  # type: ignore[arg-type]
     )
     included, skipped = scan(pack_config)
     skip_entries, converter_missing_count = _build_skiplist_entries(

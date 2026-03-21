@@ -144,6 +144,34 @@ class TestImageOcrConverter:
         ):
             assert converter.can_convert(".png") is False
 
+    def test_extract_ocr_text_handles_tuple_with_line_entries(self) -> None:
+        from foldermix.converters.image_ocr import ImageOcrConverter
+
+        result = ImageOcrConverter._extract_ocr_text(
+            ([[None, "hello", 0.99], [None, "world", 0.88]], 0.01)
+        )
+
+        assert result == "hello\nworld"
+
+    def test_extract_ocr_text_handles_none(self) -> None:
+        from foldermix.converters.image_ocr import ImageOcrConverter
+
+        assert ImageOcrConverter._extract_ocr_text(None) == ""
+
+    def test_extract_ocr_text_handles_string(self) -> None:
+        from foldermix.converters.image_ocr import ImageOcrConverter
+
+        assert ImageOcrConverter._extract_ocr_text("  hello world  ") == "hello world"
+
+    def test_extract_ocr_text_handles_dict_entries(self) -> None:
+        from foldermix.converters.image_ocr import ImageOcrConverter
+
+        result = ImageOcrConverter._extract_ocr_text(
+            [{"text": "alpha"}, {"text": "  beta  "}, {"text": ""}, {"text": None}, {}]
+        )
+
+        assert result == "alpha\nbeta"
+
     def test_convert_returns_ocr_text(self, tmp_path: Path) -> None:
         from foldermix.converters.image_ocr import ImageOcrConverter
 
@@ -210,6 +238,19 @@ class TestImageOcrConverter:
 
         assert result.content == ""
         assert result.warnings == ["OCR dependencies missing: native boom"]
+
+    def test_convert_raises_in_strict_mode_when_import_is_broken(self, tmp_path: Path) -> None:
+        from foldermix.converters.image_ocr import ImageOcrConverter
+
+        image = tmp_path / "scan.png"
+        image.write_bytes(b"fake-image")
+
+        with patch(
+            "foldermix.converters.image_ocr.importlib.import_module",
+            side_effect=RuntimeError("native boom"),
+        ):
+            with pytest.raises(RuntimeError, match="OCR dependencies missing: native boom"):
+                ImageOcrConverter().convert(image, ocr_strict=True)
 
     def test_convert_warns_when_runtime_fails(self, tmp_path: Path) -> None:
         from foldermix.converters.image_ocr import ImageOcrConverter
