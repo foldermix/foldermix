@@ -234,13 +234,6 @@
     },
     {
       "category": "Note",
-      "rel_image_path": "images/Note/2021614005.jpg",
-      "rel_expected_text_path": "expected_text/Note/2021614005.txt",
-      "sha256": "6496b8ad005caec5a200e70b1ea5793b5c55ff8946078e7cd26d50e357cade36",
-      "bytes": 95201
-    },
-    {
-      "category": "Note",
       "rel_image_path": "images/Note/2022245046.jpg",
       "rel_expected_text_path": "expected_text/Note/2022245046.txt",
       "sha256": "4e59aba76dd8420ca15fb11c34c29dcf37b042f9fe31a62fea5311a1fd23cf8c",
