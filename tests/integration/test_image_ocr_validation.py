@@ -73,9 +73,7 @@ VALIDATION_ITEMS = load_validation_items()
     "item",
     VALIDATION_ITEMS,
     ids=lambda item: (
-        "missing-validation-set"
-        if item is MISSING_VALIDATION_SET
-        else item.image_path.as_posix()
+        "missing-validation-set" if item is MISSING_VALIDATION_SET else item.image_path.as_posix()
     ),
 )
 def test_image_ocr_matches_validation_golden(item: OcrValidationItem | object) -> None:
