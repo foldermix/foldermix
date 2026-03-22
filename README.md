@@ -6,6 +6,10 @@
 
 Docs site: [foldermix.github.io/foldermix](https://foldermix.github.io/foldermix/)
 
+Maintainer docs:
+
+- [OCR validation set workflow](docs/ocr_validation.md)
+
 ## Installation
 
 ```bash
