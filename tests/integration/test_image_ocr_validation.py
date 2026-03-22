@@ -16,6 +16,7 @@ pytestmark = pytest.mark.integration
 REPO_ROOT = Path(__file__).resolve().parents[2]
 VALIDATION_ROOT = REPO_ROOT / "tests" / "data" / "ocr_validation"
 MANIFEST_PATH = VALIDATION_ROOT / "manifest.json"
+MISSING_VALIDATION_SET = object()
 
 
 @dataclass(frozen=True)
@@ -35,13 +36,9 @@ def env_int(name: str, default: int) -> int:
     return int(value) if value is not None else default
 
 
-def load_validation_items() -> list[OcrValidationItem]:
+def load_validation_items() -> list[OcrValidationItem] | list[object]:
     if not MANIFEST_PATH.exists():
-        pytest.skip(
-            "OCR validation set not present; run scripts/build_ocr_validation_set.py "
-            "and commit tests/data/ocr_validation",
-            allow_module_level=True,
-        )
+        return [MISSING_VALIDATION_SET]
 
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     if manifest.get("schema_version") != 1:
@@ -72,8 +69,22 @@ def load_validation_items() -> list[OcrValidationItem]:
 VALIDATION_ITEMS = load_validation_items()
 
 
-@pytest.mark.parametrize("item", VALIDATION_ITEMS, ids=lambda item: item.image_path.as_posix())
-def test_image_ocr_matches_validation_golden(item: OcrValidationItem) -> None:
+@pytest.mark.parametrize(
+    "item",
+    VALIDATION_ITEMS,
+    ids=lambda item: (
+        "missing-validation-set"
+        if item is MISSING_VALIDATION_SET
+        else item.image_path.as_posix()
+    ),
+)
+def test_image_ocr_matches_validation_golden(item: OcrValidationItem | object) -> None:
+    if item is MISSING_VALIDATION_SET:
+        pytest.skip(
+            "OCR validation set not present; run scripts/build_ocr_validation_set.py "
+            "and commit tests/data/ocr_validation"
+        )
+
     min_ratio = env_float("FOLDERMIX_OCR_MIN_RATIO", 0.60)
     min_chars_floor = env_int("FOLDERMIX_OCR_MIN_CHARS_FLOOR", 40)
     min_chars_frac = env_float("FOLDERMIX_OCR_MIN_CHARS_FRAC", 0.15)

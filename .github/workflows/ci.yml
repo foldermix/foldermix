@@ -90,9 +90,9 @@ jobs:
       - name: OCR validation integration check
         run: >
           python -m pytest
-          -m integration
           tests/integration/test_image_ocr_validation.py
-          -vv -ra --strict-markers --strict-config
+          -m integration
+          -o addopts="-vv -ra --strict-markers --strict-config"
 
   package-smoke:
     runs-on: ubuntu-latest

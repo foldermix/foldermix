@@ -159,7 +159,6 @@ def render_expected_text(
 
 def build_manifest(
     *,
-    out_dir: Path,
     dataset_name: str,
     dataset_root: Path,
     categories: Sequence[str],
@@ -214,7 +213,13 @@ def build_validation_set(
     if out_dir.exists():
         if not force:
             raise ValueError(f"Output directory {out_dir} already exists. Re-run with --force.")
-        shutil.rmtree(out_dir)
+        if out_dir.is_dir():
+            shutil.rmtree(out_dir)
+        else:
+            raise ValueError(
+                f"Output path {out_dir} exists and is not a directory. "
+                "Please remove it or choose a different output directory."
+            )
 
     ensure_expected_categories(dataset_root, categories)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -256,7 +261,6 @@ def build_validation_set(
             )
 
     manifest = build_manifest(
-        out_dir=out_dir,
         dataset_name=dataset_name,
         dataset_root=dataset_root,
         categories=categories,

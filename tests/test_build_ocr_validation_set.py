@@ -97,3 +97,38 @@ def test_build_validation_set_requires_force_for_existing_output_dir(tmp_path: P
         assert "--force" in str(exc)
     else:
         raise AssertionError("Expected build_validation_set to require --force.")
+
+
+def test_build_validation_set_rejects_force_when_output_path_is_a_file(tmp_path: Path) -> None:
+    module = load_builder_module()
+
+    dataset_root = tmp_path / "dataset"
+    category_dir = dataset_root / "Email"
+    category_dir.mkdir(parents=True)
+    for index in range(2):
+        (category_dir / f"email-{index}.jpg").write_bytes(b"fixture")
+
+    out_path = tmp_path / "out"
+    out_path.write_text("not a directory", encoding="utf-8")
+
+    class FakeConverter:
+        def convert(self, path: Path, encoding: str = "utf-8", *, ocr_strict: bool = False):
+            del path, encoding, ocr_strict
+            return SimpleNamespace(content="fixture")
+
+    try:
+        module.build_validation_set(
+            dataset_root=dataset_root,
+            out_dir=out_path,
+            categories=["Email"],
+            per_category=1,
+            seed=7,
+            dataset_name="fixture-dataset",
+            lowercase=False,
+            force=True,
+            converter=FakeConverter(),
+        )
+    except ValueError as exc:
+        assert "is not a directory" in str(exc)
+    else:
+        raise AssertionError("Expected build_validation_set to reject a file output path.")
