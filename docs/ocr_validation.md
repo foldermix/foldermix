@@ -22,9 +22,11 @@ pip install -e ".[all]"
 
 3. Generate the committable sample set:
 
+Point `--dataset-root` at the extracted directory whose direct children are the category folders (`ADVE/`, `Email/`, ...). For the Kaggle archive layout used during this PR, that is the extracted `ocr_docs_dataset/` directory.
+
 ```bash
 python scripts/build_ocr_validation_set.py \
-  --dataset-root /path/to/scanned-images-dataset-for-ocr-and-vlm-finetuning \
+  --dataset-root /path/to/ocr_docs_dataset \
   --out-dir tests/data/ocr_validation \
   --per-category 5 \
   --seed 1337
@@ -36,13 +38,13 @@ python scripts/build_ocr_validation_set.py \
 - `tests/data/ocr_validation/images/...`
 - `tests/data/ocr_validation/expected_text/...`
 
-The builder redacts SSN-like values in generated OCR goldens before writing them to disk. You should still review the sampled files for sensitive content before committing them.
+The builder redacts SSN-like values, email addresses, and phone numbers in generated OCR goldens before writing them to disk. You should still review the sampled files for sensitive content before committing them.
 
 To replace an existing validation set or refresh goldens after a deliberate OCR improvement, rerun with `--force`:
 
 ```bash
 python scripts/build_ocr_validation_set.py \
-  --dataset-root /path/to/scanned-images-dataset-for-ocr-and-vlm-finetuning \
+  --dataset-root /path/to/ocr_docs_dataset \
   --out-dir tests/data/ocr_validation \
   --per-category 5 \
   --seed 1337 \

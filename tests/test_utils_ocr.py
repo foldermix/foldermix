@@ -18,3 +18,8 @@ def test_normalize_ocr_text_optionally_lowercases_output() -> None:
 
 def test_redact_ocr_pii_replaces_ssn_like_values() -> None:
     assert redact_ocr_pii("SSN 123-45-6789") == "SSN 000-00-0000"
+
+
+def test_redact_ocr_pii_replaces_email_and_phone_values() -> None:
+    text = "Call (402) 559-4257 or email bgmeiner@unmc.edu."
+    assert redact_ocr_pii(text) == "Call 000-000-0000 or email redacted@example.com."

@@ -239,7 +239,7 @@ def build_validation_set(
     images_dir = out_dir / "images"
     expected_dir = out_dir / "expected_text"
     items: list[ValidationItem] = []
-    ocr_converter = converter or strict_ocr_converter()
+    ocr_converter = converter if converter is not None else strict_ocr_converter()
 
     for category in categories:
         category_dir = dataset_root / category
