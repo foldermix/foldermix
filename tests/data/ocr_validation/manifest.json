@@ -1,0 +1,376 @@
+{
+  "schema_version": 1,
+  "source": {
+    "dataset_name": "scanned-images-dataset-for-ocr-and-vlm-finetuning",
+    "dataset_root_basename": "ocr_docs_dataset"
+  },
+  "created_at": "2026-03-22T12:45:58Z",
+  "params": {
+    "per_category": 5,
+    "seed": 1337
+  },
+  "categories": [
+    "ADVE",
+    "Email",
+    "Form",
+    "Letter",
+    "Memo",
+    "News",
+    "Note",
+    "Report",
+    "Resume",
+    "Scientific"
+  ],
+  "items": [
+    {
+      "category": "ADVE",
+      "rel_image_path": "images/ADVE/1002761179.jpg",
+      "rel_expected_text_path": "expected_text/ADVE/1002761179.txt",
+      "sha256": "59e77fd590b90c87258d8cfb4fe1257b0b71e4a65b748ae61337384fc53d8a08",
+      "bytes": 1119212
+    },
+    {
+      "category": "ADVE",
+      "rel_image_path": "images/ADVE/1005150029.jpg",
+      "rel_expected_text_path": "expected_text/ADVE/1005150029.txt",
+      "sha256": "ab6e94974635c3a5db9e6b58627b0ba35eeb8c999faafde19d3beabf2a366a86",
+      "bytes": 733834
+    },
+    {
+      "category": "ADVE",
+      "rel_image_path": "images/ADVE/2071388237.jpg",
+      "rel_expected_text_path": "expected_text/ADVE/2071388237.txt",
+      "sha256": "07fd6141b2bf521181a16542eea5855cf4728b3b73ee0ccd7c8f5e696bd1c2bb",
+      "bytes": 372415
+    },
+    {
+      "category": "ADVE",
+      "rel_image_path": "images/ADVE/502592126.jpg",
+      "rel_expected_text_path": "expected_text/ADVE/502592126.txt",
+      "sha256": "7ae9a03207c8751f496fcb7448c15ba191c00e93e760e8075e379177a58701bc",
+      "bytes": 1661423
+    },
+    {
+      "category": "ADVE",
+      "rel_image_path": "images/ADVE/512725630.jpg",
+      "rel_expected_text_path": "expected_text/ADVE/512725630.txt",
+      "sha256": "b85038d2f83474a45f0a0606b25a49903be56957565185b9609608aeaf30b46f",
+      "bytes": 582779
+    },
+    {
+      "category": "Email",
+      "rel_image_path": "images/Email/2076406705.jpg",
+      "rel_expected_text_path": "expected_text/Email/2076406705.txt",
+      "sha256": "87dc78354916fff1eedeb629a0b34f0a6d84e719ad35e3d5105f2d1472356c28",
+      "bytes": 92803
+    },
+    {
+      "category": "Email",
+      "rel_image_path": "images/Email/2078340010b.jpg",
+      "rel_expected_text_path": "expected_text/Email/2078340010b.txt",
+      "sha256": "7461eb64f6234183c73e97a9e010696bcf39e737aadbb11153177aedd0d76603",
+      "bytes": 71584
+    },
+    {
+      "category": "Email",
+      "rel_image_path": "images/Email/2078802747_2748.jpg",
+      "rel_expected_text_path": "expected_text/Email/2078802747_2748.txt",
+      "sha256": "454a83cde0d0e161d54bc9b19ba0e0edec94cbea2b4c69d450455401104994c2",
+      "bytes": 226321
+    },
+    {
+      "category": "Email",
+      "rel_image_path": "images/Email/2083648580a.jpg",
+      "rel_expected_text_path": "expected_text/Email/2083648580a.txt",
+      "sha256": "0091438862da5464922d727695d1010a45e30f30f6210eb808b67e432e4ac0fe",
+      "bytes": 91323
+    },
+    {
+      "category": "Email",
+      "rel_image_path": "images/Email/528483841+-3842.jpg",
+      "rel_expected_text_path": "expected_text/Email/528483841+-3842.txt",
+      "sha256": "9f0485002a43d3c3d3a1e2809ce8fb719b7a2a7f8cdcb3db74db6b6d0e933e50",
+      "bytes": 263542
+    },
+    {
+      "category": "Form",
+      "rel_image_path": "images/Form/2043460274-b.jpg",
+      "rel_expected_text_path": "expected_text/Form/2043460274-b.txt",
+      "sha256": "36528505ea0f2c53e774009c40257b76e9dbeb8ddcbce1f002eff3dd69e7ced3",
+      "bytes": 948344
+    },
+    {
+      "category": "Form",
+      "rel_image_path": "images/Form/2063575884.jpg",
+      "rel_expected_text_path": "expected_text/Form/2063575884.txt",
+      "sha256": "04d6e8573360ab18e285c20eb6e1d1388a3f4a22277c6e6593f2a1d5e37531b3",
+      "bytes": 593442
+    },
+    {
+      "category": "Form",
+      "rel_image_path": "images/Form/2078252008.jpg",
+      "rel_expected_text_path": "expected_text/Form/2078252008.txt",
+      "sha256": "4991838d48ecc7188ccfa6fb706724e56828c0df54c2a28048a1bb9790318084",
+      "bytes": 377272
+    },
+    {
+      "category": "Form",
+      "rel_image_path": "images/Form/507222734.jpg",
+      "rel_expected_text_path": "expected_text/Form/507222734.txt",
+      "sha256": "9fe5b114cafc67dab47db6eb5446c06195bf28f9ced19e47d92f9cf8d5145543",
+      "bytes": 939505
+    },
+    {
+      "category": "Form",
+      "rel_image_path": "images/Form/523649974+-9974.jpg",
+      "rel_expected_text_path": "expected_text/Form/523649974+-9974.txt",
+      "sha256": "3cc746e26611f4bc20ce6cd8ee2bddbb12441ef0ec5ae22781742558fad4da6f",
+      "bytes": 663549
+    },
+    {
+      "category": "Letter",
+      "rel_image_path": "images/Letter/500041544.jpg",
+      "rel_expected_text_path": "expected_text/Letter/500041544.txt",
+      "sha256": "a5f7c74b0f1f04c765834d9315cb0404fd516ead24d7c812a448fc351b843d22",
+      "bytes": 785829
+    },
+    {
+      "category": "Letter",
+      "rel_image_path": "images/Letter/518193540.jpg",
+      "rel_expected_text_path": "expected_text/Letter/518193540.txt",
+      "sha256": "3e25b4ad297cc380c80141089897433b781abb8881631bbdb330717eb392071f",
+      "bytes": 363190
+    },
+    {
+      "category": "Letter",
+      "rel_image_path": "images/Letter/CTRSP-FILES026390-63.jpg",
+      "rel_expected_text_path": "expected_text/Letter/CTRSP-FILES026390-63.txt",
+      "sha256": "3efe78c14be268109dd66dacf5c1a9473dfefc9e254788f06c629c6d9a21b0cf",
+      "bytes": 122371
+    },
+    {
+      "category": "Letter",
+      "rel_image_path": "images/Letter/ti16601162.jpg",
+      "rel_expected_text_path": "expected_text/Letter/ti16601162.txt",
+      "sha256": "10329217fcd0311146add5761fe2493ee94855810169e20c4724d90e61b73571",
+      "bytes": 259294
+    },
+    {
+      "category": "Letter",
+      "rel_image_path": "images/Letter/tnwl0002422.jpg",
+      "rel_expected_text_path": "expected_text/Letter/tnwl0002422.txt",
+      "sha256": "f97e2888bdbd1a063dd5d76934bcc838a8c900ef84e7003b297bd7451f1f1278",
+      "bytes": 222217
+    },
+    {
+      "category": "Memo",
+      "rel_image_path": "images/Memo/1001854313.jpg",
+      "rel_expected_text_path": "expected_text/Memo/1001854313.txt",
+      "sha256": "c06073e3fa97589757aee50a2bbfe8ab3b708fdebfe1a292c686dbeabec9a5ec",
+      "bytes": 322984
+    },
+    {
+      "category": "Memo",
+      "rel_image_path": "images/Memo/1001906916.jpg",
+      "rel_expected_text_path": "expected_text/Memo/1001906916.txt",
+      "sha256": "b378b80839ebdd7dc5b31f93281ebff91789b7ad3d3898ffb36a67f2b602cb36",
+      "bytes": 654820
+    },
+    {
+      "category": "Memo",
+      "rel_image_path": "images/Memo/2057154439_2057154440.jpg",
+      "rel_expected_text_path": "expected_text/Memo/2057154439_2057154440.txt",
+      "sha256": "69f14bc6444e9191b1d313c90fb444bd76f61d778cbf09a11692dda3ffa2504f",
+      "bytes": 1070777
+    },
+    {
+      "category": "Memo",
+      "rel_image_path": "images/Memo/87856898_87856902.jpg",
+      "rel_expected_text_path": "expected_text/Memo/87856898_87856902.txt",
+      "sha256": "8d2425ac867182c8fe2670d523d58bab213e27fa678973e620410fd7caf04651",
+      "bytes": 659021
+    },
+    {
+      "category": "Memo",
+      "rel_image_path": "images/Memo/ti00290170_0176.jpg",
+      "rel_expected_text_path": "expected_text/Memo/ti00290170_0176.txt",
+      "sha256": "4108b16e50d635f49992ed00a6512fc6eb762b7c89ac65add98e8ffd3795070f",
+      "bytes": 136870
+    },
+    {
+      "category": "News",
+      "rel_image_path": "images/News/1003043510-a.jpg",
+      "rel_expected_text_path": "expected_text/News/1003043510-a.txt",
+      "sha256": "ec7626e51cd581cca8ced80519b28a9f50464dfdfea29510ad085603f8db0e67",
+      "bytes": 990343
+    },
+    {
+      "category": "News",
+      "rel_image_path": "images/News/2047128093_8094.jpg",
+      "rel_expected_text_path": "expected_text/News/2047128093_8094.txt",
+      "sha256": "f16ac85881cd1ef56790accbf4882bbfddb020149846c17e6af8499624c37f0b",
+      "bytes": 571247
+    },
+    {
+      "category": "News",
+      "rel_image_path": "images/News/2070051956.jpg",
+      "rel_expected_text_path": "expected_text/News/2070051956.txt",
+      "sha256": "8c921d4158181ba53f84bebc0073835714b791ae2d736f5fd28431991cf94286",
+      "bytes": 142600
+    },
+    {
+      "category": "News",
+      "rel_image_path": "images/News/2071692648.jpg",
+      "rel_expected_text_path": "expected_text/News/2071692648.txt",
+      "sha256": "1d5e02b6779ac92d08e4b02ee3f56fcd260d86b231b797d05d84295fdfeb8f57",
+      "bytes": 622657
+    },
+    {
+      "category": "News",
+      "rel_image_path": "images/News/89685528.jpg",
+      "rel_expected_text_path": "expected_text/News/89685528.txt",
+      "sha256": "74e68457968319f8589ce6cdb310e89d5b767334589df2caccba911dea9f4d2f",
+      "bytes": 1126086
+    },
+    {
+      "category": "Note",
+      "rel_image_path": "images/Note/2021614005.jpg",
+      "rel_expected_text_path": "expected_text/Note/2021614005.txt",
+      "sha256": "6496b8ad005caec5a200e70b1ea5793b5c55ff8946078e7cd26d50e357cade36",
+      "bytes": 95201
+    },
+    {
+      "category": "Note",
+      "rel_image_path": "images/Note/2022245046.jpg",
+      "rel_expected_text_path": "expected_text/Note/2022245046.txt",
+      "sha256": "4e59aba76dd8420ca15fb11c34c29dcf37b042f9fe31a62fea5311a1fd23cf8c",
+      "bytes": 374905
+    },
+    {
+      "category": "Note",
+      "rel_image_path": "images/Note/2028589254.jpg",
+      "rel_expected_text_path": "expected_text/Note/2028589254.txt",
+      "sha256": "70c2ee7662518084117c949a396b8b97f7c474331879573981c26adbd689b31a",
+      "bytes": 242668
+    },
+    {
+      "category": "Note",
+      "rel_image_path": "images/Note/2072654561.jpg",
+      "rel_expected_text_path": "expected_text/Note/2072654561.txt",
+      "sha256": "84b34852b3d74fb4715e8570db749a53f53f08b96e800d64edb7e3abad972cbd",
+      "bytes": 78593
+    },
+    {
+      "category": "Note",
+      "rel_image_path": "images/Note/2085052974.jpg",
+      "rel_expected_text_path": "expected_text/Note/2085052974.txt",
+      "sha256": "09318d64072f3e50cf600db6e907b740e0809d7990fa031b2058693c6f800d22",
+      "bytes": 104216
+    },
+    {
+      "category": "Report",
+      "rel_image_path": "images/Report/503117428_503117430.jpg",
+      "rel_expected_text_path": "expected_text/Report/503117428_503117430.txt",
+      "sha256": "347fb264d6621fbbcdbed924fecfbecf5a64d90153f7595e7b6259103ad433e3",
+      "bytes": 985872
+    },
+    {
+      "category": "Report",
+      "rel_image_path": "images/Report/506153379_506153380.jpg",
+      "rel_expected_text_path": "expected_text/Report/506153379_506153380.txt",
+      "sha256": "4cbcb3ce8c8ef41924c85d9582b88c867bfced0199d567d84c628c4d4349998d",
+      "bytes": 410800
+    },
+    {
+      "category": "Report",
+      "rel_image_path": "images/Report/511408565+-8565.jpg",
+      "rel_expected_text_path": "expected_text/Report/511408565+-8565.txt",
+      "sha256": "1fe7fae925e81b96a55866ea6a7fa31a8d5fad58c1ee36ddb751356d5613108f",
+      "bytes": 266464
+    },
+    {
+      "category": "Report",
+      "rel_image_path": "images/Report/517574050+-4065.jpg",
+      "rel_expected_text_path": "expected_text/Report/517574050+-4065.txt",
+      "sha256": "5ad4d483b755a60c806acb0ac1e2718c7142e5392ac91dbd3241b0e81208c509",
+      "bytes": 330469
+    },
+    {
+      "category": "Report",
+      "rel_image_path": "images/Report/519792044+-2049.jpg",
+      "rel_expected_text_path": "expected_text/Report/519792044+-2049.txt",
+      "sha256": "faf424002d0f36ac18897acedb65a1177f2b8706125f0009c822b8a211d0ad1f",
+      "bytes": 288900
+    },
+    {
+      "category": "Resume",
+      "rel_image_path": "images/Resume/40019153-9154.jpg",
+      "rel_expected_text_path": "expected_text/Resume/40019153-9154.txt",
+      "sha256": "e12b47b52069004cafb2e93aa8b402623bf46faac07574ee7e4ffa052332a3de",
+      "bytes": 369860
+    },
+    {
+      "category": "Resume",
+      "rel_image_path": "images/Resume/50525533-5540.jpg",
+      "rel_expected_text_path": "expected_text/Resume/50525533-5540.txt",
+      "sha256": "ad3359faf1126b33fc587098ed3f5b722734eeb4364794eea66e10112014f25a",
+      "bytes": 287187
+    },
+    {
+      "category": "Resume",
+      "rel_image_path": "images/Resume/50579200-9201.jpg",
+      "rel_expected_text_path": "expected_text/Resume/50579200-9201.txt",
+      "sha256": "6075aa0e37b587a12e1c84dfed31e524668a4ecdb8f405f2c1fa56f2c64503ac",
+      "bytes": 724771
+    },
+    {
+      "category": "Resume",
+      "rel_image_path": "images/Resume/50617273-7274.jpg",
+      "rel_expected_text_path": "expected_text/Resume/50617273-7274.txt",
+      "sha256": "b60c3295049b9bd3197d08ba9dff274dcf03139fdab4f9e2b1daa192c19f6371",
+      "bytes": 428058
+    },
+    {
+      "category": "Resume",
+      "rel_image_path": "images/Resume/50639278-9279.jpg",
+      "rel_expected_text_path": "expected_text/Resume/50639278-9279.txt",
+      "sha256": "ec3ce5d1fa30bb5f41f81e2bd46f949e32141c41e22afba2ae2b9db514fcbca9",
+      "bytes": 688069
+    },
+    {
+      "category": "Scientific",
+      "rel_image_path": "images/Scientific/10146565_10146568.jpg",
+      "rel_expected_text_path": "expected_text/Scientific/10146565_10146568.txt",
+      "sha256": "2a318aa6e315f240fe3e9ed617833a20135514b9b62db7957c8cc2163e421b4b",
+      "bytes": 1293474
+    },
+    {
+      "category": "Scientific",
+      "rel_image_path": "images/Scientific/2501033072.jpg",
+      "rel_expected_text_path": "expected_text/Scientific/2501033072.txt",
+      "sha256": "bd33b61b10a1310f77b3dd5de08c94773e48dbf73e9e4dab2f69393e43844695",
+      "bytes": 847696
+    },
+    {
+      "category": "Scientific",
+      "rel_image_path": "images/Scientific/50541753-1762.jpg",
+      "rel_expected_text_path": "expected_text/Scientific/50541753-1762.txt",
+      "sha256": "4588d0494ef76659d87b5c11d9bdfd1e4da3cc31bc84fa3328ba3f7c5b7246cd",
+      "bytes": 793080
+    },
+    {
+      "category": "Scientific",
+      "rel_image_path": "images/Scientific/87150355.jpg",
+      "rel_expected_text_path": "expected_text/Scientific/87150355.txt",
+      "sha256": "bf4a5c1bfb9c4a86d690487e4669af69de763c8231f3b453d53db450675f2ca9",
+      "bytes": 640044
+    },
+    {
+      "category": "Scientific",
+      "rel_image_path": "images/Scientific/87592525_87592533.jpg",
+      "rel_expected_text_path": "expected_text/Scientific/87592525_87592533.txt",
+      "sha256": "34095092a87e671f01feb04bc296285e8af58deb1094239a317551e7df4b15f9",
+      "bytes": 536698
+    }
+  ]
+}
