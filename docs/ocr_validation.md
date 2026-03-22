@@ -1,6 +1,6 @@
 # OCR Validation Set
 
-Foldermix ships a small committable OCR validation corpus for regression testing the standalone image OCR path. The committed files live under `tests/data/ocr_validation`, but the source dataset is **not** committed to this repository.
+Foldermix supports generating and committing a small OCR validation corpus for regression testing the standalone image OCR path. When present, the committed files live under `tests/data/ocr_validation`, but the source dataset is **not** committed to this repository.
 
 Source dataset:
 
@@ -35,6 +35,8 @@ python scripts/build_ocr_validation_set.py \
 - `tests/data/ocr_validation/manifest.json`
 - `tests/data/ocr_validation/images/...`
 - `tests/data/ocr_validation/expected_text/...`
+
+The builder redacts SSN-like values in generated OCR goldens before writing them to disk. You should still review the sampled files for sensitive content before committing them.
 
 To replace an existing validation set or refresh goldens after a deliberate OCR improvement, rerun with `--force`:
 

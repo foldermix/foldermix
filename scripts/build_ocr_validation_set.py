@@ -14,8 +14,6 @@ from pathlib import Path
 from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
 
 DEFAULT_DATASET_NAME = "scanned-images-dataset-for-ocr-and-vlm-finetuning"
 DEFAULT_CATEGORIES = (
@@ -126,25 +124,39 @@ def sha256_file(path: Path) -> str:
 
 
 def get_image_ocr_converter() -> Any:
+    ensure_project_root_on_sys_path()
     module = importlib.import_module("foldermix.converters.image_ocr")
     return module.ImageOcrConverter()
 
 
 def normalize_ocr_text_value(text: str, *, lowercase: bool) -> str:
+    ensure_project_root_on_sys_path()
     module = importlib.import_module("foldermix.utils_ocr")
-    return module.normalize_ocr_text(text, lowercase=lowercase)
+    return module.redact_ocr_pii(module.normalize_ocr_text(text, lowercase=lowercase))
+
+
+def ensure_project_root_on_sys_path() -> None:
+    if str(PROJECT_ROOT) not in sys.path:
+        sys.path.insert(0, str(PROJECT_ROOT))
+
+
+def rapidocr_import_error() -> str | None:
+    try:
+        importlib.import_module("rapidocr_onnxruntime")
+    except (ImportError, OSError, RuntimeError) as exc:
+        return str(exc)
+    return None
 
 
 def strict_ocr_converter() -> Any:
-    converter = get_image_ocr_converter()
-    rapid_ocr_cls, import_error = converter._load_rapidocr()
-    if rapid_ocr_cls is None:
+    import_error = rapidocr_import_error()
+    if import_error is not None:
         suffix = f"\nUnderlying error: {import_error}" if import_error else ""
         raise RuntimeError(
             'OCR dependencies missing. Install them with `pip install -e ".[ocr]"` '
             f'or `pip install -e ".[all]"` before building the validation set.{suffix}'
         )
-    return converter
+    return get_image_ocr_converter()
 
 
 def render_expected_text(
@@ -207,7 +219,7 @@ def build_validation_set(
     force: bool,
     converter: Any | None = None,
     created_at: datetime | None = None,
-) -> tuple[dict[str, object], list[str]]:
+) -> dict[str, object]:
     if per_category <= 0:
         raise ValueError("--per-category must be a positive integer.")
     if out_dir.exists():
@@ -226,7 +238,6 @@ def build_validation_set(
 
     images_dir = out_dir / "images"
     expected_dir = out_dir / "expected_text"
-    build_warnings: list[str] = []
     items: list[ValidationItem] = []
     ocr_converter = converter or strict_ocr_converter()
 
@@ -273,7 +284,7 @@ def build_validation_set(
         json.dumps(manifest, indent=2, sort_keys=False) + "\n",
         encoding="utf-8",
     )
-    return manifest, build_warnings
+    return manifest
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -283,7 +294,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     try:
         categories = parse_categories(args.categories)
-        manifest, warnings = build_validation_set(
+        manifest = build_validation_set(
             dataset_root=dataset_root,
             out_dir=out_dir,
             categories=categories,
@@ -304,10 +315,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         f"{item_count} images copied, "
         f"{item_count} expected-text files written."
     )
-    if warnings:
-        print("Warnings:")
-        for warning in warnings:
-            print(f"- {warning}")
     return 0
 
 

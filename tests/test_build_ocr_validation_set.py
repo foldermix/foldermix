@@ -14,7 +14,10 @@ def load_builder_module():
         raise RuntimeError("Could not load build_ocr_validation_set.py")
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        sys.modules.pop(spec.name, None)
     return module
 
 
@@ -36,7 +39,7 @@ def test_build_validation_set_creates_manifest_images_and_goldens(tmp_path: Path
             return SimpleNamespace(content=f" OCR\tfor {path.stem} \r\n")
 
     out_dir = tmp_path / "out"
-    manifest, warnings = module.build_validation_set(
+    manifest = module.build_validation_set(
         dataset_root=dataset_root,
         out_dir=out_dir,
         categories=["Email", "Memo"],
@@ -49,7 +52,6 @@ def test_build_validation_set_creates_manifest_images_and_goldens(tmp_path: Path
         created_at=datetime(2026, 3, 22, tzinfo=timezone.utc),
     )
 
-    assert warnings == []
     assert manifest["schema_version"] == 1
     assert manifest["categories"] == ["Email", "Memo"]
     assert manifest["params"] == {"per_category": 2, "seed": 1337}
@@ -62,6 +64,38 @@ def test_build_validation_set_creates_manifest_images_and_goldens(tmp_path: Path
         assert expected_text_path.exists()
         assert expected_text_path.read_text(encoding="utf-8").endswith("\n")
         assert "OCR for" in expected_text_path.read_text(encoding="utf-8")
+
+
+def test_build_validation_set_redacts_ssn_like_text(tmp_path: Path) -> None:
+    module = load_builder_module()
+
+    dataset_root = tmp_path / "dataset"
+    category_dir = dataset_root / "Resume"
+    category_dir.mkdir(parents=True)
+    for index in range(2):
+        (category_dir / f"resume-{index}.jpg").write_bytes(b"fixture")
+
+    class FakeConverter:
+        def convert(self, path: Path, encoding: str = "utf-8", *, ocr_strict: bool = False):
+            del path, encoding, ocr_strict
+            return SimpleNamespace(content="SSN: 123-45-6789")
+
+    out_dir = tmp_path / "out"
+    manifest = module.build_validation_set(
+        dataset_root=dataset_root,
+        out_dir=out_dir,
+        categories=["Resume"],
+        per_category=1,
+        seed=1337,
+        dataset_name="fixture-dataset",
+        lowercase=False,
+        force=False,
+        converter=FakeConverter(),
+        created_at=datetime(2026, 3, 22, tzinfo=timezone.utc),
+    )
+
+    expected_text_path = out_dir / manifest["items"][0]["rel_expected_text_path"]
+    assert expected_text_path.read_text(encoding="utf-8") == "SSN: 000-00-0000\n"
 
 
 def test_build_validation_set_requires_force_for_existing_output_dir(tmp_path: Path) -> None:
