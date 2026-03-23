@@ -36,7 +36,7 @@ def env_int(name: str, default: int) -> int:
     return int(value) if value is not None else default
 
 
-def load_validation_items() -> list[OcrValidationItem] | list[object]:
+def load_validation_items() -> list[OcrValidationItem | object]:
     if not MANIFEST_PATH.exists():
         return [MISSING_VALIDATION_SET]
 
@@ -50,15 +50,33 @@ def load_validation_items() -> list[OcrValidationItem] | list[object]:
 
     items: list[OcrValidationItem] = []
     for raw_item in raw_items:
-        image_path = VALIDATION_ROOT / raw_item["rel_image_path"]
-        expected_text_path = VALIDATION_ROOT / raw_item["rel_expected_text_path"]
+        if not isinstance(raw_item, dict):
+            raise AssertionError("Each OCR validation manifest item must be an object.")
+
+        category = raw_item.get("category")
+        rel_image_path = raw_item.get("rel_image_path")
+        rel_expected_text_path = raw_item.get("rel_expected_text_path")
+
+        if not isinstance(category, str) or not category:
+            raise AssertionError("Each OCR validation manifest item must have a non-empty string category.")
+        if not isinstance(rel_image_path, str) or not rel_image_path:
+            raise AssertionError(
+                "Each OCR validation manifest item must have a non-empty string rel_image_path."
+            )
+        if not isinstance(rel_expected_text_path, str) or not rel_expected_text_path:
+            raise AssertionError(
+                "Each OCR validation manifest item must have a non-empty string rel_expected_text_path."
+            )
+
+        image_path = VALIDATION_ROOT / rel_image_path
+        expected_text_path = VALIDATION_ROOT / rel_expected_text_path
         if not image_path.exists():
             raise AssertionError(f"Missing OCR validation image: {image_path}")
         if not expected_text_path.exists():
             raise AssertionError(f"Missing OCR validation golden text: {expected_text_path}")
         items.append(
             OcrValidationItem(
-                category=raw_item["category"],
+                category=category,
                 image_path=image_path,
                 expected_text_path=expected_text_path,
             )
