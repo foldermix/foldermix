@@ -89,6 +89,11 @@ def load_validation_items() -> list[OcrValidationItem | object]:
 VALIDATION_ITEMS = load_validation_items()
 
 
+@pytest.fixture(scope="module")
+def image_ocr_converter() -> ImageOcrConverter:
+    return ImageOcrConverter()
+
+
 @pytest.mark.parametrize(
     "item",
     VALIDATION_ITEMS,
@@ -96,7 +101,10 @@ VALIDATION_ITEMS = load_validation_items()
         "missing-validation-set" if item is MISSING_VALIDATION_SET else item.image_path.as_posix()
     ),
 )
-def test_image_ocr_matches_validation_golden(item: OcrValidationItem | object) -> None:
+def test_image_ocr_matches_validation_golden(
+    item: OcrValidationItem | object,
+    image_ocr_converter: ImageOcrConverter,
+) -> None:
     if item is MISSING_VALIDATION_SET:
         pytest.skip(
             "OCR validation set not present; run scripts/build_ocr_validation_set.py "
@@ -107,11 +115,10 @@ def test_image_ocr_matches_validation_golden(item: OcrValidationItem | object) -
     min_chars_floor = env_int("FOLDERMIX_OCR_MIN_CHARS_FLOOR", 40)
     min_chars_frac = env_float("FOLDERMIX_OCR_MIN_CHARS_FRAC", 0.15)
 
-    converter = ImageOcrConverter()
     expected_norm = redact_ocr_pii(
         normalize_ocr_text(item.expected_text_path.read_text(encoding="utf-8"))
     )
-    actual_result = converter.convert(item.image_path, ocr_strict=True)
+    actual_result = image_ocr_converter.convert(item.image_path, ocr_strict=True)
     actual_norm = redact_ocr_pii(normalize_ocr_text(actual_result.content))
 
     min_chars = max(min_chars_floor, int(min_chars_frac * len(expected_norm)))
