@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import importlib
+import io
 import json
 import random
 import shutil
@@ -16,6 +17,8 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 DEFAULT_DATASET_NAME = "scanned-images-dataset-for-ocr-and-vlm-finetuning"
+DEFAULT_MAX_IMAGE_BYTES = 200_000  # 200 KB per committed image
+DEFAULT_MAX_IMAGE_DIM = 1920  # max side length in pixels
 DEFAULT_CATEGORIES = (
     "ADVE",
     "Email",
@@ -38,6 +41,51 @@ class ValidationItem:
     rel_expected_text_path: str
     sha256: str
     size_bytes: int
+
+
+def shrink_image(src: Path, dest: Path, *, max_bytes: int, max_dim: int) -> None:
+    """Copy *src* to *dest*, rescaling and/or recompressing if needed.
+
+    An image is processed when either of these conditions holds:
+      - its longest side exceeds *max_dim* pixels, or
+      - its on-disk size exceeds *max_bytes* bytes.
+
+    JPEG images are written as JPEG; PNG images are written as PNG.
+    For JPEG output the quality setting is stepped down (85 → 70 → 55 → 40)
+    until the encoded size fits within *max_bytes*; if no quality step achieves
+    that target the result at the lowest quality is still written.
+    """
+    from PIL import Image  # noqa: PLC0415 - optional at script-level
+
+    src_bytes = src.stat().st_size
+    with Image.open(src) as img:
+        src_dim = max(img.size)
+        if src_bytes <= max_bytes and src_dim <= max_dim:
+            shutil.copy2(src, dest)
+            return
+        img.load()
+        work = img.copy()
+
+    if max(work.size) > max_dim:
+        work.thumbnail((max_dim, max_dim), Image.LANCZOS)
+
+    ext = src.suffix.lower()
+    if ext in (".jpg", ".jpeg"):
+        rgb = work.convert("RGB")
+        last_buf: io.BytesIO | None = None
+        for quality in (85, 70, 55, 40):
+            buf = io.BytesIO()
+            rgb.save(buf, format="JPEG", quality=quality, optimize=True)
+            last_buf = buf
+            if buf.tell() <= max_bytes:
+                break
+        assert last_buf is not None
+        dest.write_bytes(last_buf.getvalue())
+    else:
+        buf = io.BytesIO()
+        save_mode = work.mode if work.mode in ("RGBA", "RGB", "L", "P") else "RGB"
+        work.convert(save_mode).save(buf, format="PNG", optimize=True)
+        dest.write_bytes(buf.getvalue())
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -67,6 +115,26 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--force",
         action="store_true",
         help="Overwrite an existing output directory.",
+    )
+    parser.add_argument(
+        "--max-image-bytes",
+        type=int,
+        default=DEFAULT_MAX_IMAGE_BYTES,
+        help=(
+            "Maximum on-disk size (bytes) for a committed image. "
+            "Images exceeding this limit are recompressed and/or rescaled. "
+            f"Default: {DEFAULT_MAX_IMAGE_BYTES}."
+        ),
+    )
+    parser.add_argument(
+        "--max-image-dim",
+        type=int,
+        default=DEFAULT_MAX_IMAGE_DIM,
+        help=(
+            "Maximum side length (pixels) for a committed image. "
+            "Images with a longer side are scaled down before compression. "
+            f"Default: {DEFAULT_MAX_IMAGE_DIM}."
+        ),
     )
     return parser.parse_args(argv)
 
@@ -176,6 +244,8 @@ def build_manifest(
     categories: Sequence[str],
     per_category: int,
     seed: int,
+    max_image_bytes: int,
+    max_image_dim: int,
     items: Sequence[ValidationItem],
     created_at: datetime,
 ) -> dict[str, object]:
@@ -192,6 +262,8 @@ def build_manifest(
         "params": {
             "per_category": per_category,
             "seed": seed,
+            "max_image_bytes": max_image_bytes,
+            "max_image_dim": max_image_dim,
         },
         "categories": list(categories),
         "items": [
@@ -217,6 +289,8 @@ def build_validation_set(
     dataset_name: str,
     lowercase: bool,
     force: bool,
+    max_image_bytes: int = DEFAULT_MAX_IMAGE_BYTES,
+    max_image_dim: int = DEFAULT_MAX_IMAGE_DIM,
     converter: Any | None = None,
     created_at: datetime | None = None,
 ) -> dict[str, object]:
@@ -251,7 +325,12 @@ def build_validation_set(
 
         for source_path in sampled_images:
             copied_image_path = dest_image_dir / source_path.name
-            shutil.copy2(source_path, copied_image_path)
+            shrink_image(
+                source_path,
+                copied_image_path,
+                max_bytes=max_image_bytes,
+                max_dim=max_image_dim,
+            )
 
             expected_text = render_expected_text(
                 ocr_converter,
@@ -277,6 +356,8 @@ def build_validation_set(
         categories=categories,
         per_category=per_category,
         seed=seed,
+        max_image_bytes=max_image_bytes,
+        max_image_dim=max_image_dim,
         items=items,
         created_at=created_at or datetime.now(timezone.utc),
     )
@@ -303,6 +384,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             dataset_name=args.dataset_name,
             lowercase=args.lowercase,
             force=args.force,
+            max_image_bytes=args.max_image_bytes,
+            max_image_dim=args.max_image_dim,
         )
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)

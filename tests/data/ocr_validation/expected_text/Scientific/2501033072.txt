@@ -1,37 +1,30 @@
 Introduction
-The c-fos gene belongs to the family of growth- and differentiation-related
-immediate early genes whose expression, in vivo and in vitro, represents the first
+Thec-fosgenebelongsto thefamilyofgrowth-anddifferentiation-related
+immediateearlygeneswhoseexpression,invivoandinvitro,representsthefirst
 measurable response to a variety of chemical and physical stimuli including
-tumor promoters and DNA-damaging agents. The expression of c-fos has been
-identified as a signal for cell proliferation, but also for apoptosis.
+identifiedasasignal forcellproliferation,butalsoforapoptosis.
 Key Findings:
-2R1 mainstream smoke-bubbled phosphate-buffered saline (PBs) induces
-c-fos expression in quiescent 3T3 fibroblast cells ...
-concentration-dependently. A threshold concentration of approx. 0.015
-puffs/ml was observed.
-by interfering with transcriptional and posttranscriptional regulatory
+2R1 mainstream smoke-bubbled phosphate-buffered saline (PBS) induces
+c-fos expression in quiescent3T3 fibroblastcells..
+puffs/mlwasobserved.
 components since a slight induction of the c-fos promoter and a strong
-stabilization of c-fos transcripts were observed. The translation of smoke-
-bubbled PBS-induced c-fos mRNA into protein was confirmed using immuno-
-detection methods.
-independently of the presence of hydroxyl radicals formed by the Fenton
-reactionsince neither o-phenanthroline-anefficient,membranepermeable
-scavenger of iron cations - nor catalase were able to reduce cigarette smoke-
-dependent c-fos expression at concentrations that were shown to inhibit DNA
+stabilizationofc-fos transcripts wereobserved.The translationof smoke-
+bubbledPBS-inducedc-fosmRNAintoproteinwasconfirmedusingimmuno-
+detectionmethods.
+scavengerof ironcations-norcatalasewereabletoreducecigarettesmoke-
 strandbreakformation.
-the kinetics being different from those reported for physiological inducers
-(growth factors, serum), TPA, or stress treatment (heat shock, UV, hydroxyl
+thekineticsbeing different from those reported for physiological inducers
+(growth factors,serum),TPA,or stress treatment(heat shock,UV,hydroxyl
 radicals).
-in a manner very similar to that described for okadaic acid, a specific inhibitor
-of cell cycle-specific phosphatases 1 and 2A (PP-1/2A). Cellular effects
-shared by smoke-bubbledPBS and okadaic acid invitro are:
-kinetics of c-fos expression,
-pattern of c-fos expression, i.e., the slight activation of the c-fos
-promoter aswell as the stabilization of c-fos mRNA,
-partial inhibition of protein synthesis,
-induction of stress response genes such as heme oxygenase,
-induction of cell cycle arrest, and
-inhibition of PP-1/2A enzymatic activities.
-associated with a concentration-dependent loss of total cellular glutathione
-(GSHtat).
+inamannerverysimilartothatdescribedforokadaicacid,aspecificinhibitor
+ofcell cycle-specific phosphatases 1 and 2A(PP-1/2A).Cellular effects
+sharedbysmoke-bubbledPBSandokadaicacidinvitroare:
+kineticsofc-fosexpression,
+pattern of c-fos expression,ie.,the slight activation of the c-fos
+promoteraswell asthestabilizationofc-fosmRNA,
+partial inhibition ofproteinsynthesis,
+inductionofcellcyclearrest,and
+inhibitionofPP-1/2Aenzymaticactivities.
+associatedwithaconcentration-dependentlossof total cellularglutathione
+(GSHta).
 2501033072

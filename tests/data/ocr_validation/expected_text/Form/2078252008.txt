@@ -7,17 +7,14 @@ Arena
 ESTABLISHMENT TYPE
 Tavern
 Bar/
-ESTABLISHMENT TYPE, AND VENUE TYPE
-LOCATION OF PARTICIPANTS BY STATE,
-THE ACCOMMODATION PROGRAM
-Shopping
+ESTABLISHMENTTYPE,ANDVENUETYPE
+LOCATION OFPARTICIPANTS BY STATE,
+THEACCOMMODATIONPROGRAM
 Mall
-Listing of participants by state, broken down into which cities they are located in, and establishment type.
-Bowling
+HotelyBowling
 Center
-Hotel/
 Motel
-Page 1
+Page1
 Rest
 Other
 Rest
@@ -26,20 +23,20 @@ Serve
 Rest
 Mid
 Scale
-ParticipantsDining
+Dining
 Rest
 Fine
-500
-00
+Participants
 Total #of
+500
 Birmingham
 2078252008
 SanFrancisco
-LosAngeles
+Los Angeles
 Phoenix
 City
-California
 Alabama
+California
 Arizona
 Alaska
 State
