@@ -37,7 +37,7 @@ class ValidationItem:
     rel_image_path: str
     rel_expected_text_path: str
     sha256: str
-    bytes: int
+    size_bytes: int
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -200,7 +200,7 @@ def build_manifest(
                 "rel_image_path": item.rel_image_path,
                 "rel_expected_text_path": item.rel_expected_text_path,
                 "sha256": item.sha256,
-                "bytes": item.bytes,
+                "size_bytes": item.size_bytes,
             }
             for item in sorted(items, key=lambda item: (item.category, item.rel_image_path))
         ],
@@ -267,7 +267,7 @@ def build_validation_set(
                     rel_image_path=copied_image_path.relative_to(out_dir).as_posix(),
                     rel_expected_text_path=expected_text_path.relative_to(out_dir).as_posix(),
                     sha256=sha256_file(copied_image_path),
-                    bytes=copied_image_path.stat().st_size,
+                    size_bytes=copied_image_path.stat().st_size,
                 )
             )
 
