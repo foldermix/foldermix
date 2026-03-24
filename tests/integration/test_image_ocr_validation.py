@@ -58,7 +58,9 @@ def load_validation_items() -> list[OcrValidationItem | object]:
         rel_expected_text_path = raw_item.get("rel_expected_text_path")
 
         if not isinstance(category, str) or not category:
-            raise AssertionError("Each OCR validation manifest item must have a non-empty string category.")
+            raise AssertionError(
+                "Each OCR validation manifest item must have a non-empty string category."
+            )
         if not isinstance(rel_image_path, str) or not rel_image_path:
             raise AssertionError(
                 "Each OCR validation manifest item must have a non-empty string rel_image_path."
