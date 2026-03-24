@@ -1,0 +1,45 @@
+Other
+Assn.
+Casino
+Airport
+Stadium/
+Arena
+ESTABLISHMENT TYPE
+Tavern
+Bar/
+ESTABLISHMENT TYPE, AND VENUE TYPE
+LOCATION OF PARTICIPANTS BY STATE,
+THE ACCOMMODATION PROGRAM
+Shopping
+Mall
+Listing of participants by state, broken down into which cities they are located in, and establishment type.
+Bowling
+Center
+Hotel/
+Motel
+Page 1
+Rest
+Other
+Rest
+Quick
+Serve
+Rest
+Mid
+Scale
+ParticipantsDining
+Rest
+Fine
+500
+00
+Total #of
+Birmingham
+2078252008
+SanFrancisco
+LosAngeles
+Phoenix
+City
+California
+Alabama
+Arizona
+Alaska
+State

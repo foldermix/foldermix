@@ -75,6 +75,25 @@ jobs:
           -m "not integration and not slow"
           -o addopts="-vv -ra --strict-markers --strict-config"
 
+  image-ocr-validation:
+    runs-on: ubuntu-latest
+    needs: [lint]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -e ".[dev,all]"
+      - name: OCR validation integration check
+        run: >
+          python -m pytest
+          tests/integration/test_image_ocr_validation.py
+          -m integration
+          -o addopts="-vv -ra --strict-markers --strict-config"
+
   package-smoke:
     runs-on: ubuntu-latest
     permissions:
@@ -183,7 +202,7 @@ jobs:
 
   full:
     runs-on: ubuntu-latest
-    needs: [lint, smoke, minimal-deps, package-smoke, policy-integration-matrix]
+    needs: [lint, smoke, minimal-deps, image-ocr-validation, package-smoke, policy-integration-matrix]
     permissions:
       contents: read
       id-token: write
