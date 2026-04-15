@@ -290,6 +290,45 @@ def test_render_preview_continue_on_error_true_skips_failed_records(
     assert "## bad.txt" not in rendered
 
 
+def test_render_preview_can_include_skipped_files_section(tmp_path: Path) -> None:
+    path = tmp_path / "a.txt"
+    _write(path, "hello\n")
+
+    rendered = packer.render_preview(
+        PackConfig(
+            root=tmp_path,
+            include_sha256=False,
+            include_skipped_files=True,
+        ),
+        [_record(path)],
+        [packer.SkipRecord("skip.tmp", "excluded_glob")],
+    )
+
+    assert "## Skipped Files" in rendered
+    assert "`skip.tmp` [SKIP_EXCLUDED_GLOB]" in rendered
+
+
+def test_pack_include_skipped_files_adds_markdown_section(tmp_path: Path) -> None:
+    _write(tmp_path / "a.txt", "hello\n")
+    _write(tmp_path / "skip.tmp", "skip\n")
+    out_path = tmp_path / "out.md"
+    config = PackConfig(
+        root=tmp_path,
+        out=out_path,
+        format="md",
+        include_sha256=False,
+        include_skipped_files=True,
+        exclude_glob=["*.tmp"],
+        workers=1,
+    )
+
+    packer.pack(config)
+    output = out_path.read_text(encoding="utf-8")
+
+    assert "## Skipped Files" in output
+    assert "`skip.tmp` [SKIP_EXCLUDED_GLOB]" in output
+
+
 def test_pack_report_included_count_matches_written_items_on_post_convert_error(
     tmp_path: Path, monkeypatch
 ) -> None:

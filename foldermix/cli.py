@@ -72,6 +72,7 @@ _PACK_PARAM_BY_KEY = {
     "strip_frontmatter": "strip_frontmatter",
     "include_sha256": "include_sha256",
     "include_toc": "include_toc",
+    "include_skipped_files": "include_skipped_files",
     "ipynb_include_outputs": "ipynb_include_outputs",
     "dedupe_content": "dedupe_content",
     "pdf_ocr": "pdf_ocr",
@@ -389,6 +390,11 @@ def pack_cmd(
         "--include-toc/--no-include-toc",
         help="Prepend a table of contents to Markdown output [default: include]",
     ),
+    include_skipped_files: bool = typer.Option(
+        False,
+        "--include-skipped-files/--no-include-skipped-files",
+        help="Include a separate skipped-files section in Markdown output [default: disabled]",
+    ),
     ipynb_include_outputs: bool = typer.Option(
         False,
         "--ipynb-include-outputs/--no-ipynb-include-outputs",
@@ -519,6 +525,7 @@ def pack_cmd(
         "strip_frontmatter": strip_frontmatter,
         "include_sha256": include_sha256,
         "include_toc": include_toc,
+        "include_skipped_files": include_skipped_files,
         "ipynb_include_outputs": ipynb_include_outputs,
         "dedupe_content": dedupe_content,
         "pdf_ocr": pdf_ocr,
@@ -1125,6 +1132,11 @@ def preview_cmd(
         "--include-toc/--no-include-toc",
         help="Include a TOC in Markdown output [default: include]",
     ),
+    include_skipped_files: bool = typer.Option(
+        False,
+        "--include-skipped-files/--no-include-skipped-files",
+        help="Include a separate skipped-files section in Markdown output [default: disabled]",
+    ),
     ipynb_include_outputs: bool = typer.Option(
         False,
         "--ipynb-include-outputs/--no-ipynb-include-outputs",
@@ -1207,6 +1219,7 @@ def preview_cmd(
         "strip_frontmatter": strip_frontmatter,
         "include_sha256": include_sha256,
         "include_toc": include_toc,
+        "include_skipped_files": include_skipped_files,
         "ipynb_include_outputs": ipynb_include_outputs,
         "dedupe_content": False,
         "pdf_ocr": pdf_ocr,
@@ -1304,6 +1317,7 @@ def preview_cmd(
         strip_frontmatter=values["strip_frontmatter"],  # type: ignore[arg-type]
         include_sha256=values["include_sha256"],  # type: ignore[arg-type]
         include_toc=values["include_toc"],  # type: ignore[arg-type]
+        include_skipped_files=values["include_skipped_files"],  # type: ignore[arg-type]
         ipynb_include_outputs=values["ipynb_include_outputs"],  # type: ignore[arg-type]
         dedupe_content=values["dedupe_content"],  # type: ignore[arg-type]
         pdf_ocr=values["pdf_ocr"],  # type: ignore[arg-type]
@@ -1313,7 +1327,7 @@ def preview_cmd(
         stdin_paths=explicit_paths,
     )
     included, skipped = scan(preview_config)
-    if skipped:
+    if skipped and not values["include_skipped_files"]:
         skip_entries = sorted(
             (build_skipped_file_entry(path=skip.relpath, reason=skip.reason) for skip in skipped),
             key=lambda entry: entry["path"].casefold(),
@@ -1322,14 +1336,14 @@ def preview_cmd(
             console.print(
                 f"{entry['path']}  [{entry['reason_code']}] {entry['message']}",
                 markup=False,
-            )
+        )
         console.print(
             "\n[red]Preview aborted:[/red] one or more selected files cannot be previewed."
         )
         raise typer.Exit(code=1)
 
     ordered_records = _sort_records_by_explicit_path_order(included, explicit_paths)
-    typer.echo(render_preview(preview_config, ordered_records), nl=False)
+    typer.echo(render_preview(preview_config, ordered_records, skipped), nl=False)
 
 
 @app.command("init")

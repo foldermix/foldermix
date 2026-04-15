@@ -84,6 +84,23 @@ def test_markdown_writer_can_disable_toc() -> None:
     assert "Table of Contents" not in out
 
 
+def test_markdown_writer_omits_skipped_section_when_empty() -> None:
+    item = FileBundleItem(
+        relpath="file.txt",
+        ext=".txt",
+        size_bytes=12,
+        mtime="2024-01-01T00:00:00+00:00",
+        sha256=None,
+        content="abc\n",
+        converter_name="text",
+        original_mime="text/plain",
+    )
+    buf = StringIO()
+    MarkdownWriter(include_skipped_files=True).write(buf, _header(), [item], skipped_entries=[])
+    out = buf.getvalue()
+    assert "Skipped Files" not in out
+
+
 def test_xml_writer_writes_truncated_flag() -> None:
     item = FileBundleItem(
         relpath="file.txt",

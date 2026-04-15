@@ -275,6 +275,7 @@ Options:
   --strip-frontmatter           Strip YAML frontmatter from files
   --include-sha256 / --no-include-sha256  [default: include]
   --include-toc / --no-include-toc        [default: include]
+  --include-skipped-files / --no-include-skipped-files  Include a separate skipped-files section in Markdown output [default: disabled]
   --dedupe-content / --no-dedupe-content  Skip later files whose content exactly matches an earlier included file [default: disabled]
   --pdf-ocr / --no-pdf-ocr                Enable OCR fallback for textless PDF pages [default: disabled]
   --pdf-ocr-strict / --no-pdf-ocr-strict  Fail when OCR is needed but unavailable/empty [default: disabled]
@@ -341,6 +342,7 @@ foldermix preview [OPTIONS] [PATH] [FILES]...
   --strip-frontmatter
   --include-sha256 / --no-include-sha256
   --include-toc / --no-include-toc
+  --include-skipped-files / --no-include-skipped-files
   --pdf-ocr / --no-pdf-ocr
   --pdf-ocr-strict / --no-pdf-ocr-strict
   --image-ocr / --no-image-ocr
@@ -361,6 +363,8 @@ foldermix init --profile <legal|research|support|engineering-docs|course-refresh
 
 foldermix version
 ```
+
+`--include-skipped-files` is an opt-in Markdown-only output feature. When enabled, foldermix keeps the regular Table of Contents limited to included files and adds a separate `Skipped Files` section near the top of the rendered Markdown output.
 
 ## Report Schema
 

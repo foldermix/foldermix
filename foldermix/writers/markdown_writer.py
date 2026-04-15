@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import IO
 
-from .base import FileBundleItem, HeaderInfo, Writer
+from .base import FileBundleItem, HeaderInfo, SkippedFileEntry, Writer
 
 LANG_MAP: dict[str, str] = {
     ".py": "python",
@@ -50,10 +50,18 @@ def _make_anchor(relpath: str) -> str:
 
 
 class MarkdownWriter(Writer):
-    def __init__(self, include_toc: bool = True) -> None:
+    def __init__(self, include_toc: bool = True, include_skipped_files: bool = False) -> None:
         self.include_toc = include_toc
+        self.include_skipped_files = include_skipped_files
 
-    def write(self, out: IO[str], header: HeaderInfo, items: list[FileBundleItem]) -> None:
+    def write(
+        self,
+        out: IO[str],
+        header: HeaderInfo,
+        items: list[FileBundleItem],
+        skipped_entries: list[SkippedFileEntry] | None = None,
+    ) -> None:
+        skipped_entries = skipped_entries or []
         out.write("# FolderPack Context\n\n")
         out.write(f"- **Root**: `{header.root}`\n")
         out.write(f"- **Generated**: {header.generated_at}\n")
@@ -66,6 +74,12 @@ class MarkdownWriter(Writer):
             for item in items:
                 anchor = _make_anchor(item.relpath)
                 out.write(f"- [{item.relpath}](#{anchor})\n")
+            out.write("\n")
+
+        if self.include_skipped_files and skipped_entries:
+            out.write("## Skipped Files\n\n")
+            for entry in skipped_entries:
+                out.write(f"- `{entry.path}` [{entry.reason_code}] {entry.message}\n")
             out.write("\n")
 
         out.write("---\n\n")

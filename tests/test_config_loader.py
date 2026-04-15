@@ -18,6 +18,7 @@ def test_load_command_config_from_tool_section(tmp_path: Path) -> None:
                 "workers = 2",
                 'include_ext = [".py", ".md"]',
                 "include_toc = false",
+                "include_skipped_files = true",
                 "pdf_ocr = true",
                 "pdf_ocr_strict = false",
                 "image_ocr = true",
@@ -35,6 +36,7 @@ def test_load_command_config_from_tool_section(tmp_path: Path) -> None:
     assert values["workers"] == 2
     assert values["include_ext"] == [".py", ".md"]
     assert values["include_toc"] is False
+    assert values["include_skipped_files"] is True
     assert values["pdf_ocr"] is True
     assert values["pdf_ocr_strict"] is False
     assert values["image_ocr"] is True
