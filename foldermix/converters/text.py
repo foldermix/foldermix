@@ -21,6 +21,7 @@ TEXT_EXTENSIONS = {
     ".cfg",
     ".csv",
     ".tsv",
+    ".vtt",
     ".sql",
     ".html",
     ".htm",

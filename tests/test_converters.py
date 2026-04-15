@@ -19,6 +19,10 @@ class TestTextConverter:
         converter = TextConverter()
         assert converter.can_convert(".md") is True
 
+    def test_can_convert_vtt(self) -> None:
+        converter = TextConverter()
+        assert converter.can_convert(".vtt") is True
+
     def test_cannot_convert_png(self) -> None:
         converter = TextConverter()
         assert converter.can_convert(".png") is False
@@ -37,6 +41,22 @@ class TestTextConverter:
         converter = TextConverter()
         result = converter.convert(f, encoding="utf-8")
         assert "你好" in result.content
+
+    def test_convert_vtt_preserves_timing_and_cue_text(self, tmp_path: Path) -> None:
+        f = tmp_path / "captions.vtt"
+        content = (
+            "WEBVTT\n\n"
+            "00:00:01.000 --> 00:00:03.000 align:start position:0%\n"
+            "Hello there.\n\n"
+            "00:00:03.500 --> 00:00:05.000\n"
+            "General Kenobi.\n"
+        )
+        f.write_text(content, encoding="utf-8")
+        converter = TextConverter()
+        result = converter.convert(f, encoding="utf-8")
+        assert result.content == content
+        assert result.converter_name == "text"
+        assert result.original_mime == "text/vtt"
 
     def test_convert_no_warnings_on_correct_encoding(self, tmp_path: Path) -> None:
         f = tmp_path / "simple.txt"

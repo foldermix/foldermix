@@ -21,6 +21,7 @@ DEFAULT_INCLUDE_EXT: list[str] = [
     ".cfg",
     ".csv",
     ".tsv",
+    ".vtt",
     ".sql",
     ".html",
     ".htm",

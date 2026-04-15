@@ -141,6 +141,7 @@ foldermix version
 - **Smart filtering**: gitignore support, extension filters, glob patterns
 - **Sensitive file protection**: Automatically skips `.env`, keys, certificates
 - **Optional converters**: PDF (pypdf), OCR-enhanced PDF fallback (rapidocr + pypdfium2), Office docs (python-docx, openpyxl, python-pptx), markitdown
+- **Core text-like formats**: plain text, markup, config/data files, and WebVTT (`.vtt`) via the built-in text converter
 - **Notebook support**: built-in `.ipynb` conversion, with `--ipynb-include-outputs` to include or omit cell outputs
 - **Spreadsheet noise reduction**: XLSX fallback skips low-signal `Copy of ...` tabs by default
 - **Optional duplicate suppression**: skip later files whose content exactly matches an earlier included file
@@ -223,7 +224,7 @@ foldermix init --profile course-refresh --out foldermix.toml --force
 foldermix pack ./previous-course --config foldermix.toml --format md --out course-refresh-context.md --report course-refresh-report.json
 ```
 
-The `course-refresh` profile keeps teaching-material formats broad (`pdf`, `docx`, `pptx`, `ipynb`, `xlsx`, text/markup, structured text) while excluding common student/admin paths such as:
+The `course-refresh` profile keeps teaching-material formats broad (`pdf`, `docx`, `pptx`, `ipynb`, `xlsx`, `vtt`, text/markup, structured text) while excluding common student/admin paths such as:
 
 - grades
 - rosters
