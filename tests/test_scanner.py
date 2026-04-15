@@ -113,6 +113,19 @@ def test_binary_ext_excluded(sample_dir: Path) -> None:
     assert "image.png" not in relpaths
 
 
+def test_vtt_included_by_default(tmp_path: Path) -> None:
+    (tmp_path / "captions.vtt").write_text(
+        "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nhello\n",
+        encoding="utf-8",
+    )
+
+    included, skipped = scan(PackConfig(root=tmp_path))
+
+    relpaths = [r.relpath for r in included]
+    assert "captions.vtt" in relpaths
+    assert all(skip.relpath != "captions.vtt" for skip in skipped)
+
+
 def test_image_ocr_include_ext_overrides_default_image_exclude(sample_dir: Path) -> None:
     config = PackConfig(root=sample_dir, include_ext=[".png"], image_ocr=True)
     included, _ = scan(config)

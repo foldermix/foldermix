@@ -65,7 +65,7 @@ def _build_profile(
     )
 
 
-_LEGAL_EXT = [".txt", ".md", ".pdf", ".docx", ".csv"]
+_LEGAL_EXT = [".txt", ".md", ".pdf", ".docx", ".csv", ".vtt"]
 _RESEARCH_EXT = [
     ".txt",
     ".md",
@@ -75,15 +75,17 @@ _RESEARCH_EXT = [
     ".xlsx",
     ".csv",
     ".tsv",
+    ".vtt",
     ".json",
     ".yaml",
     ".yml",
 ]
-_SUPPORT_EXT = [".txt", ".md", ".json", ".yaml", ".yml", ".csv", ".tsv", ".log"]
+_SUPPORT_EXT = [".txt", ".md", ".json", ".yaml", ".yml", ".csv", ".tsv", ".vtt", ".log"]
 _ENGINEERING_DOCS_EXT = [
     ".md",
     ".rst",
     ".txt",
+    ".vtt",
     ".py",
     ".js",
     ".ts",
@@ -103,6 +105,7 @@ _COURSE_REFRESH_EXT = [
     ".xlsx",
     ".csv",
     ".tsv",
+    ".vtt",
     ".json",
     ".yaml",
     ".yml",
