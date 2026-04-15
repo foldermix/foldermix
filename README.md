@@ -597,6 +597,7 @@ pip install uv
 uv venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
 uv pip install -e ".[dev,all]"
+pre-commit install
 ```
 
 ### Lint
@@ -604,9 +605,11 @@ uv pip install -e ".[dev,all]"
 ```bash
 ruff check .
 ruff format .
+pre-commit run --all-files
 ```
 
 The CI `lint` job runs `ruff check . && ruff format --check .` on every push and pull request.
+The repository also ships a `.pre-commit-config.yaml`; after `pre-commit install`, local `git commit` runs Ruff lint/format plus the fast pytest hook before the commit is created.
 
 ### Running Tests
 

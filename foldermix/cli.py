@@ -1336,7 +1336,7 @@ def preview_cmd(
             console.print(
                 f"{entry['path']}  [{entry['reason_code']}] {entry['message']}",
                 markup=False,
-        )
+            )
         console.print(
             "\n[red]Preview aborted:[/red] one or more selected files cannot be previewed."
         )

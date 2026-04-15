@@ -10,6 +10,7 @@ pip install uv
 uv venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
 uv pip install -e ".[dev,docs,all]"
+pre-commit install
 ```
 
 ## Lint
@@ -17,7 +18,10 @@ uv pip install -e ".[dev,docs,all]"
 ```bash
 ruff check .
 ruff format .
+pre-commit run --all-files
 ```
+
+`pre-commit install` enables the repository hooks on every local `git commit`. The configured hooks cover file hygiene, Ruff linting, Ruff formatting, and the fast pytest lane.
 
 ## Docs Site
 
