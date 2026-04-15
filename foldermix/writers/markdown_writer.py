@@ -61,7 +61,8 @@ class MarkdownWriter(Writer):
         items: list[FileBundleItem],
         skipped_entries: list[SkippedFileEntry] | None = None,
     ) -> None:
-        skipped_entries = skipped_entries or []
+        if skipped_entries is None:
+            skipped_entries = []
         out.write("# FolderPack Context\n\n")
         out.write(f"- **Root**: `{header.root}`\n")
         out.write(f"- **Generated**: {header.generated_at}\n")
