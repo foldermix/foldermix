@@ -75,6 +75,7 @@ class TextConverter:
         from foldermix.utils import read_text_with_fallback
 
         text, enc_used = read_text_with_fallback(path, encoding)
+        ext = path.suffix.lower().lstrip(".") or "plain"
         warnings: list[str] = []
         if enc_used != encoding:
             warnings.append(f"Encoding fallback: used {enc_used!r} instead of {encoding!r}")
@@ -82,5 +83,5 @@ class TextConverter:
             content=text,
             warnings=warnings,
             converter_name="text",
-            original_mime=f"text/{path.suffix.lstrip('.') or 'plain'}",
+            original_mime=f"text/{ext}",
         )

@@ -58,6 +58,13 @@ class TestTextConverter:
         assert result.converter_name == "text"
         assert result.original_mime == "text/vtt"
 
+    def test_convert_uppercase_vtt_uses_lowercase_mime(self, tmp_path: Path) -> None:
+        f = tmp_path / "CAPTIONS.VTT"
+        f.write_text("WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nhello\n", encoding="utf-8")
+        converter = TextConverter()
+        result = converter.convert(f, encoding="utf-8")
+        assert result.original_mime == "text/vtt"
+
     def test_convert_no_warnings_on_correct_encoding(self, tmp_path: Path) -> None:
         f = tmp_path / "simple.txt"
         f.write_text("simple text")
