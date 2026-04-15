@@ -3,11 +3,17 @@ from __future__ import annotations
 import json
 from typing import IO
 
-from .base import FileBundleItem, HeaderInfo, Writer
+from .base import FileBundleItem, HeaderInfo, SkippedFileEntry, Writer
 
 
 class JsonlWriter(Writer):
-    def write(self, out: IO[str], header: HeaderInfo, items: list[FileBundleItem]) -> None:
+    def write(
+        self,
+        out: IO[str],
+        header: HeaderInfo,
+        items: list[FileBundleItem],
+        skipped_entries: list[SkippedFileEntry] | None = None,
+    ) -> None:
         header_line = {
             "type": "header",
             "root": header.root,

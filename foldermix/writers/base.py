@@ -33,6 +33,19 @@ class FileBundleItem:
     redaction_categories: list[str] = field(default_factory=list)
 
 
+@dataclass
+class SkippedFileEntry:
+    path: str
+    reason_code: str
+    message: str
+
+
 class Writer:
-    def write(self, out: IO[str], header: HeaderInfo, items: list[FileBundleItem]) -> None:
+    def write(
+        self,
+        out: IO[str],
+        header: HeaderInfo,
+        items: list[FileBundleItem],
+        skipped_entries: list[SkippedFileEntry] | None = None,
+    ) -> None:
         raise NotImplementedError

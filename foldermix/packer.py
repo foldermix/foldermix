@@ -36,7 +36,7 @@ from .utils import (
     utcnow_iso,
 )
 from .warning_taxonomy import normalize_warning_entries
-from .writers.base import FileBundleItem, HeaderInfo
+from .writers.base import FileBundleItem, HeaderInfo, SkippedFileEntry
 from .writers.jsonl_writer import JsonlWriter
 from .writers.markdown_writer import MarkdownWriter
 from .writers.xml_writer import XmlWriter
@@ -310,12 +310,34 @@ def _build_registry(config: PackConfig) -> ConverterRegistry:
     return build_converter_registry(ipynb_include_outputs=config.ipynb_include_outputs)
 
 
-def _get_writer(fmt: str, include_toc: bool = True):
+def _get_writer(
+    fmt: str,
+    include_toc: bool = True,
+    include_skipped_files: bool = False,
+):
     if fmt == "xml":
         return XmlWriter()
     if fmt == "jsonl":
         return JsonlWriter()
-    return MarkdownWriter(include_toc=include_toc)
+    return MarkdownWriter(
+        include_toc=include_toc,
+        include_skipped_files=include_skipped_files,
+    )
+
+
+def _build_skipped_entries(skipped: list[SkipRecord]) -> list[SkippedFileEntry]:
+    entries = [
+        build_skipped_file_entry(path=skip.relpath, reason=skip.reason)
+        for skip in sorted(skipped, key=lambda record: record.relpath.casefold())
+    ]
+    return [
+        SkippedFileEntry(
+            path=entry["path"],
+            reason_code=entry["reason_code"],
+            message=entry["message"],
+        )
+        for entry in entries
+    ]
 
 
 def _convert_record(
@@ -482,10 +504,18 @@ def _convert_record(
     )
 
 
-def render_preview(config: PackConfig, records: list[FileRecord]) -> str:
+def render_preview(
+    config: PackConfig,
+    records: list[FileRecord],
+    skipped: list[SkipRecord] | None = None,
+) -> str:
     """Render selected records into the configured output format."""
     registry = _build_registry(config)
-    writer = _get_writer(config.format, include_toc=config.include_toc)
+    writer = _get_writer(
+        config.format,
+        include_toc=config.include_toc,
+        include_skipped_files=config.include_skipped_files,
+    )
     items: list[FileBundleItem] = []
     errors: list[str] = []
     for record in records:
@@ -512,7 +542,15 @@ def render_preview(config: PackConfig, records: list[FileRecord]) -> str:
         total_bytes=total_bytes,
     )
     output = StringIO()
-    writer.write(output, header, items)
+    if config.include_skipped_files:
+        writer.write(
+            output,
+            header,
+            items,
+            skipped_entries=_build_skipped_entries(skipped or []),
+        )
+    else:
+        writer.write(output, header, items)
     return output.getvalue()
 
 
@@ -584,7 +622,11 @@ def pack(config: PackConfig) -> None:
         return
 
     registry = _build_registry(config)
-    writer = _get_writer(config.format, include_toc=config.include_toc)
+    writer = _get_writer(
+        config.format,
+        include_toc=config.include_toc,
+        include_skipped_files=config.include_skipped_files,
+    )
 
     # Convert files
     items: list[FileBundleItem] = []
@@ -743,7 +785,15 @@ def pack(config: PackConfig) -> None:
     console.print(f"Writing to [bold]{out_path}[/bold] ...")
 
     with open(out_path, "w", encoding="utf-8", newline="") as f:
-        writer.write(f, header, items)
+        if config.include_skipped_files:
+            writer.write(
+                f,
+                header,
+                items,
+                skipped_entries=_build_skipped_entries(skipped),
+            )
+        else:
+            writer.write(f, header, items)
 
     console.print(f"[green]Done![/green] {len(items)} files, {total_bytes:,} bytes -> {out_path}")
 

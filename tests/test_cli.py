@@ -168,6 +168,7 @@ def test_pack_builds_config_and_calls_packer(monkeypatch, tmp_path: Path) -> Non
             "8",
             "--no-include-sha256",
             "--no-include-toc",
+            "--include-skipped-files",
             "--ipynb-include-outputs",
             "--dedupe-content",
             "--pdf-ocr",
@@ -200,6 +201,7 @@ def test_pack_builds_config_and_calls_packer(monkeypatch, tmp_path: Path) -> Non
     assert config.min_line_length == 8
     assert config.include_sha256 is False
     assert config.include_toc is False
+    assert config.include_skipped_files is True
     assert config.ipynb_include_outputs is True
     assert config.dedupe_content is True
     assert config.pdf_ocr is True
@@ -294,6 +296,7 @@ def test_pack_cli_flags_override_config_values(monkeypatch, tmp_path: Path) -> N
                 "[pack]",
                 'format = "xml"',
                 "include_toc = false",
+                "include_skipped_files = true",
                 'policy_pack = "legal-hold"',
                 "fail_on_policy_violation = false",
                 'policy_fail_level = "critical"',
@@ -313,6 +316,7 @@ def test_pack_cli_flags_override_config_values(monkeypatch, tmp_path: Path) -> N
             "--format",
             "jsonl",
             "--include-toc",
+            "--no-include-skipped-files",
             "--policy-pack",
             "strict-privacy",
             "--fail-on-policy-violation",
@@ -325,6 +329,7 @@ def test_pack_cli_flags_override_config_values(monkeypatch, tmp_path: Path) -> N
     config = captured["config"]
     assert config.format == "jsonl"
     assert config.include_toc is True
+    assert config.include_skipped_files is False
     assert config.policy_pack == "strict-privacy"
     assert config.fail_on_policy_violation is True
     assert config.policy_fail_level == "high"
@@ -412,6 +417,7 @@ def test_pack_print_effective_config_outputs_sources_and_exits(monkeypatch, tmp_
                 "[pack]",
                 'format = "xml"',
                 "include_toc = false",
+                "include_skipped_files = true",
                 "hidden = true",
                 'line_ending = "crlf"',
                 "",
@@ -444,6 +450,8 @@ def test_pack_print_effective_config_outputs_sources_and_exits(monkeypatch, tmp_
     assert effective["format"]["source"] == "cli"
     assert effective["include_toc"]["value"] is True
     assert effective["include_toc"]["source"] == "cli"
+    assert effective["include_skipped_files"]["value"] is True
+    assert effective["include_skipped_files"]["source"] == "config"
     assert effective["hidden"]["value"] is True
     assert effective["hidden"]["source"] == "config"
     assert effective["line_ending"]["value"] == "crlf"
@@ -1198,9 +1206,10 @@ def test_preview_builds_config_with_ipynb_include_outputs(monkeypatch, tmp_path:
     captured = {}
     (tmp_path / "demo.ipynb").write_text('{"metadata":{},"cells":[]}', encoding="utf-8")
 
-    def fake_render_preview(config, records):
+    def fake_render_preview(config, records, skipped):
         captured["config"] = config
         captured["records"] = records
+        captured["skipped"] = skipped
         return "ok"
 
     monkeypatch.setattr(packer_module, "render_preview", fake_render_preview)
@@ -1219,15 +1228,17 @@ def test_preview_builds_config_with_ipynb_include_outputs(monkeypatch, tmp_path:
     assert result.exit_code == 0, result.output
     assert result.output == "ok"
     assert captured["config"].ipynb_include_outputs is True
+    assert captured["config"].include_skipped_files is False
 
 
 def test_preview_builds_config_with_image_ocr(monkeypatch, tmp_path: Path) -> None:
     captured = {}
     (tmp_path / "scan.png").write_bytes(b"\x89PNG\r\n\x1a\n")
 
-    def fake_render_preview(config, records):
+    def fake_render_preview(config, records, skipped):
         captured["config"] = config
         captured["records"] = records
+        captured["skipped"] = skipped
         return "ok"
 
     monkeypatch.setattr(packer_module, "render_preview", fake_render_preview)
@@ -1250,6 +1261,29 @@ def test_preview_builds_config_with_image_ocr(monkeypatch, tmp_path: Path) -> No
     assert result.output == "ok"
     assert captured["config"].image_ocr is True
     assert captured["config"].image_ocr_strict is True
+
+
+def test_preview_can_render_skipped_files_section_when_enabled(tmp_path: Path) -> None:
+    root = tmp_path / "root"
+    root.mkdir()
+    (root / "ok.txt").write_text("ok\n", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "preview",
+            str(root),
+            "ok.txt",
+            "missing.txt",
+            "--include-skipped-files",
+            "--no-include-sha256",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "## ok.txt" in result.output
+    assert "## Skipped Files" in result.output
+    assert "`missing.txt` [SKIP_MISSING]" in result.output
 
 
 def test_list_discovers_default_config(tmp_path: Path) -> None:
@@ -1543,6 +1577,7 @@ def test_preview_help_all_options_documented() -> None:
     assert "Jupyter" in output
     assert ".ipynb" in output
     assert "--on-oversize" in output
+    assert "skipped-files" in output
     assert "--image-ocr" in output
     assert "PNG/JPEG" in output
     assert "no-image-ocr-st" in output

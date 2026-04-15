@@ -4,7 +4,7 @@ import json
 import xml.etree.ElementTree as ET
 from io import StringIO
 
-from foldermix.writers.base import FileBundleItem, HeaderInfo
+from foldermix.writers.base import FileBundleItem, HeaderInfo, SkippedFileEntry
 from foldermix.writers.jsonl_writer import JsonlWriter
 from foldermix.writers.markdown_writer import MarkdownWriter
 from foldermix.writers.xml_writer import XmlWriter
@@ -93,6 +93,27 @@ class TestMarkdownWriter:
         writer.write(buf, make_header(), items)
         output = buf.getvalue()
         assert "TRUNCATED" in output
+
+    def test_skipped_files_section_is_opt_in(self) -> None:
+        writer = MarkdownWriter(include_skipped_files=True)
+        buf = StringIO()
+        writer.write(
+            buf,
+            make_header(),
+            make_items(),
+            skipped_entries=[
+                SkippedFileEntry(
+                    path="skip.tmp",
+                    reason_code="SKIP_EXCLUDED_GLOB",
+                    message="Path matches an excluded glob pattern.",
+                )
+            ],
+        )
+        output = buf.getvalue()
+        assert "## Skipped Files" in output
+        assert "`skip.tmp` [SKIP_EXCLUDED_GLOB]" in output
+        assert "Table of Contents" in output
+        assert "[skip.tmp](#" not in output
 
 
 class TestXmlWriter:

@@ -3,11 +3,17 @@ from __future__ import annotations
 import xml.sax.saxutils as saxutils
 from typing import IO
 
-from .base import FileBundleItem, HeaderInfo, Writer
+from .base import FileBundleItem, HeaderInfo, SkippedFileEntry, Writer
 
 
 class XmlWriter(Writer):
-    def write(self, out: IO[str], header: HeaderInfo, items: list[FileBundleItem]) -> None:
+    def write(
+        self,
+        out: IO[str],
+        header: HeaderInfo,
+        items: list[FileBundleItem],
+        skipped_entries: list[SkippedFileEntry] | None = None,
+    ) -> None:
         out.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         out.write("<foldermix>\n")
         out.write("  <header>\n")
