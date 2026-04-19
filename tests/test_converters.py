@@ -138,6 +138,7 @@ class TestMarkitdownConverter:
             assert conv.can_convert(".pdf") is True
             assert conv.can_convert(".docx") is True
             assert conv.can_convert(".pptx") is True
+            assert conv.can_convert(".ppsx") is True
             assert conv.can_convert(".xlsx") is True
             assert conv.can_convert(".txt") is False
 

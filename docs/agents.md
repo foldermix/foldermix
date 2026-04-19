@@ -104,6 +104,8 @@ class Converter(Protocol):
 
 Optional converters (`pdf`, `office`, `markitdown`) are always added to the registry, but they only become active when their optional dependencies (extras) are installed (otherwise their `can_convert()` methods return `False`, making them effective no-ops). The plain-text converter is always available as a fallback. `.ipynb` notebooks are supported by a built-in converter, with pack/preview config controlling whether cell outputs are included.
 
+`.pptx` and `.ppsx` share the PowerPoint fallback path when Office support is installed; keep slideshow support aligned across defaults, docs, and tests when changing presentation handling.
+
 ---
 
 ## Test Suite
@@ -216,6 +218,12 @@ See the [Release PR Process](../README.md#release-pr-process) section in README.
 - The `publish-pypi` job compares `HEAD` vs `HEAD^` to detect the bump.
 - Snapshot fixtures must be updated in the same PR if packer output changed.
 - The `HOMEBREW_TAP_GITHUB_TOKEN` secret must be configured for tap updates to succeed.
+
+## PR completion gate
+
+- Treat feature work and PR work as incomplete until a properly labeled, non-draft GitHub PR with a detailed description is open.
+- Assign a relevant milestone when one exists.
+- Prefer GitHub MCP tools for PR creation and metadata updates; use `gh` only for unsupported actions such as creating missing labels or milestones.
 
 ---
 

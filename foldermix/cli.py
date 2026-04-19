@@ -134,6 +134,7 @@ _OPTIONAL_CONVERTER_HINTS: dict[str, str] = {
     ".docx": "Install Office support with 'pip install \"foldermix[office]\"'.",
     ".xlsx": "Install Office support with 'pip install \"foldermix[office]\"'.",
     ".pptx": "Install Office support with 'pip install \"foldermix[office]\"'.",
+    ".ppsx": "Install Office support with 'pip install \"foldermix[office]\"'.",
 }
 
 

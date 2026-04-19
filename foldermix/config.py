@@ -47,6 +47,7 @@ DEFAULT_INCLUDE_EXT: list[str] = [
     ".pdf",
     ".docx",
     ".pptx",
+    ".ppsx",
     ".xlsx",
     ".ipynb",
 ]

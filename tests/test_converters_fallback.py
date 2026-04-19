@@ -61,12 +61,14 @@ def test_normalize_whitespace_line_replaces_nbsp_and_trims_right_edge() -> None:
 def test_pptx_fallback_can_convert_when_installed(monkeypatch) -> None:
     monkeypatch.setitem(sys.modules, "pptx", SimpleNamespace(Presentation=lambda _: None))
     assert PptxFallbackConverter().can_convert(".pptx") is True
+    assert PptxFallbackConverter().can_convert(".ppsx") is True
     assert PptxFallbackConverter().can_convert(".txt") is False
 
 
 def test_pptx_fallback_can_convert_false_when_missing(monkeypatch) -> None:
     monkeypatch.setitem(sys.modules, "pptx", None)
     assert PptxFallbackConverter().can_convert(".pptx") is False
+    assert PptxFallbackConverter().can_convert(".ppsx") is False
 
 
 def test_pptx_fallback_convert(monkeypatch, tmp_path: Path) -> None:
@@ -83,6 +85,21 @@ def test_pptx_fallback_convert(monkeypatch, tmp_path: Path) -> None:
     assert "### Slide 2" in result.content
     assert "Slide Two" in result.content
     assert result.converter_name == "python-pptx"
+
+
+def test_ppsx_fallback_convert_uses_slideshow_mime(monkeypatch, tmp_path: Path) -> None:
+    path = tmp_path / "f.ppsx"
+    path.write_text("placeholder", encoding="utf-8")
+    slide = SimpleNamespace(shapes=[SimpleNamespace(text="Slide Show")])
+    fake_pptx = SimpleNamespace(Presentation=lambda _: SimpleNamespace(slides=[slide]))
+    monkeypatch.setitem(sys.modules, "pptx", fake_pptx)
+
+    result = PptxFallbackConverter().convert(path)
+
+    assert "Slide Show" in result.content
+    assert result.original_mime == (
+        "application/vnd.openxmlformats-officedocument.presentationml.slideshow"
+    )
 
 
 def test_xlsx_fallback_can_convert_when_installed(monkeypatch) -> None:

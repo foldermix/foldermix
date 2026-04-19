@@ -49,6 +49,7 @@ _STRUCTURED_TRUNCATE_AFTER_CONVERT_EXTS = {
     ".docx",
     ".xlsx",
     ".pptx",
+    ".ppsx",
     ".ipynb",
     *IMAGE_OCR_EXTENSIONS,
 }

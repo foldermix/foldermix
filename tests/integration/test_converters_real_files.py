@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 import pytest
@@ -95,3 +96,18 @@ def test_real_file_converter_can_convert_when_dependency_installed(
 ) -> None:
     pytest.importorskip(required_module)
     assert converter.can_convert(ext) is True
+
+
+def test_real_file_ppsx_uses_same_converter_output(tmp_path: Path) -> None:
+    pytest.importorskip("pptx")
+    src = tmp_path / "sample.ppsx"
+    shutil.copyfile(REAL_DIR / "sample.pptx", src)
+    expected = (EXPECTED_DIR / "sample_pptx.txt").read_text(encoding="utf-8")
+
+    result = PptxFallbackConverter().convert(src)
+
+    assert result.content == expected
+    assert result.converter_name == "python-pptx"
+    assert result.original_mime == (
+        "application/vnd.openxmlformats-officedocument.presentationml.slideshow"
+    )

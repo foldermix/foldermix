@@ -4,6 +4,8 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from foldermix import packer
 from foldermix.config import DEFAULT_INCLUDE_EXT, PackConfig
 from foldermix.converters.base import ConversionResult
@@ -26,6 +28,10 @@ class _RegistryOne:
 
 def test_default_include_ext_contains_ipynb() -> None:
     assert ".ipynb" in DEFAULT_INCLUDE_EXT
+
+
+def test_default_include_ext_contains_ppsx() -> None:
+    assert ".ppsx" in DEFAULT_INCLUDE_EXT
 
 
 def test_convert_record_without_converter(tmp_path: Path) -> None:
@@ -87,8 +93,11 @@ def test_convert_record_truncate_when_converter_deletes_tmp_file(tmp_path: Path)
     assert not (tmp_path / "big.txt.truncated.tmp").exists()
 
 
-def test_convert_record_truncate_structured_file_uses_original_path(tmp_path: Path) -> None:
-    path = tmp_path / "deck.pptx"
+@pytest.mark.parametrize("ext", [".pptx", ".ppsx"])
+def test_convert_record_truncate_structured_file_uses_original_path(
+    tmp_path: Path, ext: str
+) -> None:
+    path = tmp_path / f"deck{ext}"
     path.write_bytes(b"placeholder")
     seen_paths: list[Path] = []
 
@@ -104,17 +113,20 @@ def test_convert_record_truncate_structured_file_uses_original_path(tmp_path: Pa
         max_bytes=12,
         include_sha256=False,
     )
-    record = FileRecord(path=path, relpath="deck.pptx", ext=".pptx", size=16, mtime=0.0)
+    record = FileRecord(path=path, relpath=f"deck{ext}", ext=ext, size=16, mtime=0.0)
     item = packer._convert_record(record, _RegistryOne(_Conv()), config)
 
     assert seen_paths == [path]
     assert item.content == "slide text"
     assert item.truncated is False
-    assert not (tmp_path / "deck.pptx.truncated.tmp").exists()
+    assert not (tmp_path / f"deck{ext}.truncated.tmp").exists()
 
 
-def test_convert_record_truncate_structured_file_truncates_rendered_text(tmp_path: Path) -> None:
-    path = tmp_path / "deck.pptx"
+@pytest.mark.parametrize("ext", [".pptx", ".ppsx"])
+def test_convert_record_truncate_structured_file_truncates_rendered_text(
+    tmp_path: Path, ext: str
+) -> None:
+    path = tmp_path / f"deck{ext}"
     path.write_bytes(b"placeholder")
     seen_paths: list[Path] = []
 
@@ -130,13 +142,13 @@ def test_convert_record_truncate_structured_file_truncates_rendered_text(tmp_pat
         max_bytes=24,
         include_sha256=False,
     )
-    record = FileRecord(path=path, relpath="deck.pptx", ext=".pptx", size=128, mtime=0.0)
+    record = FileRecord(path=path, relpath=f"deck{ext}", ext=ext, size=128, mtime=0.0)
     item = packer._convert_record(record, _RegistryOne(_Conv()), config)
 
     assert seen_paths == [path]
     assert item.truncated is True
     assert "[TRUNCATED]" in item.content
-    assert not (tmp_path / "deck.pptx.truncated.tmp").exists()
+    assert not (tmp_path / f"deck{ext}.truncated.tmp").exists()
 
 
 def test_convert_record_applies_frontmatter_redaction_and_crlf(tmp_path: Path) -> None:

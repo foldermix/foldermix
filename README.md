@@ -19,7 +19,7 @@ pip install "foldermix[all]"   # adds PDF, OCR, Office, tqdm (excludes markitdow
 pip install "foldermix[all,markitdown]"  # full optional converter stack
 pip install "foldermix[pdf]"   # pypdf only
 pip install "foldermix[ocr]"   # OCR for textless PDF pages and standalone PNG/JPEG images
-pip install "foldermix[office]" # docx/xlsx/pptx support
+pip install "foldermix[office]" # docx/xlsx/pptx/ppsx support
 ```
 
 ### Homebrew (macOS/Linux)
@@ -140,7 +140,7 @@ foldermix version
 - **Multiple output formats**: Markdown, XML, JSONL
 - **Smart filtering**: gitignore support, extension filters, glob patterns
 - **Sensitive file protection**: Automatically skips `.env`, keys, certificates
-- **Optional converters**: PDF (pypdf), OCR-enhanced PDF fallback (rapidocr + pypdfium2), Office docs (python-docx, openpyxl, python-pptx), markitdown
+- **Optional converters**: PDF (pypdf), OCR-enhanced PDF fallback (rapidocr + pypdfium2), Office docs (python-docx, openpyxl, python-pptx for `.pptx`/`.ppsx`), markitdown
 - **Core text-like formats**: plain text, markup, config/data files, and WebVTT (`.vtt`) via the built-in text converter
 - **Notebook support**: built-in `.ipynb` conversion, with `--ipynb-include-outputs` to include or omit cell outputs
 - **Spreadsheet noise reduction**: XLSX fallback skips low-signal `Copy of ...` tabs by default
@@ -224,7 +224,7 @@ foldermix init --profile course-refresh --out foldermix.toml --force
 foldermix pack ./previous-course --config foldermix.toml --format md --out course-refresh-context.md --report course-refresh-report.json
 ```
 
-The `course-refresh` profile keeps teaching-material formats broad (`pdf`, `docx`, `pptx`, `ipynb`, `xlsx`, `vtt`, text/markup, structured text) while excluding common student/admin paths such as:
+The `course-refresh` profile keeps teaching-material formats broad (`pdf`, `docx`, `pptx`, `ppsx`, `ipynb`, `xlsx`, `vtt`, text/markup, structured text) while excluding common student/admin paths such as:
 
 - grades
 - rosters
@@ -655,7 +655,7 @@ python -m mutmut results
 | `test_perf_smoke.py` | `slow` | Packs 1,500 synthetic files; asserts wall-clock ≤ 25 s and peak RSS ≤ 256 MB |
 | `integration/test_pack_outputs.py` | `integration` | Golden-file snapshot tests: Markdown, XML, JSONL output match fixture files |
 | `integration/test_pack_outputs_structured.py` | `integration` | Structured assertions on actual pack output (TOC, SHA-256, XML structure) |
-| `integration/test_converters_real_files.py` | `integration` | Real-file converter tests (PDF, docx, xlsx, pptx) |
+| `integration/test_converters_real_files.py` | `integration` | Real-file converter tests (PDF, docx, xlsx, pptx, ppsx) |
 
 Snapshot fixtures live in `tests/integration/fixtures/`:
 

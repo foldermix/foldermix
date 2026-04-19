@@ -6,7 +6,7 @@ from .base import ConversionResult
 
 
 class MarkitdownConverter:
-    EXTENSIONS = {".pdf", ".docx", ".pptx", ".xlsx"}
+    EXTENSIONS = {".pdf", ".docx", ".pptx", ".ppsx", ".xlsx"}
 
     def can_convert(self, ext: str) -> bool:
         try:
