@@ -120,7 +120,7 @@ Use `--print-effective-config` on any command to inspect the merged result with 
 | `test_perf_smoke.py` | `slow` | 1,500 synthetic files; asserts ≤ 25 s wall-clock (configurable via `FOLDERMIX_PERF_MAX_SECONDS`) and ≤ 256 MB `tracemalloc` peak (configurable via `FOLDERMIX_PERF_MAX_PEAK_MB`) |
 | `integration/test_pack_outputs.py` | `integration` | Golden-file snapshot tests for md/xml/jsonl output |
 | `integration/test_pack_outputs_structured.py` | `integration` | Structured assertions on TOC, SHA-256, XML structure |
-| `integration/test_converters_real_files.py` | `integration` | Real-file converter tests (PDF, docx, xlsx, pptx) |
+| `integration/test_converters_real_files.py` | `integration` | Real-file converter tests (PDF, docx, xlsx, pptx, ppsx) |
 
 ### Snapshot tests
 Fixtures live in `tests/integration/fixtures/`:
@@ -170,6 +170,11 @@ pytest -o addopts= tests/integration/test_pack_outputs.py -m integration -v
 - Update README and docs when user-visible behavior or options change.
 - New or modified Python modules should start with `from __future__ import annotations`; document any intentional exceptions (for example, specific `__init__.py` files).
 - Use `Protocol` for interfaces; type hints throughout.
+
+## PR completion gate
+- Treat feature work and PR work as incomplete until a properly labeled, non-draft GitHub PR with a detailed description is open.
+- Assign the PR to an appropriate milestone when one exists for the work.
+- Prefer GitHub MCP tools for PR creation and metadata updates; use `gh` only for actions those tools do not support cleanly, such as creating missing labels or milestones.
 
 ## PR expectations
 - Keep PR descriptions explicit: behavior change, flags and config keys, dependency impact, and test evidence.

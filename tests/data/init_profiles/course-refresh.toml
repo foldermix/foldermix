@@ -5,7 +5,7 @@
 
 # Pack defaults for this profile.
 [pack]
-include_ext = [".txt", ".md", ".rst", ".pdf", ".docx", ".pptx", ".ipynb", ".xlsx", ".csv", ".tsv", ".vtt", ".json", ".yaml", ".yml"]
+include_ext = [".txt", ".md", ".rst", ".pdf", ".docx", ".pptx", ".ppsx", ".ipynb", ".xlsx", ".csv", ".tsv", ".vtt", ".json", ".yaml", ".yml"]
 hidden = false
 respect_gitignore = true
 on_oversize = "truncate"
@@ -23,5 +23,5 @@ exclude_glob = ["*[Gg]rade*", "*[Rr]oster*", "*[Rr]esponse*", "*[Ff]eedback*", "
 
 # Stats defaults for this profile.
 [stats]
-include_ext = [".txt", ".md", ".rst", ".pdf", ".docx", ".pptx", ".ipynb", ".xlsx", ".csv", ".tsv", ".vtt", ".json", ".yaml", ".yml"]
+include_ext = [".txt", ".md", ".rst", ".pdf", ".docx", ".pptx", ".ppsx", ".ipynb", ".xlsx", ".csv", ".tsv", ".vtt", ".json", ".yaml", ".yml"]
 hidden = false

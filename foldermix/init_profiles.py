@@ -101,6 +101,7 @@ _COURSE_REFRESH_EXT = [
     ".pdf",
     ".docx",
     ".pptx",
+    ".ppsx",
     ".ipynb",
     ".xlsx",
     ".csv",

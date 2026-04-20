@@ -138,8 +138,47 @@ class TestMarkitdownConverter:
             assert conv.can_convert(".pdf") is True
             assert conv.can_convert(".docx") is True
             assert conv.can_convert(".pptx") is True
+            assert conv.can_convert(".ppsx") is True
             assert conv.can_convert(".xlsx") is True
             assert conv.can_convert(".txt") is False
+
+    @pytest.mark.parametrize(
+        ("name", "expected_mime"),
+        [
+            (
+                "sample.docx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ),
+            ("sample.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+            (
+                "sample.pptx",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ),
+            (
+                "sample.ppsx",
+                "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+            ),
+        ],
+    )
+    def test_convert_uses_office_mime_map(
+        self, tmp_path: Path, name: str, expected_mime: str
+    ) -> None:
+        from foldermix.converters.markitdown_conv import MarkitdownConverter
+
+        path = tmp_path / name
+        path.write_text("placeholder", encoding="utf-8")
+        mock_markitdown = MagicMock()
+        mock_markitdown.MarkItDown.return_value.convert.return_value = MagicMock(
+            text_content="converted"
+        )
+
+        converter = MarkitdownConverter()
+        with patch.dict(sys.modules, {"markitdown": mock_markitdown}):
+            result = converter.convert(path)
+
+        assert result.content == "converted"
+        assert result.converter_name == "markitdown"
+        assert result.original_mime == expected_mime
 
 
 class TestImageOcrConverter:

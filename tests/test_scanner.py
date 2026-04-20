@@ -126,6 +126,16 @@ def test_vtt_included_by_default(tmp_path: Path) -> None:
     assert all(skip.relpath != "captions.vtt" for skip in skipped)
 
 
+def test_ppsx_included_by_default(tmp_path: Path) -> None:
+    (tmp_path / "deck.ppsx").write_bytes(b"presentation")
+
+    included, skipped = scan(PackConfig(root=tmp_path))
+
+    relpaths = [r.relpath for r in included]
+    assert "deck.ppsx" in relpaths
+    assert all(skip.relpath != "deck.ppsx" for skip in skipped)
+
+
 def test_image_ocr_include_ext_overrides_default_image_exclude(sample_dir: Path) -> None:
     config = PackConfig(root=sample_dir, include_ext=[".png"], image_ocr=True)
     included, _ = scan(config)

@@ -6,11 +6,13 @@ from .base import ConversionResult
 
 
 class PptxFallbackConverter:
+    SUPPORTED_EXTENSIONS = {".pptx", ".ppsx"}
+
     def can_convert(self, ext: str) -> bool:
         try:
             import pptx  # noqa: F401
 
-            return ext.lower() == ".pptx"
+            return ext.lower() in self.SUPPORTED_EXTENSIONS
         except ImportError:
             return False
 
@@ -28,5 +30,9 @@ class PptxFallbackConverter:
         return ConversionResult(
             content="\n\n".join(slides),
             converter_name="python-pptx",
-            original_mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            original_mime=(
+                "application/vnd.openxmlformats-officedocument.presentationml.slideshow"
+                if path.suffix.lower() == ".ppsx"
+                else "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            ),
         )
