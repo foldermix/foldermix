@@ -203,3 +203,19 @@ def test_course_refresh_profile_sets_exclusion_defaults(tmp_path: Path) -> None:
     patterns = parsed["pack"]["exclude_glob"]
     assert any(fnmatch("Grades.xlsx", pattern) for pattern in patterns)
     assert any(fnmatch("nested/course/Feedback Notes.docx", pattern) for pattern in patterns)
+
+
+def test_research_profile_includes_powerpoint_formats(tmp_path: Path) -> None:
+    output_path = tmp_path / "foldermix.toml"
+
+    result = runner.invoke(
+        app,
+        ["init", "--profile", "research", "--out", str(output_path)],
+    )
+
+    assert result.exit_code == 0, result.output
+    parsed = tomllib.loads(output_path.read_text(encoding="utf-8"))
+    assert ".pptx" in parsed["pack"]["include_ext"]
+    assert ".ppsx" in parsed["pack"]["include_ext"]
+    assert ".pptx" in parsed["stats"]["include_ext"]
+    assert ".ppsx" in parsed["stats"]["include_ext"]

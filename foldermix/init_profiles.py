@@ -72,6 +72,8 @@ _RESEARCH_EXT = [
     ".rst",
     ".pdf",
     ".docx",
+    ".pptx",
+    ".ppsx",
     ".xlsx",
     ".csv",
     ".tsv",

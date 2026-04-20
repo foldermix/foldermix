@@ -187,7 +187,7 @@ foldermix init --profile course-refresh --out ./foldermix.toml --force
 Available profiles:
 
 - `legal` - privacy-first defaults with full redaction and OCR enabled.
-- `research` - broad document coverage with OCR and email-only redaction.
+- `research` - broad document coverage, including PowerPoint decks and slideshows, with OCR and email-only redaction.
 - `support` - ticket/runbook focused filters with full redaction defaults.
 - `engineering-docs` - technical docs profile with frontmatter stripping and no redaction.
 - `course-refresh` - teaching-material bundle profile that excludes grades, rosters, responses, feedback, and other student/admin paths by default.
