@@ -8,8 +8,13 @@ from rich.table import Table
 from rich.text import Text
 
 
+def format_count(count: int, singular: str, plural: str | None = None) -> str:
+    label = singular if count == 1 else plural or f"{singular}s"
+    return f"{count:,} {label}"
+
+
 def format_bytes(size: int) -> str:
-    return f"{size:,} bytes"
+    return format_count(size, "byte")
 
 
 def print_file_table(
@@ -67,7 +72,7 @@ def print_stats_table(
     table.add_column("Extension")
     table.add_column("Files", justify="right")
 
-    for ext, count in sorted(extension_counts.items(), key=lambda item: (-item[1], item[0])):
+    for ext, count in sorted(extension_counts.items(), key=lambda item: -item[1]):
         table.add_row(ext or "(none)", str(count))
 
     console.print()

@@ -19,7 +19,7 @@ from .init_profiles import available_profiles, has_profile, render_profile_confi
 from .report import build_skipped_file_entry
 from .scanner import FileRecord, SkipRecord
 from .stdin_paths import parse_stdin_paths
-from .terminal import print_file_table, print_skip_table, print_stats_table
+from .terminal import format_count, print_file_table, print_skip_table, print_stats_table
 
 _INIT_PROFILE_CHOICES = ", ".join(available_profiles())
 
@@ -781,7 +781,10 @@ def list_cmd(
     )
     included, skipped = scan(pack_config)
     print_file_table(console, included, title="Included files")
-    console.print(f"\n{len(included)} files would be included, {len(skipped)} skipped.")
+    console.print(
+        f"\n{format_count(len(included), 'file')} would be included, "
+        f"{format_count(len(skipped), 'file')} skipped."
+    )
 
 
 @app.command("stats")
@@ -1048,13 +1051,15 @@ def skiplist_cmd(
     )
     print_skip_table(console, skip_entries, title="Skipped files")
     if conversion_check:
+        converter_verb = "lacks" if converter_missing_count == 1 else "lack"
         console.print(
             "\n"
-            f"{len(skipped)} files would be skipped by scanning; "
-            f"{converter_missing_count} additional files currently lack a supported converter."
+            f"{format_count(len(skipped), 'file')} would be skipped by scanning; "
+            f"{format_count(converter_missing_count, 'additional file')} "
+            f"currently {converter_verb} a supported converter."
         )
     else:
-        console.print(f"\n{len(skip_entries)} files would be skipped.")
+        console.print(f"\n{format_count(len(skip_entries), 'file')} would be skipped.")
 
 
 @app.command("preview")

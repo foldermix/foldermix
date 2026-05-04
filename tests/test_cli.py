@@ -11,6 +11,7 @@ import foldermix.scanner as scanner_module
 from foldermix import __version__
 from foldermix import cli as cli_module
 from foldermix.cli import app
+from foldermix.terminal import format_bytes, format_count
 
 runner = CliRunner()
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
@@ -18,6 +19,15 @@ _ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 
 def _strip_ansi(text: str) -> str:
     return _ANSI_RE.sub("", text)
+
+
+def test_terminal_count_formatting_handles_singular_and_plural() -> None:
+    assert format_count(1, "file") == "1 file"
+    assert format_count(2, "file") == "2 files"
+    assert format_count(1, "additional file") == "1 additional file"
+    assert format_count(0, "additional file") == "0 additional files"
+    assert format_bytes(1) == "1 byte"
+    assert format_bytes(2) == "2 bytes"
 
 
 def test_pack_rejects_invalid_format(tmp_path: Path) -> None:
@@ -600,7 +610,7 @@ def test_list_shows_included_and_skipped_files(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert "keep.txt" in result.output
     assert ".hidden" not in result.output
-    assert "1 files would be included, 1 skipped." in result.output
+    assert "1 file would be included, 1 file skipped." in result.output
 
 
 def test_list_rejects_invalid_on_oversize(tmp_path: Path) -> None:
@@ -665,7 +675,7 @@ def test_list_reports_glob_excluded_files_from_pack_config(tmp_path: Path) -> No
     assert result.exit_code == 0, result.output
     assert "keep.txt" in result.output
     assert "skip.tmp" not in result.output
-    assert "1 files would be included, 1 skipped." in result.output
+    assert "1 file would be included, 1 file skipped." in result.output
 
 
 def test_list_honors_include_glob_override_from_pack_config(tmp_path: Path) -> None:
@@ -691,7 +701,7 @@ def test_list_honors_include_glob_override_from_pack_config(tmp_path: Path) -> N
     assert result.exit_code == 0, result.output
     assert "keep.txt" in result.output
     assert "skip.txt" not in result.output
-    assert "1 files would be included, 1 skipped." in result.output
+    assert "1 file would be included, 1 file skipped." in result.output
 
 
 def test_list_honors_exclude_dirs_from_pack_config(tmp_path: Path) -> None:
@@ -719,7 +729,7 @@ def test_list_honors_exclude_dirs_from_pack_config(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert "ok.txt" in result.output
     assert "blocked/note.txt" not in result.output
-    assert "1 files would be included, 0 skipped." in result.output
+    assert "1 file would be included, 0 files skipped." in result.output
 
 
 def test_skiplist_shows_skipped_files_with_reason_codes(tmp_path: Path) -> None:
@@ -732,7 +742,7 @@ def test_skiplist_shows_skipped_files_with_reason_codes(tmp_path: Path) -> None:
     assert ".hidden" in result.output
     assert "SKIP_HIDDEN" in result.output
     assert "keep.txt" not in result.output
-    assert "1 files would be skipped." in result.output
+    assert "1 file would be skipped." in result.output
 
 
 def test_skiplist_conversion_check_reports_missing_optional_dependency(
@@ -754,6 +764,8 @@ def test_skiplist_conversion_check_reports_missing_optional_dependency(
     assert "doc.pdf" in result.output
     assert "SKIP_OPTIONAL_DEPENDENCY_MISSING" in result.output
     assert "foldermix[pdf]" in result.output
+    assert "1 additional file currently lacks a" in result.output
+    assert "supported converter." in result.output
 
 
 def test_skiplist_conversion_check_reports_unsupported_extensions(tmp_path: Path) -> None:
@@ -1465,8 +1477,8 @@ def test_stats_prints_summary_and_extensions(tmp_path: Path) -> None:
 
 
 def test_list_prints_table_with_summary(tmp_path: Path) -> None:
-    (tmp_path / "a.txt").write_text("a\n", encoding="utf-8")
-    (tmp_path / "b.md").write_text("# b\n", encoding="utf-8")
+    (tmp_path / "a.txt").write_bytes(b"a\n")
+    (tmp_path / "b.md").write_bytes(b"# b\n")
 
     result = runner.invoke(app, ["list", str(tmp_path)])
 
@@ -1478,7 +1490,7 @@ def test_list_prints_table_with_summary(tmp_path: Path) -> None:
     assert "2 bytes" in result.output
     assert "b.md" in result.output
     assert "4 bytes" in result.output
-    assert "2 files would be included, 0 skipped." in result.output
+    assert "2 files would be included, 0 files skipped." in result.output
 
 
 def test_skiplist_prints_table_with_reason_codes(tmp_path: Path) -> None:
@@ -1494,7 +1506,7 @@ def test_skiplist_prints_table_with_reason_codes(tmp_path: Path) -> None:
     assert "Message" in result.output
     assert ".hidden" in result.output
     assert "SKIP_HIDDEN" in result.output
-    assert "1 files would be skipped." in result.output
+    assert "1 file would be skipped." in result.output
 
 
 def test_stats_reports_invalid_config(tmp_path: Path) -> None:
@@ -1541,9 +1553,10 @@ def test_pack_help_contains_examples() -> None:
 def test_init_help_contains_examples() -> None:
     result = runner.invoke(app, ["init", "--help"])
     assert result.exit_code == 0
-    assert "Examples:" in result.output
-    assert "foldermix init --profile engineering-docs" in result.output
-    assert "foldermix init --profile legal" in result.output
+    output = _strip_ansi(result.output)
+    assert "Examples:" in output
+    assert "foldermix init --profile engineering-docs" in output
+    assert "foldermix init --profile legal" in output
 
 
 def test_version_help_is_concise_and_accurate() -> None:

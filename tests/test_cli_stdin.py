@@ -96,7 +96,7 @@ def test_list_and_stats_stdin_use_only_explicit_paths(monkeypatch, tmp_path: Pat
     assert "a.txt" in list_result.output
     assert "c.txt" in list_result.output
     assert "b.txt" not in list_result.output
-    assert "2 files would be included, 1 skipped." in list_result.output
+    assert "2 files would be included, 1 file skipped." in list_result.output
 
     stats_result = runner.invoke(
         app,

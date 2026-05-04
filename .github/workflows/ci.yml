@@ -151,7 +151,7 @@ jobs:
 
           list_out="$(run_expect 0 ./.pkg-smoke-venv/bin/foldermix list smoke_input)"
           assert_contains "$list_out" "a.txt"
-          assert_contains "$list_out" "1 files would be included, 0 skipped."
+          assert_contains "$list_out" "1 file would be included, 0 files skipped."
 
           stats_out="$(run_expect 0 ./.pkg-smoke-venv/bin/foldermix stats smoke_input)"
           assert_contains "$stats_out" "Included files: 1"

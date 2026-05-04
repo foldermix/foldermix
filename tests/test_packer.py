@@ -60,7 +60,7 @@ def test_pack_dry_run_does_not_write_output(tmp_path: Path) -> None:
 
 
 def test_pack_dry_run_prints_table(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    _write(tmp_path / "a.txt", "hello\n")
+    (tmp_path / "a.txt").write_bytes(b"hello\n")
     config = PackConfig(root=tmp_path, dry_run=True, workers=1)
 
     packer.pack(config)
@@ -72,7 +72,7 @@ def test_pack_dry_run_prints_table(tmp_path: Path, capsys: pytest.CaptureFixture
     assert "a.txt" in captured.err
     assert "6 bytes" in captured.err
     assert "Dry run complete." in captured.err
-    assert "Would pack 1 files." in captured.err
+    assert "Would pack 1 file." in captured.err
 
 
 def test_pack_policy_dry_run_text_summarizes_findings_and_skips_output(
