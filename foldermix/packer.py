@@ -28,6 +28,7 @@ from .report import (
     write_report,
 )
 from .scanner import FileRecord, SkipRecord, scan
+from .terminal import format_count, print_file_table
 from .utils import (
     drop_lines_containing,
     drop_lines_shorter_than,
@@ -617,9 +618,10 @@ def pack(config: PackConfig) -> None:
         raise typer.Exit(code=3)
 
     if config.dry_run:
-        for r in included:
-            console.print(f"  [cyan]{r.relpath}[/cyan] ({r.size:,} bytes)")
-        console.print(f"\n[bold]Dry run complete.[/bold] Would pack {len(included)} files.")
+        print_file_table(console, included, title="Files that would be packed")
+        console.print(
+            f"\n[bold]Dry run complete.[/bold] Would pack {format_count(len(included), 'file')}."
+        )
         return
 
     registry = _build_registry(config)

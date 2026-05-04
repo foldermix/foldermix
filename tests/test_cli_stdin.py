@@ -90,10 +90,13 @@ def test_list_and_stats_stdin_use_only_explicit_paths(monkeypatch, tmp_path: Pat
         input="a.txt\nc.txt\nmissing.txt\n",
     )
     assert list_result.exit_code == 0, list_result.output
+    assert "Included files" in list_result.output
+    assert "Path" in list_result.output
+    assert "Size" in list_result.output
     assert "a.txt" in list_result.output
     assert "c.txt" in list_result.output
     assert "b.txt" not in list_result.output
-    assert "2 files would be included, 1 skipped." in list_result.output
+    assert "2 files would be included, 1 file skipped." in list_result.output
 
     stats_result = runner.invoke(
         app,
@@ -104,6 +107,7 @@ def test_list_and_stats_stdin_use_only_explicit_paths(monkeypatch, tmp_path: Pat
     assert "Included files: 2" in stats_result.output
     assert "Skipped files:  1" in stats_result.output
     assert "Total bytes:    3" in stats_result.output
+    assert "By extension" in stats_result.output
 
 
 @pytest.mark.parametrize("command", ["pack", "list", "stats"])

@@ -18,6 +18,8 @@ foldermix skiplist . --config foldermix.toml
 foldermix stats . --config foldermix.toml
 ```
 
+These commands print table-style summaries for included files, skipped files, and extension counts.
+
 ## Filtering And Cleanup
 
 Use include/exclude flags or config settings to narrow the bundle:
