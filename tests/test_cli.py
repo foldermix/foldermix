@@ -777,7 +777,7 @@ def test_skiplist_conversion_check_reports_unsupported_extensions(tmp_path: Path
     assert "custom.weird" in result.output
     assert "files without" in result.output
     assert "an extension" in result.output
-    assert "extension '.weird'" in result.output
+    assert ".weird" in result.output
 
 
 def test_skiplist_conversion_check_uses_real_converter_registry(tmp_path: Path) -> None:
@@ -1459,6 +1459,42 @@ def test_stats_prints_summary_and_extensions(tmp_path: Path) -> None:
     assert "Skipped files:  0" in result.output
     assert ".py" in result.output
     assert ".md" in result.output
+    assert "By extension" in result.output
+    assert "Extension" in result.output
+    assert "Files" in result.output
+
+
+def test_list_prints_table_with_summary(tmp_path: Path) -> None:
+    (tmp_path / "a.txt").write_text("a\n", encoding="utf-8")
+    (tmp_path / "b.md").write_text("# b\n", encoding="utf-8")
+
+    result = runner.invoke(app, ["list", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    assert "Included files" in result.output
+    assert "Path" in result.output
+    assert "Size" in result.output
+    assert "a.txt" in result.output
+    assert "2 bytes" in result.output
+    assert "b.md" in result.output
+    assert "4 bytes" in result.output
+    assert "2 files would be included, 0 skipped." in result.output
+
+
+def test_skiplist_prints_table_with_reason_codes(tmp_path: Path) -> None:
+    (tmp_path / "keep.txt").write_text("ok", encoding="utf-8")
+    (tmp_path / ".hidden").write_text("secret", encoding="utf-8")
+
+    result = runner.invoke(app, ["skiplist", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    assert "Skipped files" in result.output
+    assert "Path" in result.output
+    assert "Reason code" in result.output
+    assert "Message" in result.output
+    assert ".hidden" in result.output
+    assert "SKIP_HIDDEN" in result.output
+    assert "1 files would be skipped." in result.output
 
 
 def test_stats_reports_invalid_config(tmp_path: Path) -> None:
@@ -1500,6 +1536,20 @@ def test_pack_help_contains_examples() -> None:
     # \b blocks preserve the comment text verbatim
     assert "Pack current directory to Markdown" in result.output
     assert "Dry-run" in result.output
+
+
+def test_init_help_contains_examples() -> None:
+    result = runner.invoke(app, ["init", "--help"])
+    assert result.exit_code == 0
+    assert "Examples:" in result.output
+    assert "foldermix init --profile engineering-docs" in result.output
+    assert "foldermix init --profile legal" in result.output
+
+
+def test_version_help_is_concise_and_accurate() -> None:
+    result = runner.invoke(app, ["version", "--help"])
+    assert result.exit_code == 0
+    assert "Print the installed foldermix version." in result.output
 
 
 def test_pack_help_all_options_documented(tmp_path: Path) -> None:
@@ -1597,6 +1647,7 @@ def test_stats_help_all_options_documented() -> None:
     assert "--stdin" in output
     assert "--null" in output
     assert "Examples:" in output
+    assert "find . -type f -print0" in output
 
 
 def test_root_help_lists_all_commands() -> None:
@@ -1610,4 +1661,6 @@ def test_root_help_lists_all_commands() -> None:
     assert "stats" in result.output
     assert "version" in result.output
     assert "foldermix COMMAND" in result.output
-    assert "github.com/foldermix/foldermix/blob/main/docs/compliance-safety.md" in result.output
+    assert "foldermix.github.io/foldermix/quickstart" in result.output
+    assert "foldermix.github.io/foldermix/workflows" in result.output
+    assert "foldermix.github.io/foldermix/safety-and-troubleshooting" in result.output

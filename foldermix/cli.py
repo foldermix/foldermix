@@ -19,6 +19,7 @@ from .init_profiles import available_profiles, has_profile, render_profile_confi
 from .report import build_skipped_file_entry
 from .scanner import FileRecord, SkipRecord
 from .stdin_paths import parse_stdin_paths
+from .terminal import print_file_table, print_skip_table, print_stats_table
 
 _INIT_PROFILE_CHOICES = ", ".join(available_profiles())
 
@@ -36,8 +37,9 @@ app = typer.Typer(
         "  version – Print the installed foldermix version.\n\n"
         "Run 'foldermix COMMAND --help' for detailed options on any command.\n\n"
         "Guides:\n\n"
-        "  Config-first workflows: https://github.com/foldermix/foldermix/blob/main/docs/config-first-workflows.md\n\n"
-        "  Compliance & safety:   https://github.com/foldermix/foldermix/blob/main/docs/compliance-safety.md"
+        "  Quickstart: https://foldermix.github.io/foldermix/quickstart/\n\n"
+        "  Workflows:  https://foldermix.github.io/foldermix/workflows/\n\n"
+        "  Safety:     https://foldermix.github.io/foldermix/safety-and-troubleshooting/"
     ),
     add_completion=False,
 )
@@ -710,11 +712,11 @@ def list_cmd(
     Examples:
 
     \b
-      # List all files in the current directory
+      # Show files that would be packed
       foldermix list .
 
     \b
-      # List only Python files, including hidden ones
+      # Focus the scan before packing
       foldermix list . --include-ext .py --hidden
     """
     from .config import PackConfig
@@ -778,8 +780,7 @@ def list_cmd(
         image_ocr=values["image_ocr"],  # type: ignore[arg-type]
     )
     included, skipped = scan(pack_config)
-    for r in included:
-        console.print(f"{r.relpath}  ({r.size:,} bytes)")
+    print_file_table(console, included, title="Included files")
     console.print(f"\n{len(included)} files would be included, {len(skipped)} skipped.")
 
 
@@ -826,6 +827,10 @@ def stats_cmd(
     \b
       # Stats for Python files only
       foldermix stats ./src --include-ext .py
+
+    \b
+      # Stats for an explicit NUL-delimited file list
+      find . -type f -print0 | foldermix stats . --stdin --null
     """
     from .config import PackConfig
     from .scanner import scan
@@ -867,13 +872,14 @@ def stats_cmd(
     for r in included:
         ext_counts[r.ext] = ext_counts.get(r.ext, 0) + 1
 
-    console.print(f"[bold]Stats for {path}[/bold]")
-    console.print(f"  Included files: {len(included)}")
-    console.print(f"  Skipped files:  {len(skipped)}")
-    console.print(f"  Total bytes:    {total_bytes:,}")
-    console.print("\n  [bold]By extension:[/bold]")
-    for ext, count in sorted(ext_counts.items(), key=lambda x: -x[1]):
-        console.print(f"    {ext or '(none)':15s} {count:5d}")
+    print_stats_table(
+        console,
+        title=f"Stats for {path}",
+        included_count=len(included),
+        skipped_count=len(skipped),
+        total_bytes=total_bytes,
+        extension_counts=ext_counts,
+    )
 
 
 @app.command("skiplist")
@@ -970,6 +976,10 @@ def skiplist_cmd(
     \b
       # Include conversion-availability checks
       foldermix skiplist . --conversion-check
+
+    \b
+      # Inspect skipped files after applying config
+      foldermix skiplist . --config foldermix.toml
     """
     from .scanner import scan
 
@@ -1036,11 +1046,7 @@ def skiplist_cmd(
         skipped=skipped,
         conversion_check=conversion_check,
     )
-    for entry in skip_entries:
-        console.print(
-            f"{entry['path']}  [{entry['reason_code']}] {entry['message']}",
-            markup=False,
-        )
+    print_skip_table(console, skip_entries, title="Skipped files")
     if conversion_check:
         console.print(
             "\n"
@@ -1194,6 +1200,10 @@ def preview_cmd(
     \b
       # Preview files from stdin
       printf 'README.md\nsrc/a.py\n' | foldermix preview . --stdin
+
+    \b
+      # Preview with skipped-file diagnostics in Markdown output
+      foldermix preview . README.md --include-skipped-files
     """
     from .packer import render_preview
     from .scanner import scan
@@ -1369,7 +1379,18 @@ def init_cmd(
         help="Overwrite an existing output file. By default existing files are preserved.",
     ),
 ) -> None:
-    """Generate a starter foldermix.toml for common local workflows."""
+    """Generate a starter foldermix.toml for common local workflows.
+
+    Examples:
+
+    \b
+      # Generate an engineering docs starter config
+      foldermix init --profile engineering-docs
+
+    \b
+      # Overwrite an existing config intentionally
+      foldermix init --profile legal --out foldermix.toml --force
+    """
     normalized = profile.strip().lower()
     if not has_profile(normalized):
         valid = ", ".join(available_profiles())
@@ -1404,7 +1425,7 @@ def init_cmd(
 
 @app.command("version")
 def version_cmd() -> None:
-    """Print the version."""
+    """Print the installed foldermix version."""
     console.print(f"foldermix {__version__}")
 
 

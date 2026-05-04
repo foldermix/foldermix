@@ -58,6 +58,8 @@ foldermix preview . README.md
 - `stats` summarizes selected files by extension and size.
 - `preview` renders selected files through the pack pipeline without writing the full bundle.
 
+`list`, `skiplist`, and `stats` print table-style summaries so include/skip decisions are easier to scan before packing.
+
 ## Config-First Quick Path
 
 Use a starter profile when the workflow should be repeatable:
