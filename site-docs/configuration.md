@@ -26,7 +26,7 @@ When `--config` is omitted, `foldermix` discovers `foldermix.toml` by walking up
 
 - `[pack]` controls file-selection and packing behavior shared by `pack`, `list`, and `skiplist`.
 - `[stats]` keeps stats-specific defaults separate.
-- `[common]` can hold shared settings supported by the config loader.
+- `[common]` is copied into command sections, so use it only for keys that are valid for every command that will read that config.
 
 Use this command to inspect the merged result and value sources:
 

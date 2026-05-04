@@ -2,6 +2,8 @@
 
 These cookbook recipes are starting points for common local-folder jobs. Each recipe keeps commands copy-pasteable and names the expected artifact.
 
+Write generated bundles and reports outside the source tree, or exclude previous `context.*`, `*-context.*`, and `*report.json` artifacts with `.gitignore`, `foldermix.toml`, or CLI filters before repeat runs.
+
 ## AI Context Packing
 
 ### When to use it
@@ -21,7 +23,7 @@ foldermix pack . --format md --out context.md --report report.json
 
 ### Safety/filtering note
 
-Sensitive files are skipped unconditionally, `.gitignore` is respected by default, and hidden paths stay out unless `--hidden` is set.
+Sensitive files are skipped unconditionally, `.gitignore` is respected by default, and hidden paths stay out unless `--hidden` is set. Keep generated `context.md` and `report.json` out of later packs.
 
 ## Legal Review Bundles
 

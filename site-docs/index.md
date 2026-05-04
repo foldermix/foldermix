@@ -11,6 +11,12 @@
 - [Safety And Troubleshooting](safety-and-troubleshooting.md): sensitive-file handling, filters, policy dry-runs, OCR notes, and common fixes.
 - [CLI Presentation Roadmap](cli-presentation-roadmap.md): the M3 documentation and CLI presentation plan.
 
+## Project Docs
+
+- [README](https://github.com/foldermix/foldermix/blob/main/README.md): full repository overview, command reference, report schema, release notes, and developer guide.
+- [Contributing](https://github.com/foldermix/foldermix/blob/main/CONTRIBUTING.md): contribution process and local development expectations.
+- [Maintainer playbook](https://github.com/foldermix/foldermix/blob/main/docs/maintainer-playbook.md): PR triage, release, coverage, and tap troubleshooting.
+
 ## First Command
 
 ```bash

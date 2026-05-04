@@ -128,7 +128,7 @@ foldermix pack . --format jsonl --out context.jsonl --report report.json
 
 ## Common Workflows
 
-Use these as compact starting points. The longer docs-site guides cover [workflows](https://foldermix.github.io/foldermix/workflows/), [configuration](https://foldermix.github.io/foldermix/configuration/), [output formats and reports](https://foldermix.github.io/foldermix/output-formats-and-reports/), and [safety and troubleshooting](https://foldermix.github.io/foldermix/safety-and-troubleshooting/).
+Use these as compact starting points. The longer docs-site guides cover [workflows](site-docs/workflows.md), [configuration](site-docs/configuration.md), [output formats and reports](site-docs/output-formats-and-reports.md), and [safety and troubleshooting](site-docs/safety-and-troubleshooting.md).
 
 Config-first project bundle:
 
