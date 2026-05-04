@@ -206,6 +206,19 @@ Triggered on every push to `main` and every pull request.
 4. Add tests in `tests/test_converters.py` (unit) and `tests/integration/test_converters_real_files.py` (real-file integration test).
 5. Add a fallback test in `tests/test_converters_fallback.py` that verifies graceful degradation when the extra is not installed.
 
+## CLI Presentation Roadmap
+
+Use [presentation-roadmap.md](presentation-roadmap.md) as the canonical plan for the current CLI presentation and documentation milestone.
+
+Keep the work split into four reviewable PRs:
+
+1. `DOCS-PRES-1`: Planning and docs roadmap.
+2. `DOCS-PRES-2`: README presentation refresh.
+3. `DOCS-PRES-3`: Docs site and cookbook expansion.
+4. `DOCS-PRES-4`: CLI output and help presentation.
+
+Do not combine CLI behavior changes with docs-only PRs unless the user explicitly changes the plan.  Any CLI-facing behavior or output change needs focused tests and updated user documentation.
+
 ---
 
 ## Release Checklist

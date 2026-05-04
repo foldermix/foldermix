@@ -8,6 +8,7 @@ theme:
 docs_dir: site-docs
 nav:
   - Home: index.md
+  - CLI Presentation Roadmap: cli-presentation-roadmap.md
 markdown_extensions:
   - admonition
   - tables

@@ -26,6 +26,7 @@ pre-commit run --all-files
 ## Docs Site
 
 The docs site is built with MkDocs and published by `.github/workflows/docs-site.yml`.
+For the active CLI presentation and documentation milestone, see [docs/presentation-roadmap.md](docs/presentation-roadmap.md).
 
 ```bash
 pip install -e ".[docs]"
