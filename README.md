@@ -16,7 +16,7 @@ That command writes a Markdown bundle for the current folder:
 # FolderPack Context
 
 - **Root**: `/path/to/project`
-- **Files**: 3
+- **Files**: 2
 - **Total bytes**: 32
 
 ## Table of Contents
@@ -105,7 +105,7 @@ foldermix pack . --config foldermix.toml --format md --out context.md --report r
 Defaults worth knowing:
 
 - Markdown (`md`) is the default output format.
-- If you omit `--out`, `foldermix` writes a timestamped Markdown file such as `foldermix_20260307_120000.md`.
+- If you omit `--out`, `foldermix` writes a timestamped file whose extension matches `--format`, such as `foldermix_20260307_120000.md`.
 - `foldermix.toml` values override built-in defaults; explicit CLI flags override config file values.
 
 ## Format Guidance
@@ -115,7 +115,7 @@ Choose the output format based on where the bundle goes next:
 | Format | Choose it when | Output shape |
 |---|---|---|
 | Markdown (`md`) | You want a readable context file to paste into chat, inspect in an editor, or share with a human reviewer. | One document with metadata, table of contents, and fenced file blocks. |
-| XML (`xml`) | You want explicit file boundaries for tools or prompts that parse tagged sections well. | One `<bundle>` document with one `<file>` element per included file. |
+| XML (`xml`) | You want explicit file boundaries for tools or prompts that parse tagged sections well. | One `<foldermix>` document with `<header>` metadata and `<files>` containing one `<file>` element per included file. |
 | JSONL (`jsonl`) | You want streaming, indexing, or pipeline-friendly machine input. | One header object followed by one JSON object per file. |
 
 Examples:
@@ -128,14 +128,47 @@ foldermix pack . --format jsonl --out context.jsonl --report report.json
 
 ## Common Workflows
 
-| Workflow | Start here | Deeper guide |
-|---|---|---|
-| Config-first project bundle | `foldermix init --profile engineering-docs` then `foldermix pack . --config foldermix.toml --out context.md --report report.json` | [Config-first workflows](docs/config-first-workflows.md) |
-| Legal or privacy-sensitive review | `foldermix init --profile legal` then pack with `--report` and redaction/policy settings from the profile | [Compliance and safety](docs/compliance-safety.md) |
-| Research corpus or batch input | `find ./corpus -type f -print0 \| foldermix pack ./corpus --stdin --null --format jsonl --out research-context.jsonl --report research-report.json` | [Docs-site workflow examples](https://foldermix.github.io/foldermix/#common-workflows) |
-| Support incident bundle | `foldermix init --profile support` then pack selected tickets, logs, and runbooks | [Config-first workflows](docs/config-first-workflows.md) |
-| Course refresh bundle | `foldermix init --profile course-refresh` then pack prior course material while excluding student/admin paths | [Docs-site workflow examples](https://foldermix.github.io/foldermix/#common-workflows) |
-| Duplicate cleanup | `foldermix pack ./corpus --dedupe-content --report dedupe-report.json --out deduped-context.md` | [Config-first workflows](docs/config-first-workflows.md) |
+Use these as compact starting points. The longer walkthroughs live in [Config-first workflows](docs/config-first-workflows.md), [Compliance and safety](docs/compliance-safety.md), and the [docs-site workflow examples](https://foldermix.github.io/foldermix/#common-workflows).
+
+Config-first project bundle:
+
+```bash
+foldermix init --profile engineering-docs
+foldermix pack . --config foldermix.toml --out context.md --report report.json
+```
+
+Legal or privacy-sensitive review:
+
+```bash
+foldermix init --profile legal
+foldermix pack ./matter --config foldermix.toml --format md --out legal-context.md --report legal-report.json
+```
+
+Research corpus or batch input:
+
+```bash
+find ./corpus -type f -print0 | foldermix pack ./corpus --stdin --null --format jsonl --out research-context.jsonl --report research-report.json
+```
+
+Support incident bundle:
+
+```bash
+foldermix init --profile support
+foldermix pack . --config foldermix.toml --format md --out support-context.md --report support-report.json
+```
+
+Course refresh bundle:
+
+```bash
+foldermix init --profile course-refresh
+foldermix pack ./previous-course --config foldermix.toml --format md --out course-refresh-context.md --report course-refresh-report.json
+```
+
+Duplicate cleanup:
+
+```bash
+foldermix pack ./corpus --dedupe-content --report dedupe-report.json --out deduped-context.md
+```
 
 ## Features
 
