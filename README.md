@@ -586,6 +586,7 @@ See [SECURITY.md](SECURITY.md) for details on sensitive file handling.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 For maintainer operational workflows (PR triage loop, coverage recovery, release/tap troubleshooting), see [docs/maintainer-playbook.md](docs/maintainer-playbook.md).
+For the current CLI presentation and documentation milestone, see [docs/presentation-roadmap.md](docs/presentation-roadmap.md).
 
 ---
 

@@ -165,6 +165,7 @@ Publish path:
 
 This site is intentionally concise. For deeper details, use:
 - [README](https://github.com/foldermix/foldermix/blob/main/README.md)
+- [CLI presentation roadmap](cli-presentation-roadmap.md)
 - [Config-first workflows](https://github.com/foldermix/foldermix/blob/main/docs/config-first-workflows.md)
 - [Compliance and safety](https://github.com/foldermix/foldermix/blob/main/docs/compliance-safety.md)
 - [Contributing](https://github.com/foldermix/foldermix/blob/main/CONTRIBUTING.md)

@@ -149,6 +149,9 @@ pytest -o addopts= tests/integration/test_pack_outputs.py -m integration -v
 
 ## Common tasks
 
+### CLI presentation and documentation milestone
+Use [docs/presentation-roadmap.md](docs/presentation-roadmap.md) as the canonical plan for the current CLI presentation and documentation milestone.  Keep the work split into the four planned PRs: `DOCS-PRES-1` planning/docs roadmap, `DOCS-PRES-2` README presentation refresh, `DOCS-PRES-3` docs-site cookbook expansion, and `DOCS-PRES-4` CLI output/help presentation.  Do not combine CLI behavior changes with docs-only PRs unless the user explicitly changes the plan.
+
 ### Adding a new output format
 1. Create `foldermix/writers/myformat_writer.py` implementing the `Writer` protocol.
 2. Register it in `_get_writer()` in `foldermix/packer.py` and in the CLI format validation in `foldermix/cli.py`.
