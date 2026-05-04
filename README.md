@@ -1,145 +1,147 @@
 # foldermix
 
-**Pack a folder into a single LLM-friendly context file.**
+`foldermix` packs a local folder into one LLM-friendly context artifact you can inspect, share, or pipe into automation.
 
 [![CI](https://github.com/foldermix/foldermix/actions/workflows/ci.yml/badge.svg)](https://github.com/foldermix/foldermix/actions/workflows/ci.yml)
 
 Docs site: [foldermix.github.io/foldermix](https://foldermix.github.io/foldermix/)
 
-Maintainer docs:
+```bash
+pip install foldermix && foldermix pack . --out context.md
+```
 
-- [OCR validation set workflow](docs/ocr_validation.md)
+That command writes a Markdown bundle for the current folder:
 
-## Installation
+````markdown
+# FolderPack Context
+
+- **Root**: `/path/to/project`
+- **Files**: 3
+- **Total bytes**: 32
+
+## Table of Contents
+
+- [README.md](#readmemd)
+- [src/app.py](#srcapppy)
+
+---
+
+## src/app.py {#srcapppy}
+
+```python
+print("hello")
+```
+````
+
+Before it writes output, `foldermix` keeps the run predictable:
+
+- skips sensitive files such as `.env`, private keys, and certificates unconditionally
+- respects `.gitignore` by default
+- skips hidden files and directories unless you opt in with `--hidden`
+- orders files deterministically
+- lets you inspect included and skipped files with `list`, `skiplist`, `preview`, `stats`, and `--report`
+- supports redaction, size limits, duplicate suppression, and policy dry-runs when a workflow needs stricter controls
+
+## Install
+
+Recommended default:
 
 ```bash
 pip install foldermix
-# With optional extras:
-pip install "foldermix[all]"   # adds PDF, OCR, Office, tqdm (excludes markitdown)
-pip install "foldermix[all,markitdown]"  # full optional converter stack
-pip install "foldermix[pdf]"   # pypdf only
-pip install "foldermix[ocr]"   # OCR for textless PDF pages and standalone PNG/JPEG images
-pip install "foldermix[office]" # docx/xlsx/pptx/ppsx support
 ```
 
-### Homebrew (macOS/Linux)
+Use this for the core CLI and text-like files: plain text, Markdown, source code, config/data files, WebVTT, and notebooks.
 
-```bash
-brew tap foldermix/foldermix
-brew install foldermix
-```
+Choose extras only when your folders include documents that need optional converters:
 
-Homebrew installs the **core** feature set. Optional converter extras (`pdf`, `ocr`, `office`, `markitdown`) are not included in the Homebrew formula.
+| Need | Install | Notes |
+|---|---|---|
+| Core CLI for text/code/config files | `pip install foldermix` | Recommended default path. |
+| Isolated global CLI with common document converters | `uv tool install "foldermix[all]"` | Adds `pdf`, `ocr`, `office`, and `tqdm`; excludes `markitdown`. |
+| Full optional converter stack | `uv tool install "foldermix[all,markitdown]"` | Best fit when you want every optional converter available. |
+| Existing `pipx` workflow | `pipx install "foldermix[all,markitdown]"` | Same package extras, managed through `pipx`. |
+| Project-specific environment | `pip install "foldermix[all,markitdown]"` in a virtualenv | Use when the CLI should live with a project environment. |
+| macOS/Linux system install | `brew tap foldermix/foldermix && brew install foldermix` | Core feature set only; Homebrew does not install Python extras. |
 
-The `ocr` extra enables:
+Extras:
 
-- OCR fallback for textless PDF pages via `--pdf-ocr`
-- OCR for explicitly included `.png`, `.jpg`, and `.jpeg` files via `--image-ocr`
+- `pdf`: PDF text extraction with `pypdf`
+- `ocr`: OCR fallback for textless PDF pages via `--pdf-ocr`, plus explicitly included `.png`, `.jpg`, and `.jpeg` files via `--image-ocr`
+- `office`: `.docx`, `.xlsx`, `.pptx`, and `.ppsx` fallback converters
+- `markitdown`: additional optional converter support
+- `all`: `pdf`, `ocr`, `office`, and `tqdm`; include `markitdown` separately when needed
 
-### Full Optional Feature Support
-
-If you need optional converter stacks, use a Python tool installer path (`uv tool`, `pipx`, or a virtualenv install):
-
-```bash
-# uv (recommended)
-uv tool install "foldermix[all,markitdown]"
-
-# pipx
-pipx install "foldermix[all,markitdown]"
-
-# virtualenv
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install "foldermix[all,markitdown]"
-```
-
-`all` covers `pdf`, `ocr`, `office`, and `tqdm`. `markitdown` is a separate extra, so include it explicitly when needed.
-
-If `foldermix` is already installed via Homebrew and you want extras, the cleanest path is:
+If `foldermix` is already installed through Homebrew and you need extras, switch to a Python tool install:
 
 ```bash
 brew uninstall foldermix
 uv tool install "foldermix[all,markitdown]"
 ```
 
-Install-method summary:
+## Quick Start
 
-| Method | Optional extras support | Best for |
-|---|---|---|
-| `brew install foldermix` | Core only | Fast system-level CLI install |
-| `uv tool install "foldermix[all]"` | Most optional converters (`pdf`/`ocr`/`office`), excludes `markitdown` | Isolated global CLI with common optional features |
-| `uv tool install "foldermix[all,markitdown]"` | Full optional converter support | Isolated global CLI with all optional features |
-| `pipx install "foldermix[all,markitdown]"` | Full optional converter support | Isolated global CLI (pipx workflow) |
-| `pip install "foldermix[all,markitdown]"` in venv | Full optional converter support | Project-scoped environments |
-
-## Super Quick Start
-
-If you just want a single context file right now, run:
+Run from the folder you want to pack:
 
 ```bash
 foldermix pack . --out context.md
 ```
 
-This writes one Markdown bundle at `./context.md` from the current folder, with no `foldermix.toml` required.
+Inspect before packing:
 
-Default behavior:
-- output format is Markdown (`md`) unless you pass `--format`
-- if you omit `--out`, `foldermix` writes a timestamped Markdown file such as `foldermix_20260307_120000.md`
+```bash
+foldermix list .
+foldermix skiplist .
+foldermix stats .
+foldermix preview . README.md
+```
 
-For config-first and workflow-oriented usage, continue with the full Quick Start below or jump to the [command reference](#command-reference).
-
-## Quick Start (Config-First)
-
-`foldermix` is designed around a checked-in (or local) `foldermix.toml`, then command-level overrides only when needed.
-
-1. Bootstrap a starter config for your use case:
+Use a checked-in or local config when the workflow should be repeatable:
 
 ```bash
 foldermix init --profile engineering-docs
-```
-
-2. Inspect the merged effective config (defaults -> TOML -> CLI) before packing:
-
-```bash
-foldermix pack . --config foldermix.toml --print-effective-config
-```
-
-3. Preview what will be included:
-
-```bash
-foldermix list . --config foldermix.toml
-foldermix skiplist . --config foldermix.toml
-foldermix preview . README.md
-foldermix stats . --config foldermix.toml
-```
-
-4. Run the pack and emit a machine-readable report:
-
-```bash
 foldermix pack . --config foldermix.toml --format md --out context.md --report report.json
 ```
 
-5. Use explicit file-list pipelines for batch workflows:
+Defaults worth knowing:
+
+- Markdown (`md`) is the default output format.
+- If you omit `--out`, `foldermix` writes a timestamped Markdown file such as `foldermix_20260307_120000.md`.
+- `foldermix.toml` values override built-in defaults; explicit CLI flags override config file values.
+
+## Format Guidance
+
+Choose the output format based on where the bundle goes next:
+
+| Format | Choose it when | Output shape |
+|---|---|---|
+| Markdown (`md`) | You want a readable context file to paste into chat, inspect in an editor, or share with a human reviewer. | One document with metadata, table of contents, and fenced file blocks. |
+| XML (`xml`) | You want explicit file boundaries for tools or prompts that parse tagged sections well. | One `<bundle>` document with one `<file>` element per included file. |
+| JSONL (`jsonl`) | You want streaming, indexing, or pipeline-friendly machine input. | One header object followed by one JSON object per file. |
+
+Examples:
 
 ```bash
-# Newline-delimited
-printf 'a.txt\nnotes/b.txt\n' | foldermix pack . --config foldermix.toml --stdin --format jsonl --out context.jsonl
-
-# NUL-delimited (find -print0 compatible)
-find . -type f -print0 | foldermix pack . --config foldermix.toml --stdin --null --format md --out context.md
+foldermix pack . --out context.md
+foldermix pack . --format xml --out context.xml
+foldermix pack . --format jsonl --out context.jsonl --report report.json
 ```
 
-6. Show installed version:
+## Common Workflows
 
-```bash
-foldermix version
-```
+| Workflow | Start here | Deeper guide |
+|---|---|---|
+| Config-first project bundle | `foldermix init --profile engineering-docs` then `foldermix pack . --config foldermix.toml --out context.md --report report.json` | [Config-first workflows](docs/config-first-workflows.md) |
+| Legal or privacy-sensitive review | `foldermix init --profile legal` then pack with `--report` and redaction/policy settings from the profile | [Compliance and safety](docs/compliance-safety.md) |
+| Research corpus or batch input | `find ./corpus -type f -print0 \| foldermix pack ./corpus --stdin --null --format jsonl --out research-context.jsonl --report research-report.json` | [Docs-site workflow examples](https://foldermix.github.io/foldermix/#common-workflows) |
+| Support incident bundle | `foldermix init --profile support` then pack selected tickets, logs, and runbooks | [Config-first workflows](docs/config-first-workflows.md) |
+| Course refresh bundle | `foldermix init --profile course-refresh` then pack prior course material while excluding student/admin paths | [Docs-site workflow examples](https://foldermix.github.io/foldermix/#common-workflows) |
+| Duplicate cleanup | `foldermix pack ./corpus --dedupe-content --report dedupe-report.json --out deduped-context.md` | [Config-first workflows](docs/config-first-workflows.md) |
 
 ## Features
 
 - **Multiple output formats**: Markdown, XML, JSONL
 - **Smart filtering**: gitignore support, extension filters, glob patterns
-- **Sensitive file protection**: Automatically skips `.env`, keys, certificates
+- **Sensitive file protection**: automatically skips `.env`, keys, certificates
 - **Optional converters**: PDF (pypdf), OCR-enhanced PDF fallback (rapidocr + pypdfium2), Office docs (python-docx, openpyxl, python-pptx for `.pptx`/`.ppsx`), markitdown
 - **Core text-like formats**: plain text, markup, config/data files, and WebVTT (`.vtt`) via the built-in text converter
 - **Notebook support**: built-in `.ipynb` conversion, with `--ipynb-include-outputs` to include or omit cell outputs
@@ -191,58 +193,6 @@ Available profiles:
 - `support` - ticket/runbook focused filters with full redaction defaults.
 - `engineering-docs` - technical docs profile with frontmatter stripping and no redaction.
 - `course-refresh` - teaching-material bundle profile that excludes grades, rosters, responses, feedback, and other student/admin paths by default.
-
-## Workflow Recipes
-
-Use these end-to-end patterns as starting points for local-folder runs.
-
-### Legal Review Bundle
-
-```bash
-foldermix init --profile legal --out foldermix.toml --force
-foldermix pack ./matter --config foldermix.toml --format md --out legal-context.md --report legal-report.json
-```
-
-### Research Corpus Bundle (Batch Input)
-
-```bash
-foldermix init --profile research --out foldermix.toml --force
-find ./corpus -type f -print0 | foldermix pack ./corpus --config foldermix.toml --stdin --null --format jsonl --out research-context.jsonl --report research-report.json
-```
-
-### Support Incident Bundle (Explicit Path List)
-
-```bash
-foldermix init --profile support --out foldermix.toml --force
-printf 'tickets/a.md\ntickets/b.log\n' | foldermix pack . --config foldermix.toml --stdin --format md --out support-context.md --report support-report.json
-```
-
-### Course Refresh Bundle
-
-```bash
-foldermix init --profile course-refresh --out foldermix.toml --force
-foldermix pack ./previous-course --config foldermix.toml --format md --out course-refresh-context.md --report course-refresh-report.json
-```
-
-The `course-refresh` profile keeps teaching-material formats broad (`pdf`, `docx`, `pptx`, `ppsx`, `ipynb`, `xlsx`, `vtt`, text/markup, structured text) while excluding common student/admin paths such as:
-
-- grades
-- rosters
-- responses
-- feedback
-- submissions
-- student-specific folders/files
-
-### Corpus Cleanup With Duplicate Suppression
-
-```bash
-foldermix pack ./corpus --format md --out deduped-context.md --report dedupe-report.json --dedupe-content
-```
-
-`--dedupe-content` keeps the first file for each content SHA-256 and skips later duplicates. When combined with `--report`, duplicate skips are surfaced with `SKIP_DUPLICATE_CONTENT` so you can prune the source tree if needed.
-
-For a longer config-first walkthrough, see [docs/config-first-workflows.md](docs/config-first-workflows.md).
-For policy-focused operational guidance, see [docs/compliance-safety.md](docs/compliance-safety.md).
 
 ## Command Reference
 
@@ -585,7 +535,12 @@ See [SECURITY.md](SECURITY.md) for details on sensitive file handling.
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
-For maintainer operational workflows (PR triage loop, coverage recovery, release/tap troubleshooting), see [docs/maintainer-playbook.md](docs/maintainer-playbook.md).
+
+Maintainer docs:
+
+- [Maintainer playbook](docs/maintainer-playbook.md) for PR triage, coverage recovery, release, and tap troubleshooting
+- [OCR validation set workflow](docs/ocr_validation.md)
+- [Homebrew core preparation](docs/homebrew-core.md)
 
 ---
 
