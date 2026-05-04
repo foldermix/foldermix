@@ -8,6 +8,11 @@ theme:
 docs_dir: site-docs
 nav:
   - Home: index.md
+  - Quickstart: quickstart.md
+  - Workflows: workflows.md
+  - Configuration: configuration.md
+  - Output Formats And Reports: output-formats-and-reports.md
+  - Safety And Troubleshooting: safety-and-troubleshooting.md
   - CLI Presentation Roadmap: cli-presentation-roadmap.md
 markdown_extensions:
   - admonition
