@@ -177,7 +177,7 @@ Use [docs/presentation-roadmap.md](docs/presentation-roadmap.md) as the canonica
 ## PR completion gate
 - Treat feature work and PR work as incomplete until a properly labeled, non-draft GitHub PR with a detailed description is open.
 - Assign the PR to an appropriate milestone when one exists for the work.
-- Prefer GitHub MCP tools for PR creation and metadata updates; use `gh` only for actions those tools do not support cleanly, such as creating missing labels or milestones.
+- Use standard `git` and `gh` CLI first for repository and GitHub work; use git/GitHub MCP tools only for CLI gaps, unavailable CLI, or explicit user request.
 
 ## PR expectations
 - Keep PR descriptions explicit: behavior change, flags and config keys, dependency impact, and test evidence.

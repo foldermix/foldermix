@@ -236,7 +236,7 @@ See the [Release PR Process](../README.md#release-pr-process) section in README.
 
 - Treat feature work and PR work as incomplete until a properly labeled, non-draft GitHub PR with a detailed description is open.
 - Assign a relevant milestone when one exists.
-- Prefer GitHub MCP tools for PR creation and metadata updates; use `gh` only for unsupported actions such as creating missing labels or milestones.
+- Use standard `git` and `gh` CLI first for repository and GitHub work; use git/GitHub MCP tools only for CLI gaps, unavailable CLI, or explicit user request.
 
 ---
 
