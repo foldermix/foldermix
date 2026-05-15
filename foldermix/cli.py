@@ -786,7 +786,7 @@ def list_cmd(
         image_ocr=values["image_ocr"],  # type: ignore[arg-type]
     )
     included, skipped = scan(pack_config)
-    print_file_table(console, included, title="Included files")
+    print_file_table(console, included, title="📦 Included files")
     console.print(
         f"\n{format_count(len(included), 'file')} would be included, "
         f"{format_count(len(skipped), 'file')} skipped."
@@ -1056,7 +1056,7 @@ def skiplist_cmd(
         skipped=skipped,
         conversion_check=conversion_check,
     )
-    print_skip_table(console, skip_entries, title="Skipped files")
+    print_skip_table(console, skip_entries, title="⏭ Skipped files")
     if conversion_check:
         converter_verb = "lacks" if converter_missing_count == 1 else "lack"
         console.print(

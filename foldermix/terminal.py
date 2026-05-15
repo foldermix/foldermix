@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from pathlib import Path
 
 from rich import box
 from rich.console import Console
@@ -18,6 +19,14 @@ def format_bytes(size: int) -> str:
     return format_count(size, "byte")
 
 
+def format_size(size: int) -> str:
+    """Human-readable file size: B / KB / MB / GB."""
+    for unit, threshold in (("GB", 1 << 30), ("MB", 1 << 20), ("KB", 1 << 10)):
+        if size >= threshold:
+            return f"{size / threshold:.1f} {unit}"
+    return format_bytes(size)
+
+
 def print_file_table(
     console: Console,
     records: Iterable[object],
@@ -27,7 +36,7 @@ def print_file_table(
     size_attr: str = "size",
 ) -> None:
     table = Table(
-        title=f"📦 {title}",
+        title=title,
         title_style="bold cyan",
         box=box.ROUNDED,
         border_style="bright_black",
@@ -41,7 +50,7 @@ def print_file_table(
     for record in records:
         table.add_row(
             Text(str(getattr(record, path_attr))),
-            format_bytes(int(getattr(record, size_attr))),
+            format_size(int(getattr(record, size_attr))),
         )
 
     console.print(table)
@@ -49,7 +58,7 @@ def print_file_table(
 
 def print_skip_table(console: Console, entries: Iterable[dict[str, str]], *, title: str) -> None:
     table = Table(
-        title=f"⏭ {title}",
+        title=title,
         title_style="bold yellow",
         box=box.ROUNDED,
         border_style="bright_black",
@@ -97,18 +106,6 @@ def print_preview_summary(
     )
 
 
-def print_pack_start(console: Console, *, root: object, output_format: str) -> None:
-    console.print(
-        Panel(
-            f"[bold white]Root:[/bold white] {root}\n"
-            f"[bold white]Format:[/bold white] [cyan]{output_format}[/cyan]",
-            title="[bold cyan]foldermix pack[/bold cyan]",
-            border_style="cyan",
-            padding=(0, 1),
-        )
-    )
-
-
 def print_pack_scan_summary(
     console: Console,
     *,
@@ -138,12 +135,11 @@ def print_pack_scan_summary(
 def print_pack_result(
     console: Console,
     *,
-    output_path: object,
-    output_format: str,
+    output_path: Path | str,
     file_count: int,
     skipped_count: int,
     total_bytes: int,
-    report_path: object | None = None,
+    report_path: Path | str | None = None,
     policy_finding_count: int | None = None,
 ) -> None:
     table = Table(
@@ -157,26 +153,15 @@ def print_pack_result(
     table.add_column("Field", style="bold cyan", no_wrap=True)
     table.add_column("Value", style="white", overflow="fold")
     table.add_row("Output", str(output_path))
-    table.add_row("Format", output_format)
     table.add_row("Packed files", format_count(file_count, "file"))
     table.add_row("Skipped files", format_count(skipped_count, "file"))
-    table.add_row("Input bytes", format_bytes(total_bytes))
+    table.add_row("Output size", format_size(total_bytes))
     if report_path is not None:
         table.add_row("Report", str(report_path))
     if policy_finding_count is not None:
         table.add_row("Policy findings", str(policy_finding_count))
 
     console.print(table)
-    console.print(
-        Panel(
-            f"[bold green]{format_count(file_count, 'file')}[/bold green] packed • "
-            f"[bold yellow]{format_count(skipped_count, 'file')}[/bold yellow] skipped • "
-            f"[bold cyan]{format_bytes(total_bytes)}[/bold cyan] -> [bold]{output_path}[/bold]",
-            title="[bold green]Ready[/bold green]",
-            border_style="green",
-            padding=(0, 1),
-        )
-    )
 
 
 def print_stats_table(
@@ -188,17 +173,34 @@ def print_stats_table(
     total_bytes: int,
     extension_counts: dict[str, int],
 ) -> None:
-    console.print(f"[bold]{title}[/bold]")
-    console.print(f"Included files: {included_count}")
-    console.print(f"Skipped files:  {skipped_count}")
-    console.print(f"Total bytes:    {total_bytes:,}")
+    summary = Table(
+        title=title,
+        title_style="bold cyan",
+        box=box.ROUNDED,
+        border_style="bright_black",
+        header_style="bold white on dark_green",
+        show_lines=False,
+    )
+    summary.add_column("Metric", style="bold cyan", no_wrap=True)
+    summary.add_column("Value", style="white")
+    summary.add_row("Included files", format_count(included_count, "file"))
+    summary.add_row("Skipped files", format_count(skipped_count, "file"))
+    summary.add_row("Total size", format_size(total_bytes))
+    console.print(summary)
 
-    table = Table(title="By extension", box=box.SIMPLE, show_lines=False)
-    table.add_column("Extension")
-    table.add_column("Files", justify="right")
+    ext_table = Table(
+        title="By extension",
+        title_style="bold cyan",
+        box=box.ROUNDED,
+        border_style="bright_black",
+        header_style="bold white on dark_green",
+        show_lines=False,
+    )
+    ext_table.add_column("Extension", style="bright_white")
+    ext_table.add_column("Files", justify="right", style="green")
 
     for ext, count in sorted(extension_counts.items(), key=lambda item: -item[1]):
-        table.add_row(ext or "(none)", str(count))
+        ext_table.add_row(ext or "(none)", str(count))
 
     console.print()
-    console.print(table)
+    console.print(ext_table)

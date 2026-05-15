@@ -33,7 +33,6 @@ from .terminal import (
     print_file_table,
     print_pack_result,
     print_pack_scan_summary,
-    print_pack_start,
 )
 from .utils import (
     drop_lines_containing,
@@ -584,7 +583,7 @@ def pack(config: PackConfig) -> None:
 
     policy_findings = []
 
-    print_pack_start(console, root=config.root, output_format=config.format)
+    console.print(f"[bold]Scanning[/bold] {config.root} ...")
     included, skipped = scan(config)
 
     duplicate_skip_count = 0
@@ -592,10 +591,6 @@ def pack(config: PackConfig) -> None:
         included, duplicate_skips = _dedupe_included_records_by_content(included)
         skipped.extend(duplicate_skips)
         duplicate_skip_count = len(duplicate_skips)
-        if duplicate_skips:
-            console.print(
-                f"[yellow]Skipped duplicate-content files:[/yellow] {len(duplicate_skips)}"
-            )
 
     print_pack_scan_summary(
         console,
@@ -629,7 +624,7 @@ def pack(config: PackConfig) -> None:
         raise typer.Exit(code=3)
 
     if config.dry_run:
-        print_file_table(console, included, title="Files that would be packed")
+        print_file_table(console, included, title="📦 Files that would be packed")
         console.print(
             f"\n[bold]Dry run complete.[/bold] Would pack {format_count(len(included), 'file')}."
         )
@@ -813,7 +808,6 @@ def pack(config: PackConfig) -> None:
     print_pack_result(
         console,
         output_path=out_path,
-        output_format=config.format,
         file_count=len(items),
         skipped_count=len(skipped),
         total_bytes=total_bytes,
