@@ -151,7 +151,8 @@ jobs:
 
           list_out="$(run_expect 0 ./.pkg-smoke-venv/bin/foldermix list smoke_input)"
           assert_contains "$list_out" "a.txt"
-          assert_contains "$list_out" "1 file would be included, 0 files skipped."
+          assert_contains "$list_out" "1 file would be included"
+          assert_contains "$list_out" "0 files skipped"
 
           stats_out="$(run_expect 0 ./.pkg-smoke-venv/bin/foldermix stats smoke_input)"
           assert_contains "$stats_out" "Included files"
@@ -499,7 +500,8 @@ jobs:
 
           list_out="$(run_expect_zero ./.release-consumer-venv/bin/foldermix list smoke_input)"
           assert_contains "$list_out" "a.txt"
-          assert_contains "$list_out" "1 files would be included, 0 skipped."
+          assert_contains "$list_out" "1 file would be included"
+          assert_contains "$list_out" "0 files skipped"
 
           pack_out="$(
             run_expect_zero ./.release-consumer-venv/bin/foldermix pack smoke_input --out release_consumer_output.md
@@ -576,7 +578,8 @@ jobs:
 
           list_out="$(run_expect_zero foldermix list smoke_input)"
           assert_contains "$list_out" "a.txt"
-          assert_contains "$list_out" "1 files would be included, 0 skipped."
+          assert_contains "$list_out" "1 file would be included"
+          assert_contains "$list_out" "0 files skipped"
 
           pack_out="$(run_expect_zero foldermix pack smoke_input --out release_consumer_output.md)"
           assert_contains "$pack_out" "Done!"
