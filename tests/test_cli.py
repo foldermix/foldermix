@@ -1699,9 +1699,12 @@ from io import StringIO  # noqa: E402
 from rich.console import Console as _Console  # noqa: E402
 
 from foldermix.terminal import (  # noqa: E402
+    print_file_table,
     print_pack_result,
     print_pack_scan_summary,
     print_preview_summary,
+    print_skip_table,
+    print_stats_table,
 )
 
 
@@ -1896,3 +1899,47 @@ def test_print_pack_result_plain_includes_report_and_policy(tmp_path: Path) -> N
     )
     assert str(report_file) in out
     assert "policy findings: 4" in out  # uses parens, not Rich markup brackets
+
+
+def test_print_file_table_rich_renders_styled_table() -> None:
+    from types import SimpleNamespace
+
+    records = [SimpleNamespace(relpath="a.txt", size=1024)]
+    out = _rich_capture(lambda c: print_file_table(c, records, title="Test files"))
+    assert "Test files" in out
+    assert "a.txt" in out
+    assert "1.0 KB" in out
+    assert "Path" in out
+    assert "Size" in out
+
+
+def test_print_skip_table_rich_renders_styled_table() -> None:
+    entries = [{"path": "skip.txt", "reason_code": "SKIP_HIDDEN", "message": "Hidden file"}]
+    out = _rich_capture(lambda c: print_skip_table(c, entries, title="Test skips"))
+    assert "Test skips" in out
+    assert "skip.txt" in out
+    assert "SKIP_HIDDEN" in out
+    assert "Hidden file" in out
+    assert "Path" in out
+    assert "Reason code" in out
+    assert "Message" in out
+
+
+def test_print_stats_table_rich_renders_styled_tables() -> None:
+    out = _rich_capture(
+        lambda c: print_stats_table(
+            c,
+            title="Stats",
+            included_count=3,
+            skipped_count=1,
+            total_bytes=2048,
+            extension_counts={".py": 2, ".md": 1},
+        )
+    )
+    assert "Stats" in out
+    assert "3 files" in out
+    assert "1 file" in out
+    assert "2.0 KB" in out
+    assert "By extension" in out
+    assert ".py" in out
+    assert ".md" in out
