@@ -19,7 +19,13 @@ from .init_profiles import available_profiles, has_profile, render_profile_confi
 from .report import build_skipped_file_entry
 from .scanner import FileRecord, SkipRecord
 from .stdin_paths import parse_stdin_paths
-from .terminal import format_count, print_file_table, print_skip_table, print_stats_table
+from .terminal import (
+    format_count,
+    print_file_table,
+    print_preview_summary,
+    print_skip_table,
+    print_stats_table,
+)
 
 _INIT_PROFILE_CHOICES = ", ".join(available_profiles())
 
@@ -780,11 +786,12 @@ def list_cmd(
         image_ocr=values["image_ocr"],  # type: ignore[arg-type]
     )
     included, skipped = scan(pack_config)
-    print_file_table(console, included, title="Included files")
+    print_file_table(console, included, title="📦 Included files")
     console.print(
         f"\n{format_count(len(included), 'file')} would be included, "
         f"{format_count(len(skipped), 'file')} skipped."
     )
+    print_preview_summary(console, included_count=len(included), skipped_count=len(skipped))
 
 
 @app.command("stats")
@@ -1049,7 +1056,7 @@ def skiplist_cmd(
         skipped=skipped,
         conversion_check=conversion_check,
     )
-    print_skip_table(console, skip_entries, title="Skipped files")
+    print_skip_table(console, skip_entries, title="⏭ Skipped files")
     if conversion_check:
         converter_verb = "lacks" if converter_missing_count == 1 else "lack"
         console.print(
@@ -1058,8 +1065,19 @@ def skiplist_cmd(
             f"{format_count(converter_missing_count, 'additional file')} "
             f"currently {converter_verb} a supported converter."
         )
+        print_preview_summary(
+            console,
+            included_count=len(included),
+            skipped_count=len(skipped),
+            converter_missing_count=converter_missing_count,
+        )
     else:
         console.print(f"\n{format_count(len(skip_entries), 'file')} would be skipped.")
+        print_preview_summary(
+            console,
+            included_count=len(included),
+            skipped_count=len(skip_entries),
+        )
 
 
 @app.command("preview")

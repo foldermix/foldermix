@@ -28,7 +28,12 @@ from .report import (
     write_report,
 )
 from .scanner import FileRecord, SkipRecord, scan
-from .terminal import format_count, print_file_table
+from .terminal import (
+    format_count,
+    print_file_table,
+    print_pack_result,
+    print_pack_scan_summary,
+)
 from .utils import (
     drop_lines_containing,
     drop_lines_shorter_than,
@@ -581,16 +586,17 @@ def pack(config: PackConfig) -> None:
     console.print(f"[bold]Scanning[/bold] {config.root} ...")
     included, skipped = scan(config)
 
+    duplicate_skip_count = 0
     if config.dedupe_content:
         included, duplicate_skips = _dedupe_included_records_by_content(included)
         skipped.extend(duplicate_skips)
-        if duplicate_skips:
-            console.print(
-                f"[yellow]Skipped duplicate-content files:[/yellow] {len(duplicate_skips)}"
-            )
+        duplicate_skip_count = len(duplicate_skips)
 
-    console.print(
-        f"Found [green]{len(included)}[/green] files, [yellow]{len(skipped)}[/yellow] skipped"
+    print_pack_scan_summary(
+        console,
+        included_count=len(included),
+        skipped_count=len(skipped),
+        duplicate_skip_count=duplicate_skip_count,
     )
 
     if policy_evaluator is not None:
@@ -618,7 +624,7 @@ def pack(config: PackConfig) -> None:
         raise typer.Exit(code=3)
 
     if config.dry_run:
-        print_file_table(console, included, title="Files that would be packed")
+        print_file_table(console, included, title="📦 Files that would be packed")
         console.print(
             f"\n[bold]Dry run complete.[/bold] Would pack {format_count(len(included), 'file')}."
         )
@@ -785,7 +791,7 @@ def pack(config: PackConfig) -> None:
         ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         out_path = Path(f"foldermix_{ts}.{ext_map[config.format]}")
 
-    console.print(f"Writing to [bold]{out_path}[/bold] ...")
+    console.print(f"Writing to [bold cyan]{out_path}[/bold cyan] ...")
 
     with open(out_path, "w", encoding="utf-8", newline="") as f:
         if config.include_skipped_files:
@@ -799,6 +805,15 @@ def pack(config: PackConfig) -> None:
             writer.write(f, header, items)
 
     console.print(f"[green]Done![/green] {len(items)} files, {total_bytes:,} bytes -> {out_path}")
+    print_pack_result(
+        console,
+        output_path=out_path,
+        file_count=len(items),
+        skipped_count=len(skipped),
+        total_bytes=total_bytes,
+        report_path=config.report,
+        policy_finding_count=(int(policy_counts["total"]) if policy_counts is not None else None),
+    )
 
     _write_report_if_requested(
         config=config,

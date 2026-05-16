@@ -11,7 +11,7 @@ import foldermix.scanner as scanner_module
 from foldermix import __version__
 from foldermix import cli as cli_module
 from foldermix.cli import app
-from foldermix.terminal import format_bytes, format_count
+from foldermix.terminal import format_bytes, format_count, format_size
 
 runner = CliRunner()
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
@@ -28,6 +28,17 @@ def test_terminal_count_formatting_handles_singular_and_plural() -> None:
     assert format_count(0, "additional file") == "0 additional files"
     assert format_bytes(1) == "1 byte"
     assert format_bytes(2) == "2 bytes"
+
+
+def test_format_size_returns_human_readable_units() -> None:
+    assert format_size(0) == "0 bytes"
+    assert format_size(1) == "1 byte"
+    assert format_size(512) == "512 bytes"
+    assert format_size(1023) == "1,023 bytes"
+    assert format_size(1024) == "1.0 KB"
+    assert format_size(1536) == "1.5 KB"
+    assert format_size(1024 * 1024) == "1.0 MB"
+    assert format_size(1024 * 1024 * 1024) == "1.0 GB"
 
 
 def test_pack_rejects_invalid_format(tmp_path: Path) -> None:
@@ -788,7 +799,7 @@ def test_skiplist_conversion_check_reports_unsupported_extensions(tmp_path: Path
     assert "notes" in result.output
     assert "custom.weird" in result.output
     assert "files without" in result.output
-    assert "an extension" in result.output
+    assert "without an" in result.output
     assert ".weird" in result.output
 
 
@@ -1467,8 +1478,10 @@ def test_stats_prints_summary_and_extensions(tmp_path: Path) -> None:
     result = runner.invoke(app, ["stats", str(tmp_path)])
 
     assert result.exit_code == 0, result.output
-    assert "Included files: 3" in result.output
-    assert "Skipped files:  0" in result.output
+    assert "Included files" in result.output
+    assert "3 files" in result.output
+    assert "Skipped files" in result.output
+    assert "0 files" in result.output
     assert ".py" in result.output
     assert ".md" in result.output
     assert "By extension" in result.output
@@ -1677,3 +1690,256 @@ def test_root_help_lists_all_commands() -> None:
     assert "foldermix.github.io/foldermix/quickstart" in result.output
     assert "foldermix.github.io/foldermix/workflows" in result.output
     assert "foldermix.github.io/foldermix/safety-and-troubleshooting" in result.output
+
+
+# ── terminal widget unit tests ────────────────────────────────────────────────
+
+from io import StringIO  # noqa: E402
+
+from rich.console import Console as _Console  # noqa: E402
+
+from foldermix.terminal import (  # noqa: E402
+    print_file_table,
+    print_pack_result,
+    print_pack_scan_summary,
+    print_preview_summary,
+    print_skip_table,
+    print_stats_table,
+)
+
+
+def _rich_capture(fn) -> str:
+    """Capture output from a Rich-enabled (is_terminal=True) console."""
+    buf = StringIO()
+    con = _Console(file=buf, width=200, no_color=True, highlight=False, force_terminal=True)
+    fn(con)
+    return buf.getvalue()
+
+
+def _plain_capture(fn) -> str:
+    """Capture output from a non-terminal (is_terminal=False) console."""
+    buf = StringIO()
+    con = _Console(file=buf, width=200, no_color=True, highlight=False)
+    fn(con)
+    return buf.getvalue()
+
+
+# ── Rich (TTY) path ───────────────────────────────────────────────────────────
+
+
+def test_print_preview_summary_rich_shows_panel_and_counts() -> None:
+    out = _rich_capture(lambda c: print_preview_summary(c, included_count=5, skipped_count=2))
+    assert "5 files" in out
+    assert "2 files" in out
+    assert "Preview summary" in out
+
+
+def test_print_preview_summary_rich_shows_converter_missing_when_provided() -> None:
+    out = _rich_capture(
+        lambda c: print_preview_summary(
+            c, included_count=3, skipped_count=1, converter_missing_count=2
+        )
+    )
+    assert "2 additional files" in out
+    assert "converter" in out
+
+
+def test_print_preview_summary_rich_omits_converter_field_when_absent() -> None:
+    out = _rich_capture(lambda c: print_preview_summary(c, included_count=3, skipped_count=1))
+    assert "converter" not in out
+
+
+def test_print_pack_scan_summary_rich_shows_panel_and_counts() -> None:
+    out = _rich_capture(lambda c: print_pack_scan_summary(c, included_count=10, skipped_count=3))
+    assert "10 files" in out
+    assert "3 files" in out
+    assert "Scan summary" in out
+
+
+def test_print_pack_scan_summary_rich_shows_deduped_count_when_nonzero() -> None:
+    out = _rich_capture(
+        lambda c: print_pack_scan_summary(
+            c, included_count=8, skipped_count=2, duplicate_skip_count=1
+        )
+    )
+    assert "1 duplicate" in out
+    assert "deduped" in out
+
+
+def test_print_pack_scan_summary_rich_omits_deduped_when_zero() -> None:
+    out = _rich_capture(
+        lambda c: print_pack_scan_summary(
+            c, included_count=5, skipped_count=0, duplicate_skip_count=0
+        )
+    )
+    assert "deduped" not in out
+
+
+def test_print_pack_result_rich_shows_table_with_output_files_size(tmp_path: Path) -> None:
+    out_file = tmp_path / "out.md"
+    out = _rich_capture(
+        lambda c: print_pack_result(
+            c,
+            output_path=out_file,
+            file_count=7,
+            skipped_count=2,
+            total_bytes=2048,
+        )
+    )
+    assert str(out_file) in out
+    assert "7 files" in out
+    assert "2 files" in out
+    assert "2.0 KB" in out
+    assert "Pack complete" in out
+
+
+def test_print_pack_result_rich_shows_report_and_policy_when_provided(tmp_path: Path) -> None:
+    out_file = tmp_path / "out.md"
+    report_file = tmp_path / "report.json"
+    out = _rich_capture(
+        lambda c: print_pack_result(
+            c,
+            output_path=out_file,
+            file_count=3,
+            skipped_count=0,
+            total_bytes=512,
+            report_path=report_file,
+            policy_finding_count=4,
+        )
+    )
+    assert str(report_file) in out
+    assert "4" in out
+
+
+def test_print_pack_result_rich_omits_report_and_policy_when_absent(tmp_path: Path) -> None:
+    out_file = tmp_path / "out.md"
+    out = _rich_capture(
+        lambda c: print_pack_result(
+            c,
+            output_path=out_file,
+            file_count=3,
+            skipped_count=0,
+            total_bytes=512,
+        )
+    )
+    assert "Report" not in out
+    assert "Policy findings" not in out
+
+
+# ── Plain (non-TTY) path ──────────────────────────────────────────────────────
+
+
+def test_print_preview_summary_plain_emits_single_line() -> None:
+    out = _plain_capture(lambda c: print_preview_summary(c, included_count=5, skipped_count=2))
+    assert "5 files" in out
+    assert "2 files" in out
+    assert "Preview summary" not in out  # no panel border/title
+    assert "\n" not in out.strip()  # single line
+
+
+def test_print_preview_summary_plain_includes_converter_when_provided() -> None:
+    out = _plain_capture(
+        lambda c: print_preview_summary(
+            c, included_count=3, skipped_count=1, converter_missing_count=2
+        )
+    )
+    assert "2 additional files" in out
+    assert "converter" in out
+
+
+def test_print_pack_scan_summary_plain_emits_single_line() -> None:
+    out = _plain_capture(lambda c: print_pack_scan_summary(c, included_count=10, skipped_count=3))
+    assert "10 files" in out
+    assert "3 files" in out
+    assert "Scan summary" not in out  # no panel border/title
+    assert "\n" not in out.strip()
+
+
+def test_print_pack_scan_summary_plain_includes_deduped_when_nonzero() -> None:
+    out = _plain_capture(
+        lambda c: print_pack_scan_summary(
+            c, included_count=8, skipped_count=2, duplicate_skip_count=3
+        )
+    )
+    assert "3 duplicates" in out
+    assert "deduped" in out
+
+
+def test_print_pack_result_plain_emits_single_line(tmp_path: Path) -> None:
+    out_file = tmp_path / "out.md"
+    out = _plain_capture(
+        lambda c: print_pack_result(
+            c,
+            output_path=out_file,
+            file_count=7,
+            skipped_count=2,
+            total_bytes=2048,
+        )
+    )
+    assert "7 files" in out
+    assert "2.0 KB" in out
+    assert str(out_file) in out
+    assert "Pack complete" in out
+    assert "\n" not in out.strip()
+
+
+def test_print_pack_result_plain_includes_report_and_policy(tmp_path: Path) -> None:
+    out_file = tmp_path / "out.md"
+    report_file = tmp_path / "report.json"
+    out = _plain_capture(
+        lambda c: print_pack_result(
+            c,
+            output_path=out_file,
+            file_count=3,
+            skipped_count=0,
+            total_bytes=512,
+            report_path=report_file,
+            policy_finding_count=4,
+        )
+    )
+    assert str(report_file) in out
+    assert "policy findings: 4" in out  # uses parens, not Rich markup brackets
+
+
+def test_print_file_table_rich_renders_styled_table() -> None:
+    from types import SimpleNamespace
+
+    records = [SimpleNamespace(relpath="a.txt", size=1024)]
+    out = _rich_capture(lambda c: print_file_table(c, records, title="Test files"))
+    assert "Test files" in out
+    assert "a.txt" in out
+    assert "1.0 KB" in out
+    assert "Path" in out
+    assert "Size" in out
+
+
+def test_print_skip_table_rich_renders_styled_table() -> None:
+    entries = [{"path": "skip.txt", "reason_code": "SKIP_HIDDEN", "message": "Hidden file"}]
+    out = _rich_capture(lambda c: print_skip_table(c, entries, title="Test skips"))
+    assert "Test skips" in out
+    assert "skip.txt" in out
+    assert "SKIP_HIDDEN" in out
+    assert "Hidden file" in out
+    assert "Path" in out
+    assert "Reason code" in out
+    assert "Message" in out
+
+
+def test_print_stats_table_rich_renders_styled_tables() -> None:
+    out = _rich_capture(
+        lambda c: print_stats_table(
+            c,
+            title="Stats",
+            included_count=3,
+            skipped_count=1,
+            total_bytes=2048,
+            extension_counts={".py": 2, ".md": 1},
+        )
+    )
+    assert "Stats" in out
+    assert "3 files" in out
+    assert "1 file" in out
+    assert "2.0 KB" in out
+    assert "By extension" in out
+    assert ".py" in out
+    assert ".md" in out

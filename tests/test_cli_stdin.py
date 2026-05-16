@@ -104,9 +104,11 @@ def test_list_and_stats_stdin_use_only_explicit_paths(monkeypatch, tmp_path: Pat
         input="a.txt\nb.txt\nmissing.txt\n",
     )
     assert stats_result.exit_code == 0, stats_result.output
-    assert "Included files: 2" in stats_result.output
-    assert "Skipped files:  1" in stats_result.output
-    assert "Total bytes:    3" in stats_result.output
+    assert "Included files" in stats_result.output
+    assert "2 files" in stats_result.output
+    assert "Skipped files" in stats_result.output
+    assert "1 file" in stats_result.output
+    assert "Total size" in stats_result.output
     assert "By extension" in stats_result.output
 
 
