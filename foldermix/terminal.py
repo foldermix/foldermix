@@ -35,17 +35,25 @@ def print_file_table(
     path_attr: str = "relpath",
     size_attr: str = "size",
 ) -> None:
-    table = Table(
-        title=title,
-        title_style="bold cyan",
-        box=box.ROUNDED,
-        border_style="bright_black",
-        header_style="bold white on dark_green",
-        row_styles=["none", "dim"],
-        show_lines=False,
-    )
-    table.add_column("Path", overflow="fold", style="bright_white")
-    table.add_column("Size", justify="right", style="green")
+    if console.is_terminal:
+        table = Table(
+            title=title,
+            title_style="bold cyan",
+            box=box.ROUNDED,
+            border_style="bright_black",
+            header_style="bold white on dark_green",
+            row_styles=["none", "dim"],
+            show_lines=False,
+        )
+        table.add_column("Path", overflow="fold", style="bright_white")
+        table.add_column("Size", justify="right", style="green")
+    else:
+        # Print title as a plain line so it is never word-wrapped by the table
+        # renderer, then render the table itself without a title.
+        console.print(title)
+        table = Table(box=None, show_header=True)
+        table.add_column("Path", overflow="fold")
+        table.add_column("Size", justify="right")
 
     for record in records:
         table.add_row(
@@ -57,18 +65,25 @@ def print_file_table(
 
 
 def print_skip_table(console: Console, entries: Iterable[dict[str, str]], *, title: str) -> None:
-    table = Table(
-        title=title,
-        title_style="bold yellow",
-        box=box.ROUNDED,
-        border_style="bright_black",
-        header_style="bold white on dark_red",
-        row_styles=["none", "dim"],
-        show_lines=False,
-    )
-    table.add_column("Path", overflow="fold", style="bright_white")
-    table.add_column("Reason code", no_wrap=True, style="yellow")
-    table.add_column("Message", overflow="fold", style="white")
+    if console.is_terminal:
+        table = Table(
+            title=title,
+            title_style="bold yellow",
+            box=box.ROUNDED,
+            border_style="bright_black",
+            header_style="bold white on dark_red",
+            row_styles=["none", "dim"],
+            show_lines=False,
+        )
+        table.add_column("Path", overflow="fold", style="bright_white")
+        table.add_column("Reason code", no_wrap=True, style="yellow")
+        table.add_column("Message", overflow="fold", style="white")
+    else:
+        console.print(title)
+        table = Table(box=None, show_header=True)
+        table.add_column("Path", overflow="fold")
+        table.add_column("Reason code", no_wrap=True)
+        table.add_column("Message", overflow="fold")
 
     for entry in entries:
         table.add_row(
@@ -88,17 +103,31 @@ def print_preview_summary(
     converter_missing_count: int | None = None,
 ) -> None:
     parts = [
+        f"{format_count(included_count, 'file')} would be included",
+        f"{format_count(skipped_count, 'file')} skipped",
+    ]
+    if converter_missing_count is not None:
+        parts.append(
+            f"{format_count(converter_missing_count, 'additional file')} "
+            "without a supported converter"
+        )
+
+    if not console.is_terminal:
+        console.print(" • ".join(parts))
+        return
+
+    rich_parts = [
         f"[bold green]{format_count(included_count, 'file')}[/bold green] would be included",
         f"[bold yellow]{format_count(skipped_count, 'file')}[/bold yellow] skipped",
     ]
     if converter_missing_count is not None:
-        parts.append(
+        rich_parts.append(
             f"[bold magenta]{format_count(converter_missing_count, 'additional file')}[/bold magenta] "
             "without a supported converter"
         )
     console.print(
         Panel(
-            " • ".join(parts),
+            " • ".join(rich_parts),
             title="[bold cyan]Preview summary[/bold cyan]",
             border_style="cyan",
             padding=(0, 1),
@@ -114,17 +143,28 @@ def print_pack_scan_summary(
     duplicate_skip_count: int = 0,
 ) -> None:
     parts = [
+        f"{format_count(included_count, 'file')} matched",
+        f"{format_count(skipped_count, 'file')} skipped",
+    ]
+    if duplicate_skip_count:
+        parts.append(f"{format_count(duplicate_skip_count, 'duplicate')} deduped")
+
+    if not console.is_terminal:
+        console.print(" • ".join(parts))
+        return
+
+    rich_parts = [
         f"[bold green]{format_count(included_count, 'file')}[/bold green] matched",
         f"[bold yellow]{format_count(skipped_count, 'file')}[/bold yellow] skipped",
     ]
     if duplicate_skip_count:
-        parts.append(
+        rich_parts.append(
             f"[bold magenta]{format_count(duplicate_skip_count, 'duplicate')}[/bold magenta] "
             "deduped"
         )
     console.print(
         Panel(
-            " • ".join(parts),
+            " • ".join(rich_parts),
             title="[bold cyan]Scan summary[/bold cyan]",
             border_style="bright_black",
             padding=(0, 1),
@@ -142,6 +182,19 @@ def print_pack_result(
     report_path: Path | str | None = None,
     policy_finding_count: int | None = None,
 ) -> None:
+    if not console.is_terminal:
+        line = (
+            f"Pack complete: {format_count(file_count, 'file')}, "
+            f"{format_size(total_bytes)} -> {output_path}"
+        )
+        if report_path is not None:
+            line += f" (report: {report_path})"
+        if policy_finding_count is not None:
+            line += f" (policy findings: {policy_finding_count})"
+        # markup=False prevents Rich from misinterpreting path characters as tags
+        console.print(line, markup=False)
+        return
+
     table = Table(
         title="✅ Pack complete",
         title_style="bold green",
@@ -173,31 +226,43 @@ def print_stats_table(
     total_bytes: int,
     extension_counts: dict[str, int],
 ) -> None:
-    summary = Table(
-        title=title,
-        title_style="bold cyan",
-        box=box.ROUNDED,
-        border_style="bright_black",
-        header_style="bold white on dark_green",
-        show_lines=False,
-    )
-    summary.add_column("Metric", style="bold cyan", no_wrap=True)
-    summary.add_column("Value", style="white")
+    if console.is_terminal:
+        summary = Table(
+            title=title,
+            title_style="bold cyan",
+            box=box.ROUNDED,
+            border_style="bright_black",
+            header_style="bold white on dark_green",
+            show_lines=False,
+        )
+        summary.add_column("Metric", style="bold cyan", no_wrap=True)
+        summary.add_column("Value", style="white")
+    else:
+        console.print(title)
+        summary = Table(box=None, show_header=True)
+        summary.add_column("Metric", no_wrap=True)
+        summary.add_column("Value")
+
     summary.add_row("Included files", format_count(included_count, "file"))
     summary.add_row("Skipped files", format_count(skipped_count, "file"))
     summary.add_row("Total size", format_size(total_bytes))
     console.print(summary)
 
-    ext_table = Table(
-        title="By extension",
-        title_style="bold cyan",
-        box=box.ROUNDED,
-        border_style="bright_black",
-        header_style="bold white on dark_green",
-        show_lines=False,
-    )
-    ext_table.add_column("Extension", style="bright_white")
-    ext_table.add_column("Files", justify="right", style="green")
+    if console.is_terminal:
+        ext_table = Table(
+            title="By extension",
+            title_style="bold cyan",
+            box=box.ROUNDED,
+            border_style="bright_black",
+            header_style="bold white on dark_green",
+            show_lines=False,
+        )
+        ext_table.add_column("Extension", style="bright_white")
+        ext_table.add_column("Files", justify="right", style="green")
+    else:
+        ext_table = Table(title="By extension", box=None, show_header=True)
+        ext_table.add_column("Extension")
+        ext_table.add_column("Files", justify="right")
 
     for ext, count in sorted(extension_counts.items(), key=lambda item: -item[1]):
         ext_table.add_row(ext or "(none)", str(count))

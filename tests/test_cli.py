@@ -799,7 +799,7 @@ def test_skiplist_conversion_check_reports_unsupported_extensions(tmp_path: Path
     assert "notes" in result.output
     assert "custom.weird" in result.output
     assert "files without" in result.output
-    assert "an extension" in result.output
+    assert "without an" in result.output
     assert ".weird" in result.output
 
 
@@ -1706,20 +1706,32 @@ from foldermix.terminal import (  # noqa: E402
 
 
 def _rich_capture(fn) -> str:
+    """Capture output from a Rich-enabled (is_terminal=True) console."""
+    buf = StringIO()
+    con = _Console(file=buf, width=200, no_color=True, highlight=False, force_terminal=True)
+    fn(con)
+    return buf.getvalue()
+
+
+def _plain_capture(fn) -> str:
+    """Capture output from a non-terminal (is_terminal=False) console."""
     buf = StringIO()
     con = _Console(file=buf, width=200, no_color=True, highlight=False)
     fn(con)
     return buf.getvalue()
 
 
-def test_print_preview_summary_shows_included_and_skipped_counts() -> None:
+# ── Rich (TTY) path ───────────────────────────────────────────────────────────
+
+
+def test_print_preview_summary_rich_shows_panel_and_counts() -> None:
     out = _rich_capture(lambda c: print_preview_summary(c, included_count=5, skipped_count=2))
     assert "5 files" in out
     assert "2 files" in out
     assert "Preview summary" in out
 
 
-def test_print_preview_summary_shows_converter_missing_when_provided() -> None:
+def test_print_preview_summary_rich_shows_converter_missing_when_provided() -> None:
     out = _rich_capture(
         lambda c: print_preview_summary(
             c, included_count=3, skipped_count=1, converter_missing_count=2
@@ -1729,19 +1741,19 @@ def test_print_preview_summary_shows_converter_missing_when_provided() -> None:
     assert "converter" in out
 
 
-def test_print_preview_summary_omits_converter_field_when_absent() -> None:
+def test_print_preview_summary_rich_omits_converter_field_when_absent() -> None:
     out = _rich_capture(lambda c: print_preview_summary(c, included_count=3, skipped_count=1))
     assert "converter" not in out
 
 
-def test_print_pack_scan_summary_shows_matched_and_skipped() -> None:
+def test_print_pack_scan_summary_rich_shows_panel_and_counts() -> None:
     out = _rich_capture(lambda c: print_pack_scan_summary(c, included_count=10, skipped_count=3))
     assert "10 files" in out
     assert "3 files" in out
     assert "Scan summary" in out
 
 
-def test_print_pack_scan_summary_shows_deduped_count_when_nonzero() -> None:
+def test_print_pack_scan_summary_rich_shows_deduped_count_when_nonzero() -> None:
     out = _rich_capture(
         lambda c: print_pack_scan_summary(
             c, included_count=8, skipped_count=2, duplicate_skip_count=1
@@ -1751,7 +1763,7 @@ def test_print_pack_scan_summary_shows_deduped_count_when_nonzero() -> None:
     assert "deduped" in out
 
 
-def test_print_pack_scan_summary_omits_deduped_when_zero() -> None:
+def test_print_pack_scan_summary_rich_omits_deduped_when_zero() -> None:
     out = _rich_capture(
         lambda c: print_pack_scan_summary(
             c, included_count=5, skipped_count=0, duplicate_skip_count=0
@@ -1760,7 +1772,7 @@ def test_print_pack_scan_summary_omits_deduped_when_zero() -> None:
     assert "deduped" not in out
 
 
-def test_print_pack_result_shows_output_files_size(tmp_path: Path) -> None:
+def test_print_pack_result_rich_shows_table_with_output_files_size(tmp_path: Path) -> None:
     out_file = tmp_path / "out.md"
     out = _rich_capture(
         lambda c: print_pack_result(
@@ -1778,7 +1790,7 @@ def test_print_pack_result_shows_output_files_size(tmp_path: Path) -> None:
     assert "Pack complete" in out
 
 
-def test_print_pack_result_shows_report_and_policy_when_provided(tmp_path: Path) -> None:
+def test_print_pack_result_rich_shows_report_and_policy_when_provided(tmp_path: Path) -> None:
     out_file = tmp_path / "out.md"
     report_file = tmp_path / "report.json"
     out = _rich_capture(
@@ -1796,7 +1808,7 @@ def test_print_pack_result_shows_report_and_policy_when_provided(tmp_path: Path)
     assert "4" in out
 
 
-def test_print_pack_result_omits_report_and_policy_when_absent(tmp_path: Path) -> None:
+def test_print_pack_result_rich_omits_report_and_policy_when_absent(tmp_path: Path) -> None:
     out_file = tmp_path / "out.md"
     out = _rich_capture(
         lambda c: print_pack_result(
@@ -1809,3 +1821,78 @@ def test_print_pack_result_omits_report_and_policy_when_absent(tmp_path: Path) -
     )
     assert "Report" not in out
     assert "Policy findings" not in out
+
+
+# ── Plain (non-TTY) path ──────────────────────────────────────────────────────
+
+
+def test_print_preview_summary_plain_emits_single_line() -> None:
+    out = _plain_capture(lambda c: print_preview_summary(c, included_count=5, skipped_count=2))
+    assert "5 files" in out
+    assert "2 files" in out
+    assert "Preview summary" not in out  # no panel border/title
+    assert "\n" not in out.strip()  # single line
+
+
+def test_print_preview_summary_plain_includes_converter_when_provided() -> None:
+    out = _plain_capture(
+        lambda c: print_preview_summary(
+            c, included_count=3, skipped_count=1, converter_missing_count=2
+        )
+    )
+    assert "2 additional files" in out
+    assert "converter" in out
+
+
+def test_print_pack_scan_summary_plain_emits_single_line() -> None:
+    out = _plain_capture(lambda c: print_pack_scan_summary(c, included_count=10, skipped_count=3))
+    assert "10 files" in out
+    assert "3 files" in out
+    assert "Scan summary" not in out  # no panel border/title
+    assert "\n" not in out.strip()
+
+
+def test_print_pack_scan_summary_plain_includes_deduped_when_nonzero() -> None:
+    out = _plain_capture(
+        lambda c: print_pack_scan_summary(
+            c, included_count=8, skipped_count=2, duplicate_skip_count=3
+        )
+    )
+    assert "3 duplicates" in out
+    assert "deduped" in out
+
+
+def test_print_pack_result_plain_emits_single_line(tmp_path: Path) -> None:
+    out_file = tmp_path / "out.md"
+    out = _plain_capture(
+        lambda c: print_pack_result(
+            c,
+            output_path=out_file,
+            file_count=7,
+            skipped_count=2,
+            total_bytes=2048,
+        )
+    )
+    assert "7 files" in out
+    assert "2.0 KB" in out
+    assert str(out_file) in out
+    assert "Pack complete" in out
+    assert "\n" not in out.strip()
+
+
+def test_print_pack_result_plain_includes_report_and_policy(tmp_path: Path) -> None:
+    out_file = tmp_path / "out.md"
+    report_file = tmp_path / "report.json"
+    out = _plain_capture(
+        lambda c: print_pack_result(
+            c,
+            output_path=out_file,
+            file_count=3,
+            skipped_count=0,
+            total_bytes=512,
+            report_path=report_file,
+            policy_finding_count=4,
+        )
+    )
+    assert str(report_file) in out
+    assert "policy findings: 4" in out  # uses parens, not Rich markup brackets
