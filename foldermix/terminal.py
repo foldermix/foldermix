@@ -191,8 +191,9 @@ def print_pack_result(
             line += f" (report: {report_path})"
         if policy_finding_count is not None:
             line += f" (policy findings: {policy_finding_count})"
-        # markup=False prevents Rich from misinterpreting path characters as tags
-        console.print(line, markup=False)
+        # markup=False: don't interpret path chars as Rich tags
+        # soft_wrap=True: never word-wrap — keeps the whole line intact for grep/pipes
+        console.print(line, markup=False, soft_wrap=True)
         return
 
     table = Table(
