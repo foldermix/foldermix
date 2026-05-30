@@ -5,13 +5,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, Protocol
 
-from click.core import ParameterSource
-
 ConfigSource = Literal["default", "config", "cli"]
 
 
 class ParameterSourceContext(Protocol):
-    def get_parameter_source(self, param_name: str) -> ParameterSource | None: ...
+    def get_parameter_source(self, param_name: str) -> object | None: ...
 
 
 @dataclass(slots=True, frozen=True)
@@ -33,7 +31,8 @@ def merge_config_layers(
 
     for key in values:
         param_name = param_names.get(key, key)
-        if ctx.get_parameter_source(param_name) == ParameterSource.COMMANDLINE:
+        source = ctx.get_parameter_source(param_name)
+        if getattr(source, "name", None) == "COMMANDLINE":
             sources[key] = "cli"
         else:
             sources[key] = "default"
