@@ -2,6 +2,8 @@
 
 `foldermix` packs a local folder into one LLM-friendly context artifact you can inspect, share, or pipe into automation.
 
+Created and maintained by [Shay Palachy Affek](https://www.shaypalachy.com/).
+
 [![CI](https://github.com/foldermix/foldermix/actions/workflows/ci.yml/badge.svg)](https://github.com/foldermix/foldermix/actions/workflows/ci.yml)
 
 Docs site: [foldermix.github.io/foldermix](https://foldermix.github.io/foldermix/)
@@ -710,6 +712,10 @@ A release is triggered by merging a PR to `main` that bumps the `version` field 
 > **Note:** If `HOMEBREW_TAP_GITHUB_TOKEN` is not configured, both tap update and Homebrew release-consumer smoke are skipped. Configure it as a repository secret with write access to `foldermix/homebrew-foldermix` before the first release.
 
 For maintainers preparing a possible `homebrew/core` submission, see [docs/homebrew-core.md](docs/homebrew-core.md).
+
+## Credits
+
+foldermix was created and is maintained by [Shay Palachy Affek](https://www.shaypalachy.com/).
 
 ## License
 
