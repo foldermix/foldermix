@@ -6,6 +6,8 @@ Created by [Shay Palachy Affek](http://www.shaypalachy.com/).
 
 [![CI](https://github.com/foldermix/foldermix/actions/workflows/ci.yml/badge.svg)](https://github.com/foldermix/foldermix/actions/workflows/ci.yml)
 
+Main site: [foldermix.github.io](https://foldermix.github.io/)
+
 Docs site: [foldermix.github.io/foldermix](https://foldermix.github.io/foldermix/)
 
 ## Quick Start
