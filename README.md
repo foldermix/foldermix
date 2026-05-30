@@ -2,38 +2,26 @@
 
 `foldermix` packs a local folder into one LLM-friendly context artifact you can inspect, share, or pipe into automation.
 
-Created and maintained by [Shay Palachy Affek](https://www.shaypalachy.com/).
+Created by [Shay Palachy Affek](http://www.shaypalachy.com/).
 
 [![CI](https://github.com/foldermix/foldermix/actions/workflows/ci.yml/badge.svg)](https://github.com/foldermix/foldermix/actions/workflows/ci.yml)
 
 Docs site: [foldermix.github.io/foldermix](https://foldermix.github.io/foldermix/)
 
+## Quick Start
+
 ```bash
-pip install foldermix && foldermix pack . --out context.md
+pip install foldermix
+foldermix pack . --out context.md
 ```
 
-That command writes a Markdown bundle for the current folder:
+That command scans the current folder and writes one Markdown context artifact:
 
-````markdown
-# FolderPack Context
-
-- **Root**: `/path/to/project`
-- **Files**: 2
-- **Total bytes**: 32
-
-## Table of Contents
-
-- [README.md](#readmemd)
-- [src/app.py](#srcapppy)
-
----
-
-## src/app.py {#srcapppy}
-
-```python
-print("hello")
+```text
+project folder -> scan/filter/convert -> context.md -> ChatGPT / Claude / Gemini / local agents
 ```
-````
+
+For a full generated Markdown bundle, see [docs/examples/packed-output.md](docs/examples/packed-output.md).
 
 Before it writes output, `foldermix` keeps the run predictable:
 
@@ -43,6 +31,20 @@ Before it writes output, `foldermix` keeps the run predictable:
 - orders files deterministically
 - lets you inspect included and skipped files with `list`, `skiplist`, `preview`, `stats`, and `--report`
 - supports redaction, size limits, duplicate suppression, and policy dry-runs when a workflow needs stricter controls
+
+## Workflow
+
+```mermaid
+flowchart LR
+    folder["Local folder"] --> list["foldermix list"]
+    folder --> skiplist["foldermix skiplist"]
+    folder --> stats["foldermix stats"]
+    list --> pack["foldermix pack"]
+    skiplist --> pack
+    stats --> pack
+    pack --> artifact["md / xml / jsonl context artifact"]
+    artifact --> llm["LLM or automation workflow"]
+```
 
 ## Install
 
@@ -80,7 +82,7 @@ brew uninstall foldermix
 uv tool install "foldermix[all,markitdown]"
 ```
 
-## Quick Start
+## First Commands
 
 Run from the folder you want to pack:
 
@@ -715,7 +717,7 @@ For maintainers preparing a possible `homebrew/core` submission, see [docs/homeb
 
 ## Credits
 
-foldermix was created and is maintained by [Shay Palachy Affek](https://www.shaypalachy.com/).
+Created by [Shay Palachy Affek ](http://www.shaypalachy.com/) [[GitHub](https://github.com/shaypal5)]
 
 ## License
 
