@@ -1775,8 +1775,8 @@ def test_print_pack_scan_summary_rich_omits_deduped_when_zero() -> None:
     assert "deduped" not in out
 
 
-def test_print_pack_result_rich_shows_table_with_output_files_size(tmp_path: Path) -> None:
-    out_file = tmp_path / "out.md"
+def test_print_pack_result_rich_shows_table_with_output_files_size() -> None:
+    out_file = Path("build/out.md")
     out = _rich_capture(
         lambda c: print_pack_result(
             c,
@@ -1793,9 +1793,9 @@ def test_print_pack_result_rich_shows_table_with_output_files_size(tmp_path: Pat
     assert "Pack complete" in out
 
 
-def test_print_pack_result_rich_shows_report_and_policy_when_provided(tmp_path: Path) -> None:
-    out_file = tmp_path / "out.md"
-    report_file = tmp_path / "report.json"
+def test_print_pack_result_rich_shows_report_and_policy_when_provided() -> None:
+    out_file = Path("build/out.md")
+    report_file = Path("build/report.json")
     out = _rich_capture(
         lambda c: print_pack_result(
             c,

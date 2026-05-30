@@ -54,7 +54,7 @@ def _load_gitignore_spec(root: Path, respect_gitignore: bool) -> pathspec.PathSp
     if not gitignore_path.exists():
         return None
     patterns = gitignore_path.read_text().splitlines()
-    return pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+    return pathspec.PathSpec.from_lines("gitignore", patterns)
 
 
 def _normalize_include_exts(config: PackConfig) -> set[str] | None:

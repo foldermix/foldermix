@@ -96,18 +96,18 @@ def test_init_force_overwrites_existing_file(tmp_path: Path) -> None:
     assert output_path.read_text(encoding="utf-8") != "sentinel\n"
 
 
-def test_init_success_message_shell_quotes_output_path() -> None:
-    with runner.isolated_filesystem():
-        output_path = Path("my profile config.toml")
-        result = runner.invoke(
-            app,
-            ["init", "--profile", "legal", "--out", str(output_path)],
-        )
+def test_init_success_message_shell_quotes_output_path(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+    output_path = Path("my profile config.toml")
+    result = runner.invoke(
+        app,
+        ["init", "--profile", "legal", "--out", str(output_path)],
+    )
 
-        assert result.exit_code == 0, result.output
-        assert "Run:" in result.output
-        expected_tail = f"foldermix pack . --config {shlex.quote(str(output_path))}"
-        assert expected_tail in result.output
+    assert result.exit_code == 0, result.output
+    assert "Run:" in result.output
+    expected_tail = f"foldermix pack . --config {shlex.quote(str(output_path))}"
+    assert expected_tail in result.output
 
 
 def test_init_reports_write_failure(monkeypatch, tmp_path: Path) -> None:
