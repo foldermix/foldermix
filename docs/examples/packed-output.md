@@ -11,12 +11,20 @@ foldermix pack . --out context.md
 
 - **Root**: `/path/to/project`
 - **Files**: 2
-- **Total bytes**: 32
+- **Total bytes**: 58
 
 ## Table of Contents
 
 - [README.md](#readmemd)
 - [src/app.py](#srcapppy)
+
+---
+
+## README.md {#readmemd}
+
+```markdown
+# Example Project
+```
 
 ---
 
