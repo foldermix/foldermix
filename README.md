@@ -21,7 +21,7 @@ That command scans the current folder and writes one Markdown context artifact:
 project folder -> scan/filter/convert -> context.md -> ChatGPT / Claude / Gemini / local agents
 ```
 
-For a full generated Markdown bundle, see [docs/examples/packed-output.md](docs/examples/packed-output.md).
+For a minimal generated Markdown example, see [docs/examples/packed-output.md](docs/examples/packed-output.md).
 
 Before it writes output, `foldermix` keeps the run predictable:
 
