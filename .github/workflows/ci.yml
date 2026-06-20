@@ -10,7 +10,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -38,7 +38,7 @@ jobs:
           - os: windows-latest
             python-version: "3.12"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
@@ -52,7 +52,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -81,7 +81,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -99,7 +99,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -188,7 +188,7 @@ jobs:
           - os: windows-latest
             python-version: "3.12"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
@@ -209,7 +209,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -267,7 +267,7 @@ jobs:
       name: pypi
       url: https://pypi.org/project/foldermix/
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 2
       - uses: actions/setup-python@v6
@@ -349,7 +349,7 @@ jobs:
       - name: Skip tap update (token not configured)
         if: steps.tap_guard.outputs.tap_update_enabled != 'true'
         run: echo "No HOMEBREW_TAP_GITHUB_TOKEN configured; skipping tap update."
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.tap_guard.outputs.tap_update_enabled == 'true'
       - uses: actions/setup-python@v6
         if: steps.tap_guard.outputs.tap_update_enabled == 'true'
@@ -380,7 +380,7 @@ jobs:
         if: >-
           steps.tap_guard.outputs.tap_update_enabled == 'true' &&
           steps.tap_repo_ref.outputs.tap_repo_has_branch == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ env.TAP_REPOSITORY }}
           token: ${{ env.HOMEBREW_TAP_GITHUB_TOKEN }}
